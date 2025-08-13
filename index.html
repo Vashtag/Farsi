@@ -1,273 +1,678 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Farsi Fun — Learn Persian Basics</title>
-  <style>
-    :root{--bg:#0f172a;--card:#111827;--muted:#94a3b8;--text:#e5e7eb;--accent:#22c55e;--accent-2:#38bdf8;--warn:#f59e0b;--err:#ef4444}
-    *{box-sizing:border-box}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Ubuntu,Cantarell,Helvetica Neue,Arial,"Apple Color Emoji","Segoe UI Emoji";margin:0;background:linear-gradient(135deg,#0b1028,#0f172a 25%,#0b1028 100%);color:var(--text)}
-    header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:16px clamp(16px,4vw,32px);position:sticky;top:0;background:rgba(15,23,42,.75);backdrop-filter:blur(10px);border-bottom:1px solid #1f2937;z-index:5}
-    header h1{font-size:clamp(18px,2.5vw,28px);margin:0;letter-spacing:.5px}
-    .stats{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-    .badge{background:#111827;border:1px solid #1f2937;padding:6px 10px;border-radius:999px;font-size:14px;color:var(--muted)}
-    .daily{display:flex;gap:8px;align-items:center}
-    .daily .lock{font-size:16px}
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Farsi Fun — Learn Persian Basics</title>
+<style>
+  :root{
+    --bg:#0f172a;--card:#111827;--muted:#94a3b8;--text:#e5e7eb;--accent:#22c55e;--accent-2:#38bdf8;--warn:#f59e0b;--err:#ef4444;
+    --grad1:#0b1229; --grad2:#121a36;
+  }
+  /* Themes */
+  [data-theme="sunset"]{ --bg:#1a1020; --card:#201225; --grad1:#24102a; --grad2:#3a1436; --accent:#f97316; --accent-2:#fb7185;}
+  [data-theme="forest"]{ --bg:#0e1a14; --card:#0f2418; --grad1:#0c1e16; --grad2:#153022; --accent:#22c55e; --accent-2:#86efac;}
 
-    main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 96px}
+  *{box-sizing:border-box}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Ubuntu,Cantarell,Helvetica Neue,Arial,"Apple Color Emoji","Segoe UI Emoji";margin:0;background:linear-gradient(135deg,var(--bg),#0b1028);color:var(--text)}
+  header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:16px clamp(16px,4vw,32px);position:sticky;top:0;background:rgba(15,23,42,.75);backdrop-filter:blur(10px);border-bottom:1px solid #1f2937;z-index:5}
+  header h1{font-size:clamp(18px,2.5vw,28px);margin:0;letter-spacing:.5px}
+  .stats{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .badge{background:#111827;border:1px solid #1f2937;padding:6px 10px;border-radius:999px;font-size:14px;color:var(--muted)}
+  .clicky{cursor:pointer}
 
-    .card{background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:16px;padding:clamp(16px,3vw,28px);box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    .row{display:grid;grid-template-columns:1fr;gap:16px}
-    @media(min-width:860px){.row{grid-template-columns:1fr 1fr}}
+  main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 110px}
+  .card{background:linear-gradient(180deg,var(--grad1),var(--grad2));border:1px solid #1f2937;border-radius:16px;padding:clamp(16px,3vw,28px);box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .row{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:860px){.row{grid-template-columns:1fr 1fr}}
+  .media-wrap{display:grid;place-items:center}
+  .pic{width:min(420px,92%);height:min(280px,45vw);object-fit:contain;background:#0b1229;border:1px solid #1f2937;border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.25);display:none}
+  .emoji{font-size:clamp(64px,12vw,120px);text-align:center;line-height:1;filter:drop-shadow(0 10px 20px rgba(0,0,0,.35))}
+  .word{display:flex;flex-direction:column;gap:6px;align-items:flex-start;justify-content:center}
+  .en{font-size:clamp(18px,2.2vw,22px);color:var(--muted)}
+  .fa{font-size:clamp(36px,6vw,52px);font-weight:700;direction:rtl;text-align:right}
+  .trans{font-size:clamp(16px,2vw,18px);color:#cbd5e1}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+  button,.btn,select{appearance:none;border:none;background:#111827;color:var(--text);border:1px solid #1f2937;padding:10px 14px;border-radius:12px;cursor:pointer;transition:transform .03s ease,background .2s ease,border-color .2s ease}
+  button:hover,.btn:hover,select:hover{background:#0b1229;border-color:#263042}
+  button:active,.btn:active{transform:translateY(1px)}
+  .primary{background:linear-gradient(180deg,var(--accent),#16a34a);border-color:#14532d}
+  .primary:hover{background:linear-gradient(180deg,#2fe272,#1fb157)}
+  .accent{background:linear-gradient(180deg,var(--accent-2),#0ea5e9);border-color:#075985}
+  .danger{background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d}
+  .danger:hover{background:linear-gradient(180deg,#f35e5e,#e03a3a)}
+  .select{padding:10px 12px}
 
-    .media-wrap{display:grid;place-items:center}
-    .pic{width:min(380px,90%);height:min(260px,40vw);object-fit:contain;background:#0b1229;border:1px solid #1f2937;border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.25);display:none}
-    .emoji{font-size:clamp(64px,12vw,120px);text-align:center;line-height:1;filter:drop-shadow(0 10px 20px rgba(0,0,0,.35))}
+  .input{background:#0b1229;border:1px solid #1f2937;padding:12px 14px;border-radius:12px;color:var(--text);width:100%;font-size:16px}
+  .feedback{margin-top:8px;min-height:24px;font-size:15px}
+  .ok{color:var(--accent)} .warn{color:var(--warn)} .err{color:var(--err)}
+  .progress{margin-top:12px;height:10px;background:#0b1229;border-radius:999px;border:1px solid #1f2937;overflow:hidden}
+  .bar{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .4s ease}
+  .mode{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+  .tiny{font-size:12px;color:var(--muted)}
+  .tip{margin-top:12px;font-size:14px;color:#a5b4fc}
 
-    .word{display:flex;flex-direction:column;gap:6px;align-items:flex-start;justify-content:center}
-    .en{font-size:clamp(18px,2.2vw,22px);color:var(--muted)}
-    .fa{font-size:clamp(36px,6vw,52px);font-weight:700;direction:rtl;text-align:right}
-    .trans{font-size:clamp(16px,2vw,18px);color:#cbd5e1}
+  footer{position:fixed;inset-block-end:12px;inset-inline:0;display:flex;justify-content:center;pointer-events:none}
+  .footer-inner{pointer-events:auto;background:rgba(17,24,39,.9);border:1px solid #1f2937;border-radius:999px;padding:8px 14px;font-size:13px;color:var(--muted)}
 
-    .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
-    button,.btn{appearance:none;border:none;background:#111827;color:var(--text);border:1px solid #1f2937;padding:10px 14px;border-radius:12px;cursor:pointer;transition:transform .03s ease,background .2s ease,border-color .2s ease}
-    button:hover{background:#0b1229;border-color:#263042}
-    button:active{transform:translateY(1px)}
-    .primary{background:linear-gradient(180deg,#22c55e,#16a34a);border-color:#14532d}
-    .primary:hover{background:linear-gradient(180deg,#2fe272,#1fb157)}
-    .accent{background:linear-gradient(180deg,#38bdf8,#0ea5e9);border-color:#075985}
-    .danger{background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d}
+  /* overlays & messages */
+  .cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.92);border:1px solid #1f2937;padding:14px 18px;border-radius:14px;font-weight:800;letter-spacing:.3px;z-index:20}
+  .fade-out{animation:fadeOut .9s ease forwards}
+  @keyframes fadeOut{0%{opacity:1}100%{opacity:0}}
 
-    .input{background:#0b1229;border:1px solid #1f2937;padding:12px 14px;border-radius:12px;color:var(--text);width:100%;font-size:16px}
+  .overlay{position:fixed;inset:0;background:radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%), rgba(15,23,42,.94);display:grid;place-items:center;z-index:10}
+  .overlay-card{background:linear-gradient(180deg,var(--grad1),var(--grad2));border:1px solid #1f2937;border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:620px;margin:0 16px}
+  .overlay .btns{display:flex;gap:12px;flex-wrap:wrap}
 
-    .feedback{margin-top:8px;min-height:24px;font-size:15px}
-    .ok{color:var(--accent)}
-    .warn{color:var(--warn)}
-    .err{color:var(--err)}
-
-    .progress{margin-top:12px;height:10px;background:#0b1229;border-radius:999px;border:1px solid #1f2937;overflow:hidden}
-    .bar{height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#22c55e);transition:width .4s ease}
-
-    .mode{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-    .tiny{font-size:12px;color:var(--muted)}
-    .tip{margin-top:12px;font-size:14px;color:#a5b4fc}
-
-    footer{position:fixed;inset-block-end:12px;inset-inline:0;display:flex;justify-content:center;pointer-events:none}
-    .footer-inner{pointer-events:auto;background:rgba(17,24,39,.9);border:1px solid #1f2937;border-radius:999px;padding:8px 14px;font-size:13px;color:var(--muted)}
-
-    /* celebration UI */
-    .cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.92);border:1px solid #1f2937;padding:14px 18px;border-radius:14px;font-weight:800;letter-spacing:.3px}
-    .fade-out{animation:fadeOut .9s ease forwards}
-    @keyframes fadeOut{0%{opacity:1}100%{opacity:0}}
-
-    /* start screen overlay */
-    .overlay{position:fixed;inset:0;background:radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%), rgba(15,23,42,.94);display:grid;place-items:center;z-index:10}
-    .overlay-card{background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:18px;padding:24px 24px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:560px;margin:0 16px}
-    .overlay h2{margin:0 0 10px 0;font-size:28px}
-    .overlay p{margin:0 0 16px 0;color:var(--muted)}
-    .overlay .btns{display:flex;gap:12px;flex-wrap:wrap}
-
-    /* sad popup */
-    .sad-pop{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);font-size:56px;filter:drop-shadow(0 6px 20px rgba(0,0,0,.5));opacity:0;pointer-events:none;transition:opacity .2s ease}
-    .sad-show{opacity:1}
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
+  /* dashboard modal */
+  .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45);z-index:12}
+  .modal-card{background:linear-gradient(180deg,var(--grad1),var(--grad2));border:1px solid #1f2937;border-radius:16px;max-width:760px;width:92%;padding:18px 18px 24px}
+  .grid{display:grid;gap:10px}
+  @media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
+  .stat{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px}
+  .ach{display:flex;gap:8px;align-items:center}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#0b1229;border:1px solid #1f2937;border-radius:999px;padding:6px 10px;font-size:12px;color:var(--muted);margin:2px 4px 0 0}
+  .facts{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px;margin-top:6px}
+  details summary{cursor:pointer}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
 <body>
-  <header>
-    <h1>✨ Farsi Fun — Learn Persian Basics</h1>
-    <div class="stats">
-      <div class="badge" id="scoreBadge">Score: 0</div>
-      <div class="badge" id="streakBadge">Streak: 0 🔥</div>
-      <div class="badge daily" title="Daily unlocked / total">
-        <span class="lock">🔓</span>
-        <span id="unlockedBadge">0/0</span>
-      </div>
-      <button id="resetBtn" class="btn danger">♻️ Reset Progress</button>
-    </div>
-  </header>
+<header>
+  <h1 class="clicky" id="openDash">✨ Farsi Fun — Learn Persian Basics</h1>
+  <div class="stats">
+    <div class="badge" id="scoreBadge">Score: 0</div>
+    <div class="badge" id="streakBadge">Streak: 0 🔥</div>
+    <div class="badge" id="unlockedBadge">0/0 unlocked</div>
+    <select id="themeSelect" class="select" title="Theme">
+      <option value="default">Theme: Ocean</option>
+      <option value="sunset" disabled>Theme: Sunset (unlock 10)</option>
+      <option value="forest" disabled>Theme: Forest (unlock 25)</option>
+    </select>
+  </div>
+</header>
 
-  <!-- Start screen (must choose a mode) -->
-  <div id="startOverlay" class="overlay">
-    <div class="overlay-card">
-      <h2>How do you want to learn today?</h2>
-      <p>Pick a mode to get started. You can switch later.</p>
-      <div class="btns">
-        <button id="startLearn" class="primary">📚 Learn Mode</button>
-        <button id="startQuiz" class="accent">🎯 Quiz Mode</button>
-      </div>
-      <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s; if missing, it reads the phonetic line. <b>Say it</b> uses the mic.</p>
+<!-- Start screen -->
+<div id="startOverlay" class="overlay">
+  <div class="overlay-card">
+    <h2>How do you want to learn today?</h2>
+    <p>Pick a mode to get started. You can switch later.</p>
+    <div class="btns">
+      <button id="startLearn" class="primary">📚 Learn Mode</button>
+      <button id="startQuiz" class="accent">🎯 Quiz Mode</button>
     </div>
+    <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s; if missing, it reads the phonetic line. <b>Say it</b> uses the mic. Daily unlocks apply.</p>
+  </div>
+</div>
+
+<main>
+  <div class="mode">
+    <button id="learnBtn" class="btn">Learn Mode</button>
+    <button id="quizBtn" class="btn">Quiz Mode</button>
+    <label class="tiny" style="display:inline-flex;align-items:center;gap:6px;">
+      Difficulty:
+      <select id="difficulty" class="select">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+      <span id="diffLabel" class="badge">Level: Easy</span>
+    </label>
+    <button id="miniQuizBtn" class="btn">⚡ Mini Quiz (5)</button>
+    <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
+    <button id="resetBtn" class="btn danger">♻️ Reset Progress</button>
+    <span class="tiny">Quiz pulls from mastered/SRS due. “Review All” ignores SRS and quizzes mastered words.</span>
   </div>
 
-  <main>
-    <div class="mode">
-      <button id="learnBtn" class="btn">Learn Mode</button>
-      <button id="quizBtn" class="btn">Quiz Mode</button>
-      <span class="tiny">New words unlock <b>every midnight</b>. Quiz pulls only from words she has <b>mastered</b> in Learn.</span>
-    </div>
+  <div class="card">
+    <div class="row">
+      <div class="media-wrap">
+        <img id="pic" class="pic" alt="" />
+        <div class="emoji" id="emoji">🍎</div>
+      </div>
+      <div class="word">
+        <div class="en" id="en">apple</div>
+        <div class="fa" id="fa" dir="rtl">سیب</div>
+        <div class="trans" id="trans">sib</div>
 
-    <div class="card">
-      <div class="row">
-        <div class="media-wrap">
-          <img id="pic" class="pic" alt="" />
-          <div class="emoji" id="emoji">🍎</div>
+        <div class="controls">
+          <button id="listenBtn" class="accent">🔊 Listen</button>
+          <button id="sayBtn">🎙️ Say it</button>
+          <button id="hintBtn">💡 Hint</button>
+          <button id="revealBtn">👀 Reveal</button>
+          <button id="nextBtn" class="primary">➡️ Next</button>
         </div>
-        <div class="word">
-          <div class="en" id="en">apple</div>
-          <div class="fa" id="fa" dir="rtl">سیب</div>
-          <div class="trans" id="trans">sib</div>
 
-          <div class="controls">
-            <button id="listenBtn" class="accent">🔊 Listen</button>
-            <button id="sayBtn">🎙️ Say it</button>
-            <button id="revealBtn">👀 Reveal</button>
-            <button id="nextBtn" class="primary">➡️ Next</button>
-          </div>
+        <div class="feedback" id="speechFeedback"></div>
 
-          <div class="feedback" id="speechFeedback"></div>
-
-          <label class="tiny" for="typeInput">Type the pronunciation (English letters):</label>
-          <input class="input" id="typeInput" placeholder="e.g., sib"/>
-          <div class="controls">
-            <button id="checkBtn">✅ Check</button>
-            <button id="skipBtn">⏭️ Skip</button>
-          </div>
-          <div class="feedback" id="typeFeedback"></div>
-
-          <div class="progress"><div class="bar" id="progressBar"></div></div>
-          <div class="tip" id="tip">Pronunciation tip: “kh” ~ German “Bach”; “â” ~ a in “father”.</div>
+        <label class="tiny" for="typeInput">Type the pronunciation (English letters):</label>
+        <input class="input" id="typeInput" placeholder="e.g., sib"/>
+        <div class="controls">
+          <button id="checkBtn">✅ Check</button>
+          <button id="skipBtn">⏭️ Skip</button>
         </div>
+        <div class="feedback" id="typeFeedback"></div>
+
+        <div class="progress"><div class="bar" id="progressBar"></div></div>
+
+        <details id="factBox" class="facts" style="display:none">
+          <summary>Fun fact</summary>
+          <div id="factText"></div>
+        </details>
+
+        <div class="tip" id="tip">Pronunciation tip: “kh” ~ German “Bach”; “â” ~ a in “father”.</div>
       </div>
     </div>
+  </div>
+</main>
 
-  </main>
+<footer>
+  <div class="footer-inner">Put images in <b>/images</b> (e.g., <code>images/sib.jpg</code>). Put audio in <b>/audio</b> (e.g., <code>audio/sib.mp3</code>). Optional encouragement in <b>/audio/encouragement/</b>.</div>
+</footer>
 
-  <footer>
-    <div class="footer-inner">Put images in <b>/images</b> (e.g., <code>images/sib.jpg</code>). Put audio in <b>/audio</b> (e.g., <code>audio/sib.mp3</code>).</div>
-  </footer>
+<div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
+<div id="sadFace" class="cele-msg" style="display:none">😢</div>
 
-  <div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
-  <div id="sadPop" class="sad-pop">😢</div>
+<!-- Dashboard Modal -->
+<div id="dashModal" class="modal">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h3 style="margin:0">📈 Progress Dashboard</h3>
+      <button id="closeDash" class="btn">Close</button>
+    </div>
+    <div class="grid">
+      <div class="stat">
+        <b>Totals</b>
+        <div id="totals"></div>
+      </div>
+      <div class="stat">
+        <b>Due & SRS</b>
+        <div id="dueStats"></div>
+      </div>
+      <div class="stat">
+        <b>Achievements</b>
+        <div id="achievements"></div>
+      </div>
+      <div class="stat">
+        <b>Themes</b>
+        <div id="themesInfo"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-// ---------------------- Settings ----------------------
-const DAILY_WORDS = 5; // daily unlock count
+/** ================== SETTINGS ================== **/
+const DAILY_WORDS = 5;
 const STORAGE_PREFIX = 'ff_';
+const SRS_INTERVALS_HOURS = [0, 8, 24, 72, 168, 336]; // 0, 8h, 1d, 3d, 7d, 14d
+const MINI_QUIZ_SIZE = 5;
+const FIREWORK_STREAKS = [5,10,20];
 
-// ---------------------- Words ----------------------
-const words=[
-  {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.jpg"},
-  {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.jpg"},
+/** ================== WORDS ================== **/
+const words = [
+  {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.jpg", fact:"In Persian cuisine, apple slices often pair with walnuts as a snack."},
+  {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.jpg", fact:"کتاب is from Arabic root k‑t‑b related to writing."},
   {fa:"گربه", en:"cat", translit:"gorbe", emoji:"🐱", image:"images/gorbe.jpg"},
   {fa:"سگ", en:"dog", translit:"sag", emoji:"🐶", image:"images/sag.jpg"},
   {fa:"آب", en:"water", translit:"âb", emoji:"💧", audio:"audio/ab.mp3", image:"images/ab.jpg"},
   {fa:"نان", en:"bread", translit:"nân", emoji:"🍞", audio:"audio/nan.mp3", image:"images/nan.jpg"},
-  {fa:"چای", en:"tea", translit:"chây", emoji:"🍵", audio:"audio/chay.mp3", image:"images/chay.jpg"},
+  {fa:"چای", en:"tea", translit:"chây", emoji:"🍵", audio:"audio/chay.mp3", image:"images/chay.jpg", fact:"Traditional Persian tea is strong and served with sugar cubes."},
   {fa:"ماشین", en:"car", translit:"mâshin", emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.jpg"},
   {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠", audio:"audio/khane.mp3", image:"images/khane.jpg"},
   {fa:"در", en:"door", translit:"dar", emoji:"🚪", image:"images/dar.jpg"},
   {fa:"خورشید", en:"sun", translit:"khorshid", emoji:"☀️", image:"images/khorshid.jpg"},
-  {fa:"گل", en:"flower", translit:"gol", emoji:"🌸", image:"images/gol.jpg"}
+  {fa:"گل", en:"flower", translit:"gol", emoji:"🌸", image:"images/gol.jpg"},
+  // add more words; daily unlocks follow this order
 ];
 
-// ---------------------- Memory helpers ----------------------
-const ls = { get:(k,f=null)=>{try{const v=localStorage.getItem(STORAGE_PREFIX+k);return v===null?f:JSON.parse(v)}catch{return f}}, set:(k,v)=>{try{localStorage.setItem(STORAGE_PREFIX+k,JSON.stringify(v))}catch{}} };
-function todayISO(){ const d=new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
-function initDailyUnlock(){ let start=ls.get('start_date'); if(!start){ start=todayISO(); ls.set('start_date',start); } const last=ls.get('last_date'); const unlockedStored=ls.get('unlocked_count',0); const startDate=new Date(start+'T00:00:00'); const now=new Date(); const diffDays=Math.floor((now.setHours(0,0,0,0)-startDate.getTime())/(24*60*60*1000)); const shouldUnlock=Math.min(words.length,(diffDays+1)*DAILY_WORDS); let unlocked=Math.max(unlockedStored||0,shouldUnlock); if(unlocked!==unlockedStored){ ls.set('unlocked_count',unlocked); } if(last!==todayISO()){ ls.set('last_date',todayISO()); } return unlocked; }
-function getCoveredSet(){ return new Set(ls.get('covered',[])); }
-function addCovered(i){ const c=getCoveredSet(); c.add(i); ls.set('covered',[...c]); }
+/** ================== LOCAL STORAGE ================== **/
+const ls={get:(k,f=null)=>{try{const v=localStorage.getItem(STORAGE_PREFIX+k);return v===null?f:JSON.parse(v);}catch{return f}},set:(k,v)=>{try{localStorage.setItem(STORAGE_PREFIX+k,JSON.stringify(v))}catch{}}};
 
-let score=Number(ls.get('score',0)); let streak=Number(ls.get('streak',0));
-
-// ---------------------- State ----------------------
-let unlockedCount=initDailyUnlock();
-let mode='learn';
-let idx=0; // position inside current order
-
-function unlockedIndices(){ return [...Array(unlockedCount).keys()]; }
-function coveredIndices(){ const cov=getCoveredSet(); const arr=[...cov].filter(i=>i<unlockedCount); return arr.length?arr:[]; }
-function currentPool(){ if(mode==='quiz'){ const c=coveredIndices(); return c.length?c:unlockedIndices(); } return unlockedIndices(); }
-function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-let order=shuffle(currentPool());
-
-// ---------------------- DOM ----------------------
+/** ================== UTILITIES ================== **/
 const $=id=>document.getElementById(id);
-const picEl=$('pic'); const emojiEl=$('emoji'), enEl=$('en'), faEl=$('fa'), transEl=$('trans');
-const listenBtn=$('listenBtn'), sayBtn=$('sayBtn'), revealBtn=$('revealBtn'), nextBtn=$('nextBtn');
-const typeInput=$('typeInput'), checkBtn=$('checkBtn'), skipBtn=$('skipBtn');
-const speechFeedback=$('speechFeedback'), typeFeedback=$('typeFeedback');
-const scoreBadge=$('scoreBadge'), streakBadge=$('streakBadge'), progressBar=$('progressBar');
-const learnBtn=$('learnBtn'), quizBtn=$('quizBtn'), resetBtn=$('resetBtn');
-const startOverlay=$('startOverlay'), startLearn=$('startLearn'), startQuiz=$('startQuiz');
-const unlockedBadge=$('unlockedBadge');
-const sadPop=$('sadPop');
+function now(){return Date.now()}
+function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
+function slugifyTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-')}
+function randPick(arr){return arr[Math.floor(Math.random()*arr.length)]}
 
-function updateBadges(){ scoreBadge.textContent=`Score: ${score}`; streakBadge.textContent=`Streak: ${streak} 🔥`; unlockedBadge.textContent=`${Math.min(unlockedCount,words.length)}/${words.length}`; const donePct=Math.round((getCoveredSet().size/Math.max(1,unlockedCount))*100); progressBar.style.width=donePct+'%'; }
+/** ================== STATE ================== **/
+let mode='learn';
+let difficulty=ls.get('difficulty','easy'); // 'easy'|'medium'|'hard'
+let reviewAll=false;
+let score=Number(ls.get('score',0));
+let streak=Number(ls.get('streak',0));
+let unlockedCount=initDailyUnlock();
+let idx=0;
+let order=[]; // indices into words (current pool)
+let miniQuizQueue=[]; // active mini quiz items
+let correctThisSession=0; // counts to suggest mini quiz
 
-function showImageOrEmoji(item){ if(item.image){ picEl.style.display='none'; emojiEl.style.display='block'; picEl.onload=()=>{picEl.style.display='block'; emojiEl.style.display='none'}; picEl.onerror=()=>{picEl.style.display='none'; emojiEl.style.display='block'}; picEl.src=item.image; picEl.alt=item.en; } else { picEl.style.display='none'; emojiEl.style.display='block'; } }
+/** SRS memory: { [index]: {stage:0..5, due:ms, seen:int, correct:int, wrong:int} } */
+let srs=ls.get('srs', {});
+function ensureSRS(i){
+  if(!srs[i]) srs[i]={stage:0,due:0,seen:0,correct:0,wrong:0};
+  return srs[i];
+}
+function isDue(i){ return ensureSRS(i).due <= now(); }
+function scheduleAfter(i, hours){ ensureSRS(i).due = now() + hours*3600*1000; }
 
-function updateControlVisibility(){
-  // Hide Listen in quiz mode
-  listenBtn.style.display = (mode==='quiz') ? 'none' : 'inline-flex';
-  // Hide Reveal in learn mode
-  revealBtn.style.display = (mode==='learn') ? 'none' : 'inline-flex';
+/** Covered/mastered set (for achievements/progress) */
+function getCoveredSet(){ return new Set(ls.get('covered', [])); }
+function addCovered(i){ const s=getCoveredSet(); s.add(i); ls.set('covered',[...s]); }
+
+/** ACHIEVEMENTS **/
+let achievements=ls.get('ach', {first10:false, perfectMini:false, streak7:false, mastered50:false});
+function updateAchievements(){
+  const mastered = getCoveredSet().size;
+  if(!achievements.first10 && mastered>=10) achievements.first10=true;
+  if(!achievements.streak7 && streak>=7) achievements.streak7=true;
+  if(!achievements.mastered50 && mastered>=50) achievements.mastered50=true;
+  ls.set('ach', achievements);
 }
 
-function load(){ unlockedCount=initDailyUnlock(); order=order.filter(i=>i<unlockedCount); if(order.length===0) order=currentPool(); const globalIdx=order[idx%order.length]; const item=words[globalIdx]; showImageOrEmoji(item); emojiEl.textContent=item.emoji||'❓'; enEl.textContent=item.en; faEl.textContent=(mode==='quiz')?'•••':item.fa; transEl.textContent=(mode==='quiz')?'—':item.translit; typeInput.value=''; speechFeedback.textContent=''; typeFeedback.textContent=''; updateBadges(); updateControlVisibility(); }
+/** ================== INIT DAILY UNLOCK ================== **/
+function initDailyUnlock(){
+  let start = ls.get('start_date');
+  if(!start){ start = todayISO(); ls.set('start_date', start); }
+  const unlockedStored = ls.get('unlocked_count', 0);
+  const startDate = new Date(start+'T00:00:00');
+  const dNow = new Date(); dNow.setHours(0,0,0,0);
+  const diffDays = Math.floor((dNow - startDate)/86400000);
+  const shouldUnlock = Math.min(words.length, (diffDays+1)*DAILY_WORDS);
+  let unlocked = Math.max(unlockedStored||0, shouldUnlock);
+  if(unlocked!==unlockedStored) ls.set('unlocked_count', unlocked);
+  ls.set('last_date', todayISO());
+  return unlocked;
+}
 
-function next(){ const pool=currentPool(); if(pool.length===0){ typeFeedback.textContent='Learn some words first to unlock the quiz!'; typeFeedback.className='feedback warn'; return; } if(order.some(i=>!pool.includes(i))||pool.some(i=>!order.includes(i))){ order=shuffle([...pool]); idx=0; } else { idx=(idx+1)%order.length; } load(); }
+/** ================== POOLS ================== **/
+function unlockedIndices(){ return [...Array(unlockedCount).keys()]; }
+function masteredIndices(){ return [...getCoveredSet()].filter(i=>i<unlockedCount); }
+function dueIndices(){
+  // Priority: all due mastered items, then other due unlocked
+  const u=unlockedIndices();
+  return u.filter(i=>isDue(i));
+}
+function quizPool(){
+  if(reviewAll){
+    const m = masteredIndices();
+    return m.length? m : unlockedIndices();
+  }
+  const due = dueIndices();
+  if(due.length) return due;
+  const m = masteredIndices();
+  return m.length? m : unlockedIndices();
+}
+function learnPool(){
+  // Learn cycles through unlocked words; SRS: if an item is due show it earlier
+  const u = unlockedIndices();
+  const due=u.filter(i=>isDue(i));
+  const rest=u.filter(i=>!isDue(i));
+  return [...due, ...rest];
+}
 
-function setMode(newMode){ mode=newMode; const pool=currentPool(); order=shuffle([...pool]); idx=0; load(); }
+/** ================== DOM REFS ================== **/
+const picEl=$('pic'), emojiEl=$('emoji'), enEl=$('en'), faEl=$('fa'), transEl=$('trans');
+const listenBtn=$('listenBtn'), sayBtn=$('sayBtn'), hintBtn=$('hintBtn'), revealBtn=$('revealBtn'), nextBtn=$('nextBtn');
+const typeInput=$('typeInput'), checkBtn=$('checkBtn'), skipBtn=$('skipBtn');
+const speechFeedback=$('speechFeedback'), typeFeedback=$('typeFeedback');
+const scoreBadge=$('scoreBadge'), streakBadge=$('streakBadge'), progressBar=$('progressBar'), unlockedBadge=$('unlockedBadge');
+const learnBtn=$('learnBtn'), quizBtn=$('quizBtn'), resetBtn=$('resetBtn'), miniQuizBtn=$('miniQuizBtn');
+const reviewToggle=$('reviewToggle'), difficultySel=$('difficulty'), diffLabel=$('diffLabel');
+const startOverlay=$('startOverlay'), startLearn=$('startLearn'), startQuiz=$('startQuiz');
+const celebration=$('celebration'), sadFace=$('sadFace'), tip=$('tip'), factBox=$('factBox'), factText=$('factText');
+const openDash=$('openDash'), dashModal=$('dashModal'), closeDash=$('closeDash'), totals=$('totals'), dueStats=$('dueStats'), achievementsBox=$('achievements'), themesInfo=$('themesInfo');
+const themeSelect=$('themeSelect');
 
-function reveal(){ if(mode==='learn'){ return; } // guarded; should be hidden anyway
-  const globalIdx=order[idx]; const item=words[globalIdx]; faEl.textContent=item.fa; transEl.textContent=item.translit; showSad(); }
+/** ================== THEME UNLOCKS ================== **/
+function applyThemeControls(){
+  const mastered = getCoveredSet().size;
+  themeSelect.options[1].disabled = mastered < 10; // sunset
+  themeSelect.options[2].disabled = mastered < 25; // forest
+}
+function loadTheme(){
+  const t = ls.get('theme','default');
+  document.documentElement.setAttribute('data-theme', t==='default'?'':t);
+  themeSelect.value = t;
+}
+themeSelect.addEventListener('change', ()=>{
+  const t=themeSelect.value;
+  ls.set('theme', t);
+  loadTheme();
+});
 
-// ---------------------- Celebration & Sad popup ----------------------
-function playDing(){ try{ const C=window.AudioContext||window.webkitAudioContext; if(!C) return; const ctx=new C(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.type='triangle'; o.frequency.value=880; o.connect(g); g.connect(ctx.destination); const t=ctx.currentTime; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.35,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.4); o.start(t); o.stop(t+0.42);}catch(e){} }
-function bottomBurst(){ if(typeof confetti!=='function') return; const base={origin:{y:1,x:0.5},gravity:1.15,ticks:200,scalar:0.9}; confetti({...base,particleCount:60,spread:70,startVelocity:55}); confetti({...base,particleCount:40,spread:100,startVelocity:45,origin:{y:1,x:0.2}}); confetti({...base,particleCount:40,spread:100,startVelocity:45,origin:{y:1,x:0.8}}); }
-function showCelebration(){ const msg=$('celebration'); msg.style.display='block'; bottomBurst(); setTimeout(()=>{ msg.classList.add('fade-out'); },700); setTimeout(()=>{ msg.classList.remove('fade-out'); msg.style.display='none'; },1600);} 
-function celebrate(){ playDing(); showCelebration(); }
-function showSad(){ sadPop.classList.add('sad-show'); setTimeout(()=>{ sadPop.classList.remove('sad-show'); }, 1200); }
+/** ================== UI HELPERS ================== **/
+function updateBadges(){
+  scoreBadge.textContent=`Score: ${score}`;
+  streakBadge.textContent=`Streak: ${streak} 🔥`;
+  unlockedBadge.textContent=`${Math.min(unlockedCount, words.length)}/${words.length} unlocked`;
+  const donePct = Math.round((getCoveredSet().size / Math.max(1, unlockedCount))*100);
+  progressBar.style.width = donePct + '%';
+  diffLabel.textContent = `Level: ${difficulty[0].toUpperCase()+difficulty.slice(1)}`;
+  applyThemeControls();
+}
+function showImageOrEmoji(item){
+  if(item.image){
+    picEl.style.display='none'; emojiEl.style.display='block';
+    picEl.onload=()=>{ picEl.style.display='block'; emojiEl.style.display='none'; };
+    picEl.onerror=()=>{ picEl.style.display='none'; emojiEl.style.display='block'; };
+    picEl.src=item.image; picEl.alt=item.en;
+  } else { picEl.style.display='none'; emojiEl.style.display='block'; }
+}
+function updateControlVisibility(){
+  // Listen hidden in Quiz; Reveal hidden in Learn
+  listenBtn.style.display = (mode==='quiz') ? 'none' : 'inline-flex';
+  revealBtn.style.display = (mode==='quiz') ? 'inline-flex' : 'none';
+  // Hint visible only when info is hidden (Medium/Hard) and in Learn
+  hintBtn.style.display = (mode==='learn' && (difficulty!=='easy')) ? 'inline-flex' : 'none';
+}
+function setDifficulty(d){
+  difficulty=d; ls.set('difficulty', d); load();
+}
 
-// ---------------------- Audio & TTS fallback ----------------------
-function slugifyTranslit(s){ return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-'); }
-let enVoice=null, voicesReady=false; function pickEnglishVoice(){ const v=speechSynthesis.getVoices()||[]; return (v.find(x=>/^en(-|$)/i.test(x.lang)&&/natural|neural|premium/i.test(x.name))||v.find(x=>/^en(-|$)/i.test(x.lang))||v[0]||null);} function ensureEnglishVoice(cb){ if(voicesReady&&enVoice){cb();return;} const tryPick=()=>{enVoice=pickEnglishVoice();voicesReady=true;cb();}; const ex=speechSynthesis.getVoices(); if(ex&&ex.length){enVoice=pickEnglishVoice();voicesReady=true;cb();} else {speechSynthesis.onvoiceschanged=tryPick;} }
-function translitToSpeak(s){ if(!s) return ""; return s.replace(/â|ā/g,"aa").replace(/kh/g,"kha").replace(/gh/g,"gha").replace(/sh/g,"sha").replace(/ch/g,"cha").replace(/j/g,"zhe"); }
-function speakTransliteration(text){ try{ const phrase=translitToSpeak(text); ensureEnglishVoice(()=>{ const u=new SpeechSynthesisUtterance(phrase); if(enVoice){u.voice=enVoice;u.lang=enVoice.lang||"en-US";} else {u.lang="en-US";} u.rate=0.95; try{speechSynthesis.cancel();}catch{} speechSynthesis.speak(u); }); }catch(e){console.warn("TTS error",e);} }
-const audioCache=new Map(); function getAudioForWord(item){ const explicit=item.audio; const fallback=`audio/${slugifyTranslit(item.translit)}.mp3`; const url=explicit||fallback; if(!audioCache.has(url)){ const a=new Audio(); a.preload='auto'; a.src=url; audioCache.set(url,a);} return audioCache.get(url);} 
-async function playYourAudio(){ const globalIdx=order[idx]; const item=words[globalIdx]; const a=getAudioForWord(item); try{ a.currentTime=0; await a.play(); } catch(e){ speakTransliteration(item.translit); } }
+/** ================== LOAD/RENDER ================== **/
+function currentPool(){
+  return (mode==='quiz') ? quizPool() : learnPool();
+}
+function ensureOrder(){
+  const pool=currentPool();
+  order = pool.slice();
+  // Slight shuffle but keep dues earlier in learn
+  if(mode==='quiz' || (mode==='learn' && !dueIndices().length)) shuffle(order);
+  idx=0;
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function load(){
+  unlockedCount = initDailyUnlock();
+  const pool = currentPool();
+  if(!order.length) ensureOrder();
+  order = order.filter(i=>pool.includes(i)); // keep in sync
+  if(order.length===0){ ensureOrder(); }
+
+  const globalIdx = order[idx % order.length];
+  const item = words[globalIdx];
+
+  showImageOrEmoji(item);
+  emojiEl.textContent=item.emoji||'❓';
+
+  // Difficulty-driven visibility
+  if(mode==='quiz'){
+    enEl.textContent=item.en; // show English in quiz
+    faEl.textContent='•••';
+    transEl.textContent='—';
+  } else {
+    if(difficulty==='easy'){
+      enEl.textContent=item.en;
+      faEl.textContent=item.fa;
+      transEl.textContent=item.translit;
+    } else if(difficulty==='medium'){
+      enEl.textContent=item.en;
+      faEl.textContent=item.fa;
+      transEl.textContent='(hidden)';
+    } else { // hard
+      enEl.textContent='(hidden)';
+      faEl.textContent=item.fa;
+      transEl.textContent='(hidden)';
+    }
+  }
+
+  factBox.style.display = item.fact && mode==='learn' ? 'block' : 'none';
+  factText.textContent = item.fact || '';
+
+  typeInput.value=''; speechFeedback.textContent=''; typeFeedback.textContent='';
+  updateBadges(); updateControlVisibility();
+}
+
+/** ================== NAVIGATION ================== **/
+function next(){
+  const pool=currentPool();
+  if(pool.length===0){ typeFeedback.textContent='Learn some words first!'; typeFeedback.className='feedback warn'; return; }
+  if(order.some(i=>!pool.includes(i)) || pool.some(i=>!order.includes(i))){ ensureOrder(); }
+  else { idx = (idx+1) % order.length; }
+  load();
+}
+function setMode(newMode){
+  mode=newMode;
+  ensureOrder();
+  load();
+}
+
+/** ================== CELEBRATIONS ================== **/
+function playDing(){
+  try{
+    const C=window.AudioContext||window.webkitAudioContext; if(!C) return;
+    const ctx=new C(), o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='triangle'; o.frequency.value=880;
+    o.connect(g); g.connect(ctx.destination);
+    const t=ctx.currentTime; g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.35,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.4);
+    o.start(t); o.stop(t+0.42);
+  }catch{}
+}
+function fireworks(){
+  if(typeof confetti!=='function') return;
+  const base={origin:{y:1,x:0.5},gravity:1.15,ticks:200,scalar:1.0};
+  confetti({...base, particleCount:120, spread:80, startVelocity:60});
+  confetti({...base, particleCount:90, spread:120, startVelocity:55, origin:{y:1,x:0.2}});
+  confetti({...base, particleCount:90, spread:120, startVelocity:55, origin:{y:1,x:0.8}});
+}
+function randomEncouragement(){
+  const files=['yay1.mp3','yay2.mp3','nice1.mp3','great1.mp3'];
+  const file=randPick(files);
+  const url=`audio/encouragement/${file}`;
+  const a=new Audio(); a.src=url; a.play().catch(()=>playDing());
+}
+function showCelebration(){
+  celebration.style.display='block';
+  fireworks();
+  setTimeout(()=>{ celebration.classList.add('fade-out'); },700);
+  setTimeout(()=>{ celebration.classList.remove('fade-out'); celebration.style.display='none'; },1600);
+}
+function celebrate(){
+  randomEncouragement();
+  showCelebration();
+}
+
+/** ================== AUDIO: YOUR VOICE + TTS ================== **/
+let enVoice=null, voicesReady=false;
+function pickEnglishVoice(){const v=speechSynthesis.getVoices()||[];return (v.find(x=>/^en(-|$)/i.test(x.lang)&&/natural|neural|premium/i.test(x.name))||v.find(x=>/^en(-|$)/i.test(x.lang))||v[0]||null)}
+function ensureEnglishVoice(cb){ if(voicesReady&&enVoice){cb();return;} const tryPick=()=>{enVoice=pickEnglishVoice();voicesReady=true;cb();}; const ex=speechSynthesis.getVoices(); if(ex&&ex.length){enVoice=pickEnglishVoice();voicesReady=true;cb();}else{speechSynthesis.onvoiceschanged=tryPick;} }
+function translitToSpeak(s){return (s||'').replace(/â|ā/g,"aa").replace(/kh/g,"kha").replace(/gh/g,"gha").replace(/sh/g,"sha").replace(/ch/g,"cha").replace(/j/g,"zhe")}
+function speakTransliteration(text){ try{ const phrase=translitToSpeak(text); ensureEnglishVoice(()=>{ const u=new SpeechSynthesisUtterance(phrase); if(enVoice){u.voice=enVoice;u.lang=enVoice.lang||"en-US";} else {u.lang="en-US";} u.rate=0.95; try{speechSynthesis.cancel();}catch{} speechSynthesis.speak(u); }); }catch(e){} }
+const audioCache=new Map();
+function getAudioForWord(item){ const url=item.audio||`audio/${slugifyTranslit(item.translit)}.mp3`; if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);} return audioCache.get(url);}
+async function playYourAudio(){ const i=order[idx]; const item=words[i]; const a=getAudioForWord(item); try{ a.currentTime=0; await a.play(); } catch(e){ speakTransliteration(item.translit); } }
 listenBtn.addEventListener('click', playYourAudio);
 
-// ---------------------- Speech Recognition ----------------------
-function normalizeFa(s){ if(!s) return ''; return s.replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,''); }
+/** ================== SPEECH RECOGNITION ================== **/
+function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition; let rec=null; let micPrimed=false;
-async function primeMic(){ if(micPrimed||!navigator.mediaDevices?.getUserMedia) return; try{ await navigator.mediaDevices.getUserMedia({audio:true}); micPrimed=true; }catch(e){ speechFeedback.textContent='Microphone permission is blocked. Please allow mic access (click the lock icon).'; speechFeedback.className='feedback err'; } }
-if(SR){ rec=new SR(); rec.lang='fa-IR'; rec.interimResults=false; rec.maxAlternatives=3; rec.onresult=(ev)=>{ const globalIdx=order[idx]; const item=words[globalIdx]; const heard=normalizeFa(ev.results[0][0].transcript); const target=normalizeFa(item.fa); const ok=heard.includes(target)||target.includes(heard); if(ok){ celebrate(); speechFeedback.textContent=`✔️ Heard: ${ev.results[0][0].transcript}`; speechFeedback.className='feedback ok'; score+=10; streak+=1; addCovered(globalIdx); ls.set('score',score); ls.set('streak',streak); updateBadges(); next(); } else { speechFeedback.textContent=`I heard “${ev.results[0][0].transcript}”. Try again!`; speechFeedback.className='feedback warn'; streak=0; ls.set('streak',streak); } }; rec.onerror=(e)=>{ const kind=e?.error||'unknown'; const map={'no-speech':'No speech detected. Try speaking closer to the mic.','audio-capture':'No microphone found. Plug in or enable your mic.','not-allowed':'Mic access denied. Click the lock (🔒) in the address bar to allow the mic.','aborted':'Recognition aborted. Tap “Say it” again.'}; speechFeedback.textContent=map[kind]||('Mic error: '+kind); speechFeedback.className='feedback err'; }; } else { sayBtn.disabled=true; sayBtn.title='Speech recognition not supported in this browser. Use Chrome on desktop/mobile.'; }
+async function primeMic(){ if(micPrimed||!navigator.mediaDevices?.getUserMedia) return; try{ await navigator.mediaDevices.getUserMedia({audio:true}); micPrimed=true; }catch(e){ speechFeedback.textContent='Microphone permission is blocked. Click the lock icon to allow.'; speechFeedback.className='feedback err'; } }
+if(SR){
+  rec=new SR(); rec.lang='fa-IR'; rec.interimResults=false; rec.maxAlternatives=3;
+  rec.onresult=(ev)=>{
+    const gi=order[idx], item=words[gi];
+    const heard=normalizeFa(ev.results[0][0].transcript), target=normalizeFa(item.fa);
+    const ok=heard.includes(target)||target.includes(heard);
+    handleAnswer(ok, gi, 'speech', ev.results[0][0].transcript);
+  };
+  rec.onerror=(e)=>{ const kind=e?.error||'unknown'; const map={'no-speech':'No speech detected. Try closer to the mic.','audio-capture':'No microphone found.','not-allowed':'Mic blocked. Allow in the address bar.','aborted':'Recognition aborted. Tap again.'}; speechFeedback.textContent=map[kind]||('Mic error: '+kind); speechFeedback.className='feedback err'; };
+}else{ sayBtn.disabled=true; sayBtn.title='Speech recognition not supported. Use Chrome.'; }
+sayBtn.addEventListener('click', async ()=>{
+  if(!rec){ speechFeedback.textContent='Speech recognition not supported.'; speechFeedback.className='feedback err'; return; }
+  if(!window.isSecureContext){ speechFeedback.textContent='Mic works only over HTTPS (use your Pages link).'; speechFeedback.className='feedback err'; return; }
+  await primeMic(); speechFeedback.textContent='Listening…'; speechFeedback.className='feedback';
+  try{ rec.start(); }catch{}
+});
 
-sayBtn.addEventListener('click',async()=>{ if(!rec){ speechFeedback.textContent='Speech recognition not supported on this device/browser.'; speechFeedback.className='feedback err'; return; } if(!window.isSecureContext){ speechFeedback.textContent='Mic only works over HTTPS. Open your published site (https).'; speechFeedback.className='feedback err'; return; } await primeMic(); speechFeedback.textContent='Listening… please say the Persian word'; speechFeedback.className='feedback'; try{ rec.start(); }catch{} });
+/** ================== ANSWERING LOGIC (SRS + scoring) ================== **/
+function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/\s+/g,'')}
+function handleAnswer(correct, gi, source='typing', transcript=''){
+  const item=words[gi];
+  const rec=ensureSRS(gi); rec.seen++;
+  if(correct){
+    rec.correct++;
+    // SRS promote
+    rec.stage=Math.min(rec.stage+1, SRS_INTERVALS_HOURS.length-1);
+    scheduleAfter(gi, SRS_INTERVALS_HOURS[rec.stage]||24);
+    celebrate();
+    score+=10; streak+=1; correctThisSession++;
+    addCovered(gi);
+    // Fireworks on milestones
+    if(FIREWORK_STREAKS.includes(streak)) fireworks();
+    // Mini quiz suggestion optional (we show button always; you can trigger auto)
+    typeFeedback.textContent = 'Great! +10 points'; typeFeedback.className='feedback ok';
+    ls.set('score',score); ls.set('streak',streak); ls.set('srs',srs); updateAchievements(); updateBadges();
+    // progress next
+    setTimeout(next, 500);
+  } else {
+    rec.wrong++;
+    // SRS demote slightly and schedule soon
+    rec.stage=Math.max(0, rec.stage-1);
+    scheduleAfter(gi, 2); // 2 hours retry
+    streak=0;
+    typeFeedback.textContent = source==='speech' ? `Heard “${transcript}”. Try again!` : `Not quite. Hint: ${item.translit}`;
+    typeFeedback.className='feedback warn';
+    ls.set('streak',streak); ls.set('srs',srs); updateBadges();
+  }
+}
 
-// ---------------------- Typing Check ----------------------
-function normalizeTranslit(s){ return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/\s+/g,''); }
-checkBtn.addEventListener('click',()=>{ const globalIdx=order[idx]; const item=words[globalIdx]; const guess=normalizeTranslit(typeInput.value); const target=normalizeTranslit(item.translit); if(!guess){ typeFeedback.textContent='Type your guess first!'; typeFeedback.className='feedback warn'; return; } if(guess===target){ typeFeedback.textContent='Great! +10 points'; typeFeedback.className='feedback ok'; celebrate(); score+=10; streak+=1; addCovered(globalIdx); ls.set('score',score); ls.set('streak',streak); updateBadges(); next(); } else { typeFeedback.textContent=`Not quite. Hint: ${item.translit}`; typeFeedback.className='feedback warn'; streak=0; ls.set('streak',streak); } });
+/** ================== CONTROLS ================== **/
+checkBtn.addEventListener('click', ()=>{
+  const gi=order[idx], item=words[gi];
+  const guess=normalizeTranslit(typeInput.value); const target=normalizeTranslit(item.translit);
+  if(!guess){ typeFeedback.textContent='Type your guess first!'; typeFeedback.className='feedback warn'; return; }
+  handleAnswer(guess===target, gi, 'typing');
+});
+skipBtn.addEventListener('click', ()=>{ streak=0; ls.set('streak',streak); next(); });
+nextBtn.addEventListener('click', next);
+learnBtn.addEventListener('click', ()=> setMode('learn'));
+quizBtn.addEventListener('click',  ()=> setMode('quiz'));
+difficultySel.value=difficulty;
+difficultySel.addEventListener('change', e=> setDifficulty(e.target.value));
+reviewToggle.addEventListener('click', ()=>{
+  reviewAll=!reviewAll;
+  reviewToggle.textContent = `🔁 Review All Mastered: ${reviewAll?'ON':'OFF'}`;
+  ensureOrder(); load();
+});
+hintBtn.addEventListener('click', ()=>{
+  if(mode!=='learn') return;
+  // show hidden pieces per difficulty
+  const gi=order[idx], item=words[gi];
+  if(difficulty==='medium'){ transEl.textContent=item.translit; }
+  if(difficulty==='hard'){ enEl.textContent=item.en; transEl.textContent=item.translit; }
+});
+function reveal(){
+  const gi=order[idx], item=words[gi];
+  faEl.textContent=item.fa; transEl.textContent=item.translit;
+  // Sad popup in Quiz
+  if(mode==='quiz'){
+    sadFace.style.display='block';
+    setTimeout(()=>sadFace.classList.add('fade-out'), 700);
+    setTimeout(()=>{sadFace.classList.remove('fade-out'); sadFace.style.display='none';},1500);
+  }
+}
+revealBtn.addEventListener('click', reveal);
 
-skipBtn.addEventListener('click',()=>{ streak=0; ls.set('streak',streak); next(); });
-nextBtn.addEventListener('click',next);
-revealBtn.addEventListener('click',reveal);
-learnBtn.addEventListener('click',()=> setMode('learn'));
-quizBtn.addEventListener('click',()=> setMode('quiz'));
+/** ================== MINI QUIZ ================== **/
+miniQuizBtn.addEventListener('click', startMiniQuiz);
+function startMiniQuiz(){
+  // Build a 5-item set from SRS due + mastered; fallback to unlocked
+  const pool = [...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
+  shuffle(pool);
+  miniQuizQueue = pool.slice(0, MINI_QUIZ_SIZE);
+  if(!miniQuizQueue.length){ alert('Nothing to quiz yet! Learn a few words first.'); return; }
+  alert('Mini Quiz: 5 questions. Type the transliteration!');
+  runMiniQuestion();
+}
+let miniCorrect=0, miniTotal=0;
+function runMiniQuestion(){
+  if(!miniQuizQueue.length){
+    const perfect = miniCorrect===miniTotal && miniTotal>0;
+    if(perfect){ achievements.perfectMini=true; ls.set('ach',achievements); fireworks(); }
+    alert(`Mini Quiz complete! Score: ${miniCorrect}/${miniTotal}${perfect?' (Perfect!)':''}`);
+    miniCorrect=0; miniTotal=0; updateBadges(); return;
+  }
+  const gi=miniQuizQueue.shift(); const item=words[gi];
+  const ans = prompt(`Mini Quiz: What is the transliteration for “${item.en}” (${item.fa})?`, '');
+  miniTotal++;
+  if(ans!==null && normalizeTranslit(ans)===normalizeTranslit(item.translit)){ miniCorrect++; handleAnswer(true, gi, 'mini'); }
+  else { handleAnswer(false, gi, 'mini'); }
+  setTimeout(runMiniQuestion, 300);
+}
 
-// ---------------------- Reset Progress ----------------------
-resetBtn.addEventListener('click',()=>{ if(!confirm('Reset ALL progress? This clears score, streak, mastered words, and daily unlocks.')) return; for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(k&&k.startsWith(STORAGE_PREFIX)){ localStorage.removeItem(k); }} score=0; streak=0; order=[]; idx=0; unlockedCount=initDailyUnlock(); setMode('learn'); alert('Progress reset!'); });
+/** ================== DASHBOARD ================== **/
+openDash.addEventListener('click', ()=>{ renderDashboard(); dashModal.style.display='grid'; });
+closeDash.addEventListener('click', ()=> dashModal.style.display='none');
+dashModal.addEventListener('click', (e)=>{ if(e.target===dashModal) dashModal.style.display='none'; });
 
-// ---------------------- Start screen ----------------------
+function renderDashboard(){
+  const mastered = getCoveredSet().size;
+  const total = words.length;
+  const acc = calcAccuracy();
+  totals.innerHTML = `
+    <div class="chip">Words unlocked: ${unlockedCount}/${total}</div>
+    <div class="chip">Words mastered: ${mastered}</div>
+    <div class="chip">Score: ${score}</div>
+    <div class="chip">Streak: ${streak}</div>
+    <div class="chip">Accuracy: ${acc.toFixed(1)}%</div>
+  `;
+  const dueCount = dueIndices().length;
+  const srsBreakdown = breakdownStages();
+  dueStats.innerHTML = `
+    <div class="chip">Due now: ${dueCount}</div>
+    ${srsBreakdown.map((n,i)=>`<div class="chip">Stage ${i}: ${n}</div>`).join('')}
+  `;
+  achievementsBox.innerHTML = `
+    <div class="ach">${achievements.first10?'🏅':'⬜'} First 10 mastered</div>
+    <div class="ach">${achievements.perfectMini?'🏅':'⬜'} Perfect Mini Quiz</div>
+    <div class="ach">${achievements.streak7?'🏅':'⬜'} 7‑day streak</div>
+    <div class="ach">${achievements.mastered50?'🏅':'⬜'} 50 mastered</div>
+  `;
+  themesInfo.innerHTML = `
+    <div class="chip">Ocean (Default)</div>
+    <div class="chip ${themeSelect.options[1].disabled?'':'ok'}">Sunset ${themeSelect.options[1].disabled?'(unlock 10)':'✓ unlocked'}</div>
+    <div class="chip ${themeSelect.options[2].disabled?'':'ok'}">Forest ${themeSelect.options[2].disabled?'(unlock 25)':'✓ unlocked'}</div>
+  `;
+}
+function calcAccuracy(){
+  let c=0, t=0; for(const k in srs){ c+=srs[k].correct||0; t+=(srs[k].correct||0)+(srs[k].wrong||0); }
+  return t? (100*c/t):0;
+}
+function breakdownStages(){
+  const arr=Array(SRS_INTERVALS_HOURS.length).fill(0);
+  for(const k in srs){ arr[srs[k].stage||0]++; }
+  return arr;
+}
+
+/** ================== RESET ================== **/
+resetBtn.addEventListener('click',()=>{
+  if(!confirm('Reset ALL progress? (score, streak, SRS, unlocks, achievements)')) return;
+  for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(k&&k.startsWith(STORAGE_PREFIX)){ localStorage.removeItem(k); } }
+  score=0; streak=0; srs={}; achievements={first10:false,perfectMini:false,streak7:false,mastered50:false};
+  unlockedCount=initDailyUnlock(); ensureOrder(); load(); alert('Progress reset!');
+});
+
+/** ================== START SCREEN ================== **/
 startLearn.addEventListener('click',()=>{ setMode('learn'); startOverlay.style.display='none'; });
-startQuiz.addEventListener('click',()=>{ setMode('quiz'); startOverlay.style.display='none'; });
+startQuiz.addEventListener('click',()=>{ setMode('quiz');  startOverlay.style.display='none'; });
 
-// Initial
-updateBadges();
-load();
+/** ================== LISTEN/REVEAL VISIBILITY & INIT ================== **/
+function updateControlVisibilityWrapper(){ updateControlVisibility(); }
+document.addEventListener('visibilitychange', updateControlVisibilityWrapper);
+
+/** ================== INIT ================== **/
+function firstLoad(){
+  loadTheme();
+  ensureOrder();
+  setDifficulty(difficulty);
+  updateAchievements();
+  updateBadges();
+  load();
+}
+firstLoad();
 </script>
 </body>
 </html>
