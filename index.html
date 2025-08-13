@@ -32,9 +32,15 @@
   .pic{width:min(420px,92%);height:min(280px,45vw);object-fit:contain;background:#0b1229;border:1px solid #1f2937;border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.25);display:none}
   .emoji{font-size:clamp(64px,12vw,120px);text-align:center;line-height:1;filter:drop-shadow(0 10px 20px rgba(0,0,0,.35))}
   .word{display:flex;flex-direction:column;gap:6px;align-items:flex-start;justify-content:center}
+  /* Base sizes */
   .en{font-size:clamp(18px,2.2vw,22px);color:var(--muted)}
-  .fa{font-size:clamp(36px,6vw,52px);font-weight:700;direction:rtl;text-align:right}
-  .trans{font-size:clamp(16px,2vw,18px);color:#cbd5e1}
+  .fa{font-size:clamp(28px,5vw,40px);font-weight:700;direction:rtl;text-align:right}
+  .trans{font-size:clamp(18px,2.2vw,22px);color:#cbd5e1}
+  /* Learn-mode sizing overrides */
+  .learn .en{font-size:clamp(26px,3.4vw,34px);font-weight:700;color:#e2e8f0}
+  .learn .fa{font-size:clamp(18px,2.6vw,22px);color:#cbd5e1}
+  .learn .trans{font-size:clamp(26px,3.4vw,34px);font-weight:600;color:#e2e8f0}
+
   .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
   button,.btn,select{appearance:none;border:none;background:#111827;color:var(--text);border:1px solid #1f2937;padding:10px 14px;border-radius:12px;cursor:pointer;transition:transform .03s ease,background .2s ease,border-color .2s ease}
   button:hover,.btn:hover,select:hover{background:#0b1229;border-color:#263042}
@@ -73,10 +79,11 @@
   .facts{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px;margin-top:6px}
   details summary{cursor:pointer}
 
+  /* Mini-quiz panel (simplified) */
   .quizpanel{margin-top:16px;padding:12px;border:1px dashed #334155;border-radius:12px;background:#0b1229}
-  .qtitle{font-weight:700;margin-bottom:8px}
   .qprogress{height:8px;background:#0a142e;border-radius:999px;overflow:hidden;border:1px solid #1f2937;margin-bottom:10px}
   .qbar{height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#22c55e)}
+  .mq-pic{width:min(420px,92%);height:min(280px,45vw);object-fit:contain;background:#0b1229;border:1px solid #1f2937;border-radius:12px;display:block;margin:0 auto 10px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
@@ -122,7 +129,7 @@
       </select>
       <span id="diffLabel" class="badge">Level: Easy</span>
     </label>
-    <button id="miniQuizBtn" class="btn">⚡ Mini Quiz (5)</button>
+    <!-- Mini Quiz button removed from main UI -->
   </div>
 
   <div class="card">
@@ -131,7 +138,7 @@
         <img id="pic" class="pic" alt="" />
         <div class="emoji" id="emoji">🍎</div>
       </div>
-      <div class="word">
+      <div class="word" id="wordWrap">
         <div class="en" id="en">apple</div>
         <div class="fa" id="fa" dir="rtl">سیب</div>
         <div class="trans" id="trans">sib</div>
@@ -163,16 +170,13 @@
 
         <div class="tip" id="tip">Pronunciation tip: “kh” ~ German “Bach”; “â” ~ a in “father”.</div>
 
-        <!-- Embedded Mini Quiz Panel -->
+        <!-- Embedded Mini Quiz Panel (only image + input + Check) -->
         <div id="miniQuizPanel" class="quizpanel" style="display:none">
-          <div class="qtitle" id="mqTitle">Mini Quiz</div>
           <div class="qprogress"><div id="mqBar" class="qbar"></div></div>
-          <div id="mqQuestion" style="margin-bottom:8px"></div>
+          <img id="mqPic" class="mq-pic" alt=""/>
           <input id="mqInput" class="input" placeholder="Type the transliteration…"/>
-          <div class="controls">
-            <button id="mqSubmit" class="primary">Submit</button>
-            <button id="mqSkip" class="btn">Skip</button>
-            <button id="mqExit" class="btn danger">Exit</button>
+          <div class="controls" style="justify-content:flex-start">
+            <button id="mqCheck" class="primary">Check</button>
           </div>
           <div id="mqFeedback" class="feedback"></div>
         </div>
@@ -204,7 +208,7 @@
   </div>
 </div>
 
-<!-- Settings Modal -->
+<!-- Settings Modal (now contains Mini Quiz) -->
 <div id="settingsModal" class="modal">
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -212,6 +216,11 @@
       <button id="closeSettings" class="btn">Close</button>
     </div>
     <div class="grid">
+      <div class="stat">
+        <b>Mini Quiz</b>
+        <p class="tiny">Practice 5 items. You’ll see <b>only an image</b>; type the transliteration.</p>
+        <button id="startMiniQuiz" class="btn">⚡ Start Mini Quiz</button>
+      </div>
       <div class="stat">
         <b>Review Mode</b>
         <p class="tiny">Quiz only on words she has mastered (ignores SRS order).</p>
@@ -234,7 +243,7 @@ const STORAGE_PREFIX = 'ff_';
 const SRS_INTERVALS_HOURS = [0, 8, 24, 72, 168, 336];
 const MINI_QUIZ_SIZE = 5;
 
-/** ============ WORDS (sample with .png images) ============ */
+/** ============ WORDS (sample, .png images) ============ */
 const words = [
   {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.png", fact:"In Persian cuisine, apple slices often pair with walnuts as a snack."},
   {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.png", fact:"کتاب is from Arabic root k‑t‑b related to writing."},
@@ -258,9 +267,9 @@ const $=id=>document.getElementById(id);
 function now(){return Date.now()}
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
 function slugifyTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-')}
-function randPick(arr){return arr[Math.floor(Math.random()*arr.length)]}
 function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/\s+/g,'')}
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
+function randPick(arr){return arr[Math.floor(Math.random()*arr.length)]}
 
 /** ============ STATE ============ */
 let mode='learn';
@@ -326,6 +335,8 @@ function learnPool(){
 }
 
 /** ============ DOM ============ */
+const bodyEl=document.body;
+const wordWrap=$('wordWrap');
 const picEl=$('pic'), emojiEl=$('emoji'), enEl=$('en'), faEl=$('fa'), transEl=$('trans');
 const listenBtn=$('listenBtn'), sayBtn=$('sayBtn'), hintBtn=$('hintBtn'), revealBtn=$('revealBtn'), nextBtn=$('nextBtn');
 const typeInput=$('typeInput'), checkBtn=$('checkBtn'), skipBtn=$('skipBtn');
@@ -335,10 +346,10 @@ const startOverlay=$('startOverlay'), startLearn=$('startLearn'), startQuiz=$('s
 const celebration=$('celebration'), sadFace=$('sadFace'), factBox=$('factBox'), factText=$('factText'), tip=$('tip');
 const openDash=$('openDash'), dashModal=$('dashModal'), closeDash=$('closeDash'), totals=$('totals'), dueStats=$('dueStats'), achievementsBox=$('achievements'), themesInfo=$('themesInfo');
 const themeSelect=$('themeSelect'), openSettings=$('openSettings'), settingsModal=$('settingsModal'), closeSettings=$('closeSettings');
-const reviewToggle=$('reviewToggle'), resetBtn=$('resetBtn');
-const learnBtn=$('learnBtn'), quizBtn=$('quizBtn'), miniQuizBtn=$('miniQuizBtn');
+const reviewToggle=$('reviewToggle'), resetBtn=$('resetBtn'), startMiniQuizBtn=$('startMiniQuiz');
+const learnBtn=$('learnBtn'), quizBtn=$('quizBtn');
 const difficultySel=$('difficulty'), diffLabel=$('diffLabel');
-const miniPanel=$('miniQuizPanel'), mqTitle=$('mqTitle'), mqBar=$('mqBar'), mqQuestion=$('mqQuestion'), mqInput=$('mqInput'), mqSubmit=$('mqSubmit'), mqSkip=$('mqSkip'), mqExit=$('mqExit'), mqFeedback=$('mqFeedback');
+const miniPanel=$('miniQuizPanel'), mqBar=$('mqBar'), mqPic=$('mqPic'), mqInput=$('mqInput'), mqCheck=$('mqCheck'), mqFeedback=$('mqFeedback');
 
 /** ============ THEMES ============ */
 function applyThemeControls(){
@@ -372,17 +383,21 @@ function showImageOrEmoji(item){
   } else { picEl.style.display='none'; emojiEl.style.display='block'; }
 }
 function updateControlVisibility(){
+  // Listen hidden in Quiz; Reveal visible only in Quiz; Hint in Learn (non-easy)
   listenBtn.style.display = (mode==='quiz') ? 'none' : 'inline-flex';
-  revealBtn.style.display = (mode==='quiz') ? 'inline-flex' : 'none';
-  hintBtn.style.display = (mode==='learn' && (difficulty!=='easy')) ? 'inline-flex' : 'none';
+  revealBtn.style.display  = (mode==='quiz') ? 'inline-flex' : 'none';
+  hintBtn.style.display    = (mode==='learn' && (difficulty!=='easy')) ? 'inline-flex' : 'none';
 }
 function setDifficulty(d){ difficulty=d; ls.set('difficulty', d); load(); }
 function currentPool(){ return (mode==='quiz') ? quizPool() : learnPool(); }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
 function ensureOrder(){ const pool=currentPool(); order=pool.slice(); if(mode==='quiz' || (mode==='learn' && !dueIndices().length)) shuffle(order); idx=0; }
 function load(){
+  // Toggle Learn-mode typography class on <body>
+  bodyEl.classList.toggle('learn', mode==='learn');
+
   unlockedCount = initDailyUnlock();
-  const pool=currentPool();
+  const pool = currentPool();
   if(!order.length) ensureOrder();
   order = order.filter(i=>pool.includes(i)); if(!order.length) ensureOrder();
   const gi = order[idx % order.length]; const item = words[gi];
@@ -390,8 +405,9 @@ function load(){
   showImageOrEmoji(item);
   emojiEl.textContent=item.emoji||'❓';
 
-  if(mode==='quiz'){ enEl.textContent=item.en; faEl.textContent='•••'; transEl.textContent='—'; }
-  else {
+  if(mode==='quiz'){
+    enEl.textContent=item.en; faEl.textContent='•••'; transEl.textContent='—';
+  } else {
     if(difficulty==='easy'){ enEl.textContent=item.en; faEl.textContent=item.fa; transEl.textContent=item.translit; }
     else if(difficulty==='medium'){ enEl.textContent=item.en; faEl.textContent=item.fa; transEl.textContent='(hidden)'; }
     else { enEl.textContent='(hidden)'; faEl.textContent=item.fa; transEl.textContent='(hidden)'; }
@@ -400,10 +416,9 @@ function load(){
   factBox.style.display = item.fact && mode==='learn' && !miniQuizActive ? 'block' : 'none';
   factText.textContent = item.fact || '';
 
-  const hideWhenMini = miniQuizActive ? 'none' : '';
-  typeInput.parentElement.style.display = hideWhenMini;
-  document.querySelectorAll('.controls')[0].style.display = hideWhenMini;
-  document.querySelectorAll('.controls')[1].style.display = hideWhenMini;
+  // Hide main training controls when mini quiz is active
+  const mainRows = wordWrap.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, #speechFeedback, .progress, #factBox, #tip');
+  mainRows.forEach(el=>{ el.style.display = miniQuizActive ? 'none' : ''; });
 
   updateBadges(); updateControlVisibility();
 }
@@ -420,7 +435,7 @@ function happyDing(){
   try{
     const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
     const ctx=new AC();
-    const tones=[659,784,988]; // E5, G5, B5 (cheery major chord)
+    const tones=[659,784,988]; // E5, G5, B5
     const t0=ctx.currentTime;
     tones.forEach((f,i)=>{
       const o=ctx.createOscillator(), g=ctx.createGain();
@@ -532,89 +547,77 @@ function reveal(){
 }
 $('revealBtn').addEventListener('click', reveal);
 
-/** ============ EMBEDDED MINI QUIZ ============ */
-$('miniQuizBtn').addEventListener('click', startMiniQuiz);
+/** ============ EMBEDDED MINI QUIZ (Settings-triggered) ============ */
+startMiniQuizBtn.addEventListener('click', ()=>{
+  $('settingsModal').style.display='none';
+  startMiniQuiz();
+});
+
 function startMiniQuiz(){
   miniQuizActive=true; miniQ.correct=0; miniQ.total=0;
   const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
-  shuffle(pool); miniQ.queue=pool.slice(0,5);
+  shuffle(pool); miniQ.queue=pool.slice(0,MINI_QUIZ_SIZE);
   if(!miniQ.queue.length){ miniQuizActive=false; alert('Nothing to quiz yet!'); return; }
   showMiniPanel(true); nextMiniQuestion();
 }
 function showMiniPanel(show){
   miniPanel.style.display = show ? 'block' : 'none';
-  document.querySelectorAll('.controls')[0].style.display = show ? 'none' : '';
-  document.querySelectorAll('.controls')[1].style.display = show ? 'none' : '';
-  $('typeInput').parentElement.style.display = show ? 'none' : '';
+  // hide main training UI while mini quiz is active
+  const mainRows = wordWrap.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, #speechFeedback, .progress, #factBox, #tip');
+  mainRows.forEach(el=>{ el.style.display = show ? 'none' : ''; });
 }
 function nextMiniQuestion(){
   if(!miniQ.queue.length){
-    const perfect = miniQ.correct===miniQ.total && miniQ.total>0;
-    if(perfect){ const a=ls.get('ach',{first10:false,perfectMini:false,streak7:false,mastered50:false}); a.perfectMini=true; ls.set('ach',a); fireworksBurst(); }
-    mqTitle.textContent='Mini Quiz — Done!';
-    mqQuestion.innerHTML = `Score: <b>${miniQ.correct}</b> / ${miniQ.total}`;
-    mqFeedback.textContent='';
+    // Show brief summary then auto-close
+    mqFeedback.innerHTML = `Mini Quiz complete! Score: <b>${miniQ.correct}</b> / ${miniQ.total}`;
+    mqFeedback.className='feedback ok';
     mqBar.style.width='100%';
-    $('mqInput').style.display='none';
-    $('mqSubmit').style.display='none';
-    $('mqSkip').textContent='Restart';
-    $('mqSkip').onclick=()=>{ showMiniPanel(false); miniQuizActive=false; load(); };
+    setTimeout(()=>{ showMiniPanel(false); miniQuizActive=false; load(); }, 1500);
     return;
   }
   miniQ.current = miniQ.queue.shift();
   const item=words[miniQ.current];
-  mqTitle.textContent='Mini Quiz';
-  mqQuestion.innerHTML = `Type the transliteration for <b>${item.en}</b> (${item.fa})`;
+  mqBar.style.width = `${(miniQ.total/MINI_QUIZ_SIZE)*100}%`;
+  mqPic.src = item.image || '';
+  mqPic.alt = item.en || '';
+  mqInput.value = '';
   mqFeedback.textContent='';
-  $('mqInput').value='';
-  $('mqInput').style.display='block';
-  $('mqSubmit').style.display='inline-flex';
-  $('mqSkip').textContent='Skip';
-  $('mqSkip').onclick=skipMini;
-  mqBar.style.width = `${(miniQ.total/5)*100}%`;
-  $('mqInput').focus();
+  mqInput.focus();
 }
 function submitMini(){
   const item=words[miniQ.current];
   miniQ.total++;
-  const ans = normalizeTranslit($('mqInput').value);
+  const ans = normalizeTranslit(mqInput.value);
   const ok = ans && ans===normalizeTranslit(item.translit);
-  if(ok){ miniQ.correct++; mqFeedback.textContent='Nice!'; mqFeedback.className='feedback ok'; handleAnswer(true, miniQ.current, 'mini'); }
-  else { mqFeedback.textContent=`Answer: ${item.translit}`; mqFeedback.className='feedback warn'; handleAnswer(false, miniQ.current, 'mini'); }
+  if(ok){ miniQ.correct++; mqFeedback.textContent='Nice!'; mqFeedback.className='feedback ok'; celebrate(); }
+  else { mqFeedback.textContent=`Answer: ${item.translit}`; mqFeedback.className='feedback warn'; streak=0; ls.set('streak',streak); }
   setTimeout(nextMiniQuestion, 350);
 }
-function skipMini(){
-  miniQ.total++;
-  mqFeedback.textContent='Skipped.';
-  mqFeedback.className='feedback warn';
-  setTimeout(nextMiniQuestion, 250);
-}
-$('mqSubmit').addEventListener('click', submitMini);
-$('mqInput').addEventListener('keydown', e=>{ if(e.key==='Enter') submitMini(); });
-$('mqExit').addEventListener('click', ()=>{ showMiniPanel(false); miniQuizActive=false; load(); });
+mqCheck.addEventListener('click', submitMini);
+mqInput.addEventListener('keydown', e=>{ if(e.key==='Enter') submitMini(); });
 
 /** ============ DASHBOARD ============ */
-$('openDash').addEventListener('click', ()=>{ renderDashboard(); $('dashModal').style.display='grid'; });
-$('closeDash').addEventListener('click', ()=> $('dashModal').style.display='none');
-$('dashModal').addEventListener('click', e=>{ if(e.target===$('dashModal')) $('dashModal').style.display='none'; });
+openDash.addEventListener('click', ()=>{ renderDashboard(); dashModal.style.display='grid'; });
+closeDash.addEventListener('click', ()=> dashModal.style.display='none');
+dashModal.addEventListener('click', e=>{ if(e.target===dashModal) dashModal.style.display='none'; });
 function renderDashboard(){
   const mastered = getCoveredSet().size, total=words.length;
   const acc = calcAccuracy();
-  $('totals').innerHTML = `
+  totals.innerHTML = `
     <div class="chip">Words unlocked: ${unlockedCount}/${total}</div>
     <div class="chip">Words mastered: ${mastered}</div>
     <div class="chip">Score: ${score}</div>
     <div class="chip">Streak: ${streak}</div>
     <div class="chip">Accuracy: ${acc.toFixed(1)}%</div>`;
   const dueCount = dueIndices().length, srsBreakdown = breakdownStages();
-  $('dueStats').innerHTML = `<div class="chip">Due now: ${dueCount}</div>` + srsBreakdown.map((n,i)=>`<div class="chip">Stage ${i}: ${n}</div>`).join('');
+  dueStats.innerHTML = `<div class="chip">Due now: ${dueCount}</div>` + srsBreakdown.map((n,i)=>`<div class="chip">Stage ${i}: ${n}</div>`).join('');
   const a=ls.get('ach', achievements);
-  $('achievements').innerHTML = `
+  achievementsBox.innerHTML = `
     <div class="ach">${a.first10?'🏅':'⬜'} First 10 mastered</div>
     <div class="ach">${a.perfectMini?'🏅':'⬜'} Perfect Mini Quiz</div>
     <div class="ach">${a.streak7?'🏅':'⬜'} 7‑day streak</div>
     <div class="ach">${a.mastered50?'🏅':'⬜'} 50 mastered</div>`;
-  $('themesInfo').innerHTML = `
+  themesInfo.innerHTML = `
     <div class="chip">Ocean (Default)</div>
     <div class="chip ${themeSelect.options[1].disabled?'':'ok'}">Sunset ${themeSelect.options[1].disabled?'(unlock 10)':'✓ unlocked'}</div>
     <div class="chip ${themeSelect.options[2].disabled?'':'ok'}">Forest ${themeSelect.options[2].disabled?'(unlock 25)':'✓ unlocked'}</div>`;
@@ -623,13 +626,13 @@ function calcAccuracy(){ let c=0,t=0; for(const k in srs){ c+=srs[k].correct||0;
 function breakdownStages(){ const arr=Array(SRS_INTERVALS_HOURS.length).fill(0); for(const k in srs){ arr[srs[k].stage||0]++; } return arr; }
 
 /** ============ SETTINGS ============ */
-$('openSettings').addEventListener('click', ()=>{ $('settingsModal').style.display='grid'; updateReviewButton(); });
-$('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
-$('settingsModal').addEventListener('click', e=>{ if(e.target===$('settingsModal')) $('settingsModal').style.display='none'; });
+openSettings.addEventListener('click', ()=>{ settingsModal.style.display='grid'; updateReviewButton(); });
+closeSettings.addEventListener('click', ()=> settingsModal.style.display='none');
+settingsModal.addEventListener('click', e=>{ if(e.target===settingsModal) settingsModal.style.display='none'; });
 
-function updateReviewButton(){ $('reviewToggle').textContent = `🔁 Review All Mastered: ${reviewAll?'ON':'OFF'}`; }
-$('reviewToggle').addEventListener('click', ()=>{ reviewAll=!reviewAll; updateReviewButton(); ensureOrder(); load(); });
-$('resetBtn').addEventListener('click',()=>{
+function updateReviewButton(){ reviewToggle.textContent = `🔁 Review All Mastered: ${reviewAll?'ON':'OFF'}`; }
+reviewToggle.addEventListener('click', ()=>{ reviewAll=!reviewAll; updateReviewButton(); ensureOrder(); load(); });
+resetBtn.addEventListener('click',()=>{
   if(!confirm('Reset ALL progress? (score, streak, SRS, unlocks, achievements)')) return;
   for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(k&&k.startsWith(STORAGE_PREFIX)) localStorage.removeItem(k); }
   score=0; streak=0; srs={}; achievements={first10:false,perfectMini:false,streak7:false,mastered50:false};
@@ -637,12 +640,10 @@ $('resetBtn').addEventListener('click',()=>{
 });
 
 /** ============ START SCREEN ============ */
-$('startLearn').addEventListener('click',()=>{ setMode('learn'); $('startOverlay').style.display='none'; });
-$('startQuiz').addEventListener('click',()=>{ setMode('quiz');  $('startOverlay').style.display='none'; });
+startLearn.addEventListener('click',()=>{ setMode('learn'); startOverlay.style.display='none'; });
+startQuiz.addEventListener('click',()=>{ setMode('quiz');  startOverlay.style.display='none'; });
 
 /** ============ INIT ============ */
-function applyThemeControls(){ const mastered = getCoveredSet().size; themeSelect.options[1].disabled = mastered < 10; themeSelect.options[2].disabled = mastered < 25; }
-function updateBadges(){ scoreBadge.textContent=`Score: ${score}`; streakBadge.textContent=`Streak: ${streak} 🔥`; unlockedBadge.textContent=`${Math.min(unlockedCount, words.length)}/${words.length} unlocked`; const donePct=Math.round((getCoveredSet().size/Math.max(1,unlockedCount))*100); progressBar.style.width=donePct+'%'; diffLabel.textContent=`Level: ${difficulty[0].toUpperCase()+difficulty.slice(1)}`; applyThemeControls(); }
 function firstLoad(){ loadTheme(); ensureOrder(); setDifficulty(difficulty); updateAchievements(); updateBadges(); load(); }
 firstLoad();
 </script>
