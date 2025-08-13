@@ -15,7 +15,7 @@
        margin:0;background:linear-gradient(135deg,var(--bg),#0b1028);color:var(--text)}
   header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:16px clamp(16px,4vw,32px);
          position:sticky;top:0;background:rgba(15,23,42,.75);backdrop-filter:blur(10px);border-bottom:1px solid #1f2937;z-index:6}
-  header h1{font-size:clamp(18px,2.5vw,28px);margin:0;letter-spacing:.5px;cursor:pointer}
+  header h1{font-size:clamp(18px,2.5vw,28px);margin:0;letter-spacing:.5px}
   .stats{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .badge{background:#111827;border:1px solid #1f2937;padding:6px 10px;border-radius:999px;font-size:14px;color:var(--muted)}
   .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;
@@ -69,14 +69,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/fireba
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-/* ===== Paste YOUR Firebase config here ===== */
+/* ===== REPLACE with YOUR Firebase config ===== */
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
   projectId: "YOUR_PROJECT_ID",
   appId: "YOUR_APP_ID"
 };
-/* ========================================== */
+/* ============================================= */
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -129,25 +129,24 @@ const THEMES = {
   night:    {name:'Night Bazaar',    vars:{'--grad1':'#0a0a0f','--grad2':'#15151f','--accent-2':'#60a5fa','--accent':'#22d3ee'}, req:'7‑day streak badge'},
   cats:     {name:'Cat Party',       vars:{'--grad1':'#12121a','--grad2':'#1a1a22','--accent-2':'#f472b6','--accent':'#22c55e'}, req:'Unlock ≥ 6 map tiles'}
 };
-/* Apply theme by writing CSS vars */
 function applyTheme(key){
   const t = THEMES[key] || THEMES.ocean;
   for(const [k,v] of Object.entries(t.vars)) document.documentElement.style.setProperty(k, v);
   state.theme = key; saveStateToCloud();
 }
 
-/* ===== State (synced to Firestore) ===== */
+/* ===== State (synced) ===== */
 const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
   difficulty:'easy',
   mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
-  settings:{reviewAll:false, sentenceMode:false},   // sentence mode OFF by default
+  settings:{reviewAll:false, sentenceMode:false},   // sentence OFF by default
   theme:'ocean'
 });
 let state = defaultState();
-let ACTIVE_PROFILE = 'Nicole';     // default user: Nicole
-let DEVELOPER_MODE = false;         // Sia only
+let ACTIVE_PROFILE = 'Nicole';     // Default user (no login)
+let DEVELOPER_MODE = false;        // Sia only when PIN is entered
 let mode='learn', order=[], idx=0;
 let docIdHash = null;
 
@@ -189,17 +188,17 @@ function ensureStartAndUnlocks(){
   const diffDays = Math.floor((dNow - startDate)/86400000);
   const shouldUnlock = Math.min(words.length, (diffDays+1)*DAILY_WORDS);
   state.unlocked_count = Math.max(state.unlocked_count||0, shouldUnlock);
-  // If Sia (dev), fully unlock
+  // Sia (dev) = full unlock
   if(ACTIVE_PROFILE==='Sia'){ state.unlocked_count = words.length; }
 }
 
 /* ===== UI ===== */
 function reflectAll(){
-  $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}${DEVELOPER_MODE?' (dev)':''}`;
+  // header badges (no profile badge shown)
   $('scoreBadge').textContent   = `Score: ${state.score}`;
   $('streakBadge').textContent  = `Streak: ${state.streak} 🔥`;
   $('unlockedBadge').textContent = `${unlockedCount()}/${words.length} unlocked`;
-  // Theme application + refresh theme list
+  // Theme + map + badges
   applyTheme(state.theme||'ocean');
   renderThemeList();
   renderMap();
@@ -219,28 +218,39 @@ function showItem(){
   if(order.length===0 || order.some(i=>!pool.includes(i))) ensureOrder();
   const gi = order[idx % order.length]; const item = words[gi];
 
-  // Show main media only when not in mini-quiz
+  // Only show main media when mini-quiz is not active
   if(!$('miniQuizPanel').dataset.active){
     showImageOrEmoji(item);
   }
   if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
   else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
 
-  // sentence context (default OFF)
-  const sbox=$('sentBox'), sfa=$('s_fa'), str=$('s_tr'), sen=$('s_en');
-  if(state.settings?.sentenceMode && item.sentence && mode==='learn'){
-    $('sentenceBox').style.display='block';
-    sbox.style.display='block'; sfa.textContent=item.sentence.fa; str.textContent=item.sentence.translit; sen.textContent=item.sentence.en;
-  }else{ sbox.style.display='none'; }
-
-  // controls
-  $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
-  $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
+  // Sentence display (no button here; toggle lives in Settings)
+  const hasSent = state.settings?.sentenceMode && item.sentence && mode==='learn';
+  // We’ll render sentence lines right below progress when ON:
+  const sfa = byIdOrMake('sentFA','div','fa'); sfa.dir='rtl'; sfa.style.display = hasSent?'block':'none';
+  const str = byIdOrMake('sentTR','div','trans'); str.style.display = hasSent?'block':'none';
+  const sen = byIdOrMake('sentEN','div','en'); sen.style.display = hasSent?'block':'none';
+  if(hasSent){
+    sfa.textContent = item.sentence.fa;
+    str.textContent = item.sentence.translit;
+    sen.textContent = item.sentence.en;
+    // Insert after progress bar if not already there
+    const prog = $('progressBar').parentElement;
+    if(!prog.nextSibling || prog.nextSibling.id!=='sentFA'){
+      prog.after(sfa); sfa.after(str); str.after(sen);
+    }
+  }
 
   const pct = Math.round((getCoveredSet().size/Math.max(1,unlockedCount()))*100);
   $('progressBar').style.width = pct + '%';
 
   $('typeInput').value=''; $('typeInput').focus();
+}
+function byIdOrMake(id, tag, className){
+  let el=document.getElementById(id);
+  if(!el){ el=document.createElement(tag); el.id=id; el.className=className; }
+  return el;
 }
 function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
@@ -330,10 +340,7 @@ function reflectBadges(){
 /* ===== THEME UNLOCK LOGIC & UI ===== */
 function hasStreak7(){return !!state.achievements?.streak7;}
 function masteredCount(){ return [...getCoveredSet()].length; }
-function updateThemeUnlocks(){
-  // We compute locks dynamically; theme stays whatever user picked (if still meets req when switching profiles).
-  renderThemeList();
-}
+function updateThemeUnlocks(){ renderThemeList(); }
 function isThemeUnlocked(key){
   switch(key){
     case 'ocean': return true;
@@ -346,14 +353,12 @@ function isThemeUnlocked(key){
   }
 }
 function renderThemeList(){
-  const box=$('themesBox');
-  if(!box) return;
+  const box=$('themesBox'); if(!box) return;
   box.innerHTML='';
   Object.entries(THEMES).forEach(([key, t])=>{
     const unlocked = isThemeUnlocked(key);
     const btn=document.createElement('button');
-    btn.className='btn';
-    btn.style.margin='4px';
+    btn.className='btn'; btn.style.margin='4px';
     btn.disabled = !unlocked;
     btn.textContent = unlocked ? `🎨 ${t.name}` : `🔒 ${t.name} — ${t.req}`;
     btn.addEventListener('click', ()=> applyTheme(key));
@@ -397,9 +402,9 @@ function startMiniQuiz(){
   shuffle(pool); miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
   $('miniQuizPanel').dataset.active='1';
   $('miniQuizPanel').style.display='block';
-  // Hide main media/controls entirely to avoid “double image”
+  // Hide main media/controls to avoid duplicate visuals
   document.querySelector('.media-wrap').style.display='none';
-  document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #sentenceBox').forEach(el=> el.style && (el.style.display='none'));
+  document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress').forEach(el=> el.style && (el.style.display='none'));
   nextMiniQuestion();
 }
 function endMiniQuiz(){
@@ -407,7 +412,7 @@ function endMiniQuiz(){
   $('miniQuizPanel').style.display='none';
   // Restore UI
   document.querySelector('.media-wrap').style.display='';
-  document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #sentenceBox').forEach(el=> el.style && (el.style.display=''));
+  document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress').forEach(el=> el.style && (el.style.display=''));
   showItem();
 }
 function nextMiniQuestion(){
@@ -434,27 +439,13 @@ $('mqCheck').addEventListener('click', ()=>{
 $('mqInput').addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('mqCheck').click(); }});
 
 /* ===== Settings: sentence toggle & stats ===== */
-$('sentenceToggle').addEventListener('click', ()=>{
-  const v = !(state.settings?.sentenceMode); state.settings.sentenceMode=v; saveStateToCloud();
-  $('sentenceToggle').textContent = `Sentence Mode: ${v?'ON':'OFF'}`;
-});
-$('openSettings').addEventListener('click', ()=>{ 
-  $('settingsModal').style.display='grid'; 
-  $('reviewToggle').textContent=`Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`;
-  $('sentenceToggle').textContent = `Sentence Mode: ${state.settings?.sentenceMode?'ON':'OFF'}`;
-});
-$('reviewToggle').addEventListener('click', ()=>{
-  state.settings.reviewAll = !state.settings.reviewAll; saveStateToCloud();
-  $('reviewToggle').textContent=`Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`;
-});
-
-/* ===== Stats modal ===== */
 function openStats(){
   const totalSeen = Object.values(state.srs||{}).reduce((a,r)=>a+(r.seen||0),0);
   const totalCorrect = Object.values(state.srs||{}).reduce((a,r)=>a+(r.correct||0),0);
   const totalWrong = Object.values(state.srs||{}).reduce((a,r)=>a+(r.wrong||0),0);
   const acc = totalSeen ? Math.round((totalCorrect/totalSeen)*100) : 0;
   const mastered = masteredCount();
+  $('statsName').textContent = ACTIVE_PROFILE;
   $('statsBody').innerHTML = `
     <div class="grid">
       <div class="stat"><b>Total attempts</b><div>${totalSeen}</div></div>
@@ -478,7 +469,7 @@ async function switchProfile(name){
   docIdHash = await computeDocId(ACTIVE_PROFILE);
   await loadStateFromCloud();
   ensureStartAndUnlocks();
-  // If Sia, force full unlock
+  // Sia = full unlock & banner
   if(ACTIVE_PROFILE==='Sia'){ state.unlocked_count = words.length; DEVELOPER_MODE=true; showDevBanner(true); }
   else { DEVELOPER_MODE=false; showDevBanner(false); }
   await saveStateToCloud();
@@ -496,7 +487,7 @@ $('devLoginBtn').addEventListener('click', async ()=>{
 });
 $('devLogoutBtn').addEventListener('click', async ()=>{
   await switchProfile('Nicole');
-  alert('Switched to Nicole.');
+  alert('Exited developer mode. Back to Nicole.');
   $('settingsModal').style.display='none';
 });
 
@@ -509,7 +500,6 @@ $('midnightBtn').addEventListener('click', showMidnight);
 /* ===== Auth & bootstrap (anonymous) ===== */
 onAuthStateChanged(auth, async (u)=>{
   if(!u){ await signInAnonymously(auth); return; }
-  // Restore last profile (if any), default to Nicole
   const last = localStorage.getItem('ff_last_profile');
   if(last){ ACTIVE_PROFILE = last; }
   docIdHash = await computeDocId(ACTIVE_PROFILE);
@@ -527,13 +517,16 @@ document.addEventListener('click', (e)=>{
   if(e.target.id==='achModal')   e.target.style.display='none';
   if(e.target.id==='mapModal')   e.target.style.display='none';
 });
+
+/* Small query helper */
+function bySel(s){return document.querySelector(s);}
 </script>
 </head>
 <body>
 <header>
   <h1>✨ Farsi Fun — Learn Persian Basics</h1>
   <div class="stats">
-    <div class="badge" id="profileBadge">Profile: —</div>
+    <!-- Removed Profile badge -->
     <div class="badge" id="scoreBadge">Score: 0</div>
     <div class="badge" id="streakBadge">Streak: 0 🔥</div>
     <div class="badge" id="unlockedBadge">0/0 unlocked</div>
@@ -583,15 +576,7 @@ document.addEventListener('click', (e)=>{
 
         <div class="progress"><div class="bar" id="progressBar"></div></div>
 
-        <!-- Sentence Context Mode -->
-        <div id="sentenceBox" class="card" style="margin-top:10px;padding:12px">
-          <div id="sentBox" style="display:none">
-            <div class="fa" id="s_fa" dir="rtl" style="font-size:20px"></div>
-            <div class="trans" id="s_tr" style="font-size:18px"></div>
-            <div class="en" id="s_en" style="font-size:18px"></div>
-          </div>
-          <button id="sentenceToggle" class="btn" style="margin-top:6px">Sentence Mode: OFF</button>
-        </div>
+        <!-- (Sentences render here automatically when enabled in Settings; no button in main UI) -->
 
         <!-- Mini Quiz -->
         <div id="miniQuizPanel" class="card" style="display:none; margin-top:14px">
@@ -643,7 +628,7 @@ document.addEventListener('click', (e)=>{
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <h3 style="margin:0">⚙️ Settings</h3>
-      <button id="closeSettings" class="btn">Close</button>
+      <button id="closeSettings" class="btn" onclick="document.getElementById('settingsModal').style.display='none'">Close</button>
     </div>
     <div class="grid">
       <div class="stat">
@@ -656,7 +641,7 @@ document.addEventListener('click', (e)=>{
         <button id="startMiniQuiz" class="btn">⚡ Start Mini Quiz</button>
       </div>
       <div class="stat">
-        <b>Review Mode</b><p class="tiny">Quiz only on words she has mastered (ignores SRS order).</p>
+        <b>Review Mode</b><p class="tiny">Quiz only on words she has mastered.</p>
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
       <div class="stat">
@@ -673,7 +658,6 @@ document.addEventListener('click', (e)=>{
           <button id="devLoginBtn" class="btn">🔓 Developer login</button>
           <button id="devLogoutBtn" class="btn">🔒 Exit developer</button>
         </div>
-        <p class="tiny" style="opacity:.8;margin-top:6px">PIN: 3232. Sia has everything unlocked.</p>
       </div>
     </div>
   </div>
