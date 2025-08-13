@@ -10,7 +10,7 @@
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Ubuntu,Cantarell,Helvetica Neue,Arial,"Apple Color Emoji","Segoe UI Emoji";margin:0;background:linear-gradient(135deg,#0b1028,#0f172a 25%,#0b1028 100%);color:var(--text)}
     header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:16px clamp(16px,4vw,32px);position:sticky;top:0;background:rgba(15,23,42,.75);backdrop-filter:blur(10px);border-bottom:1px solid #1f2937;z-index:5}
     header h1{font-size:clamp(18px,2.5vw,28px);margin:0;letter-spacing:.5px}
-    .stats{display:flex;gap:12px;align-items:center}
+    .stats{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
     .badge{background:#111827;border:1px solid #1f2937;padding:6px 10px;border-radius:999px;font-size:14px;color:var(--muted)}
     .daily{display:flex;gap:8px;align-items:center}
     .daily .lock{font-size:16px}
@@ -38,7 +38,6 @@
     .primary:hover{background:linear-gradient(180deg,#2fe272,#1fb157)}
     .accent{background:linear-gradient(180deg,#38bdf8,#0ea5e9);border-color:#075985}
     .danger{background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d}
-    .danger:hover{background:linear-gradient(180deg,#f35e5e,#e03a3a)}
 
     .input{background:#0b1229;border:1px solid #1f2937;padding:12px 14px;border-radius:12px;color:var(--text);width:100%;font-size:16px}
 
@@ -68,6 +67,10 @@
     .overlay h2{margin:0 0 10px 0;font-size:28px}
     .overlay p{margin:0 0 16px 0;color:var(--muted)}
     .overlay .btns{display:flex;gap:12px;flex-wrap:wrap}
+
+    /* sad popup */
+    .sad-pop{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);font-size:56px;filter:drop-shadow(0 6px 20px rgba(0,0,0,.5));opacity:0;pointer-events:none;transition:opacity .2s ease}
+    .sad-show{opacity:1}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
@@ -81,6 +84,7 @@
         <span class="lock">🔓</span>
         <span id="unlockedBadge">0/0</span>
       </div>
+      <button id="resetBtn" class="btn danger">♻️ Reset Progress</button>
     </div>
   </header>
 
@@ -101,8 +105,7 @@
     <div class="mode">
       <button id="learnBtn" class="btn">Learn Mode</button>
       <button id="quizBtn" class="btn">Quiz Mode</button>
-      <button id="resetBtn" class="btn danger">♻️ Reset Progress</button>
-      <span class="tiny">New words unlock <b>every midnight</b> (your local time). Quiz pulls only from words she has <b>mastered</b> in Learn.</span>
+      <span class="tiny">New words unlock <b>every midnight</b>. Quiz pulls only from words she has <b>mastered</b> in Learn.</span>
     </div>
 
     <div class="card">
@@ -146,14 +149,14 @@
   </footer>
 
   <div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
+  <div id="sadPop" class="sad-pop">😢</div>
 
 <script>
-// ---------------------- Settings (tweak these) ----------------------
-const DAILY_WORDS = 5; // how many new words unlock each day
+// ---------------------- Settings ----------------------
+const DAILY_WORDS = 5; // daily unlock count
 const STORAGE_PREFIX = 'ff_';
 
-// ---------------------- Word data ----------------------
-// Add image/audio per word. Order matters for daily unlocking.
+// ---------------------- Words ----------------------
 const words=[
   {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.jpg"},
   {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.jpg"},
@@ -166,85 +169,32 @@ const words=[
   {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠", audio:"audio/khane.mp3", image:"images/khane.jpg"},
   {fa:"در", en:"door", translit:"dar", emoji:"🚪", image:"images/dar.jpg"},
   {fa:"خورشید", en:"sun", translit:"khorshid", emoji:"☀️", image:"images/khorshid.jpg"},
-  {fa:"گل", en:"flower", translit:"gol", emoji:"🌸", image:"images/gol.jpg"},
-  // add more as needed; they'll unlock in this order
+  {fa:"گل", en:"flower", translit:"gol", emoji:"🌸", image:"images/gol.jpg"}
 ];
 
-// ---------------------- Memory (localStorage) ----------------------
-const ls = {
-  get: (k, fallback=null)=>{
-    try{ const v = localStorage.getItem(STORAGE_PREFIX+k); return v===null?fallback:JSON.parse(v);}catch{ return fallback }
-  },
-  set: (k, val)=>{ try{ localStorage.setItem(STORAGE_PREFIX+k, JSON.stringify(val)); }catch{} },
-};
+// ---------------------- Memory helpers ----------------------
+const ls = { get:(k,f=null)=>{try{const v=localStorage.getItem(STORAGE_PREFIX+k);return v===null?f:JSON.parse(v)}catch{return f}}, set:(k,v)=>{try{localStorage.setItem(STORAGE_PREFIX+k,JSON.stringify(v))}catch{}} };
+function todayISO(){ const d=new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
+function initDailyUnlock(){ let start=ls.get('start_date'); if(!start){ start=todayISO(); ls.set('start_date',start); } const last=ls.get('last_date'); const unlockedStored=ls.get('unlocked_count',0); const startDate=new Date(start+'T00:00:00'); const now=new Date(); const diffDays=Math.floor((now.setHours(0,0,0,0)-startDate.getTime())/(24*60*60*1000)); const shouldUnlock=Math.min(words.length,(diffDays+1)*DAILY_WORDS); let unlocked=Math.max(unlockedStored||0,shouldUnlock); if(unlocked!==unlockedStored){ ls.set('unlocked_count',unlocked); } if(last!==todayISO()){ ls.set('last_date',todayISO()); } return unlocked; }
+function getCoveredSet(){ return new Set(ls.get('covered',[])); }
+function addCovered(i){ const c=getCoveredSet(); c.add(i); ls.set('covered',[...c]); }
 
-function todayISO(){ // local date at midnight
-  const d = new Date();
-  d.setHours(0,0,0,0);
-  return d.toISOString().slice(0,10); // YYYY-MM-DD
-}
-
-function initDailyUnlock(){
-  let start = ls.get('start_date');
-  if(!start){ start = todayISO(); ls.set('start_date', start); }
-  const last = ls.get('last_date');
-  const unlockedStored = ls.get('unlocked_count', 0);
-
-  // compute days since start (inclusive day 0)
-  const startDate = new Date(start+'T00:00:00');
-  const now = new Date();
-  const diffDays = Math.floor((now.setHours(0,0,0,0) - startDate.getTime()) / (24*60*60*1000));
-  const shouldUnlock = Math.min(words.length, (diffDays+1) * DAILY_WORDS);
-
-  let unlocked = Math.max(unlockedStored || 0, shouldUnlock);
-  if(unlocked !== unlockedStored){ ls.set('unlocked_count', unlocked); }
-
-  if(last !== todayISO()){ ls.set('last_date', todayISO()); }
-
-  return unlocked;
-}
-
-// Words she has MASTERED (correct in typing or speech)
-function getCoveredSet(){ return new Set(ls.get('covered', [])); }
-function addCovered(index){
-  const covered = getCoveredSet();
-  covered.add(index);
-  ls.set('covered', [...covered]);
-}
-
-// Score / streak memory
-let score = Number(ls.get('score', 0));
-let streak = Number(ls.get('streak', 0));
-let completed = new Set(ls.get('done', [])); // legacy support
+let score=Number(ls.get('score',0)); let streak=Number(ls.get('streak',0));
 
 // ---------------------- State ----------------------
-let unlockedCount = initDailyUnlock();
-let mode = 'learn';
-let idx = 0; // index within current pool (not global index)
+let unlockedCount=initDailyUnlock();
+let mode='learn';
+let idx=0; // position inside current order
 
-// Build pools
 function unlockedIndices(){ return [...Array(unlockedCount).keys()]; }
-function coveredIndices(){
-  const cov = getCoveredSet();
-  const arr = [...cov].filter(i => i < unlockedCount); // only ask learnt & unlocked
-  return arr.length ? arr : []; // could be empty
-}
-
-function currentPool(){
-  if(mode==='quiz'){
-    const c = coveredIndices();
-    return c.length ? c : unlockedIndices(); // fallback to unlocked if nothing mastered yet
-  }
-  return unlockedIndices();
-}
-
+function coveredIndices(){ const cov=getCoveredSet(); const arr=[...cov].filter(i=>i<unlockedCount); return arr.length?arr:[]; }
+function currentPool(){ if(mode==='quiz'){ const c=coveredIndices(); return c.length?c:unlockedIndices(); } return unlockedIndices(); }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-let order = shuffle(currentPool());
+let order=shuffle(currentPool());
 
 // ---------------------- DOM ----------------------
 const $=id=>document.getElementById(id);
-const picEl=$('pic');
-const emojiEl=$('emoji'), enEl=$('en'), faEl=$('fa'), transEl=$('trans');
+const picEl=$('pic'); const emojiEl=$('emoji'), enEl=$('en'), faEl=$('fa'), transEl=$('trans');
 const listenBtn=$('listenBtn'), sayBtn=$('sayBtn'), revealBtn=$('revealBtn'), nextBtn=$('nextBtn');
 const typeInput=$('typeInput'), checkBtn=$('checkBtn'), skipBtn=$('skipBtn');
 const speechFeedback=$('speechFeedback'), typeFeedback=$('typeFeedback');
@@ -252,146 +202,55 @@ const scoreBadge=$('scoreBadge'), streakBadge=$('streakBadge'), progressBar=$('p
 const learnBtn=$('learnBtn'), quizBtn=$('quizBtn'), resetBtn=$('resetBtn');
 const startOverlay=$('startOverlay'), startLearn=$('startLearn'), startQuiz=$('startQuiz');
 const unlockedBadge=$('unlockedBadge');
+const sadPop=$('sadPop');
 
-function updateBadges(){
-  scoreBadge.textContent = `Score: ${score}`;
-  streakBadge.textContent = `Streak: ${streak} 🔥`;
-  unlockedBadge.textContent = `${Math.min(unlockedCount, words.length)}/${words.length}`;
-  const donePct = Math.round((getCoveredSet().size / Math.max(1, unlockedCount)) * 100);
-  progressBar.style.width = donePct + '%';
+function updateBadges(){ scoreBadge.textContent=`Score: ${score}`; streakBadge.textContent=`Streak: ${streak} 🔥`; unlockedBadge.textContent=`${Math.min(unlockedCount,words.length)}/${words.length}`; const donePct=Math.round((getCoveredSet().size/Math.max(1,unlockedCount))*100); progressBar.style.width=donePct+'%'; }
+
+function showImageOrEmoji(item){ if(item.image){ picEl.style.display='none'; emojiEl.style.display='block'; picEl.onload=()=>{picEl.style.display='block'; emojiEl.style.display='none'}; picEl.onerror=()=>{picEl.style.display='none'; emojiEl.style.display='block'}; picEl.src=item.image; picEl.alt=item.en; } else { picEl.style.display='none'; emojiEl.style.display='block'; } }
+
+function updateControlVisibility(){
+  // Hide Listen in quiz mode
+  listenBtn.style.display = (mode==='quiz') ? 'none' : 'inline-flex';
+  // Hide Reveal in learn mode
+  revealBtn.style.display = (mode==='learn') ? 'none' : 'inline-flex';
 }
 
-function showImageOrEmoji(item){
-  if(item.image){
-    picEl.style.display='none';
-    emojiEl.style.display='block';
-    picEl.onload=()=>{ picEl.style.display='block'; emojiEl.style.display='none'; };
-    picEl.onerror=()=>{ picEl.style.display='none'; emojiEl.style.display='block'; };
-    picEl.src=item.image;
-    picEl.alt=item.en;
-  } else {
-    picEl.style.display='none';
-    emojiEl.style.display='block';
-  }
-}
+function load(){ unlockedCount=initDailyUnlock(); order=order.filter(i=>i<unlockedCount); if(order.length===0) order=currentPool(); const globalIdx=order[idx%order.length]; const item=words[globalIdx]; showImageOrEmoji(item); emojiEl.textContent=item.emoji||'❓'; enEl.textContent=item.en; faEl.textContent=(mode==='quiz')?'•••':item.fa; transEl.textContent=(mode==='quiz')?'—':item.translit; typeInput.value=''; speechFeedback.textContent=''; typeFeedback.textContent=''; updateBadges(); updateControlVisibility(); }
 
-function updateListenVisibility(){
-  if(!listenBtn) return;
-  // Hide Listen in Quiz, show in Learn
-  listenBtn.style.display = (mode === 'quiz') ? 'none' : 'inline-flex';
-}
+function next(){ const pool=currentPool(); if(pool.length===0){ typeFeedback.textContent='Learn some words first to unlock the quiz!'; typeFeedback.className='feedback warn'; return; } if(order.some(i=>!pool.includes(i))||pool.some(i=>!order.includes(i))){ order=shuffle([...pool]); idx=0; } else { idx=(idx+1)%order.length; } load(); }
 
-function load(){
-  // Recompute daily unlock in case midnight passed while open
-  unlockedCount = initDailyUnlock();
-  order = order.filter(i => i < unlockedCount); // trim order if needed
-  if(order.length===0) order = currentPool();
+function setMode(newMode){ mode=newMode; const pool=currentPool(); order=shuffle([...pool]); idx=0; load(); }
 
-  const globalIdx = order[idx % order.length];
-  const item = words[globalIdx];
+function reveal(){ if(mode==='learn'){ return; } // guarded; should be hidden anyway
+  const globalIdx=order[idx]; const item=words[globalIdx]; faEl.textContent=item.fa; transEl.textContent=item.translit; showSad(); }
 
-  showImageOrEmoji(item);
-  emojiEl.textContent=item.emoji||'❓';
-  enEl.textContent=item.en;
-  faEl.textContent=mode==='quiz'?'•••':item.fa;
-  transEl.textContent=mode==='quiz'?'—':item.translit;
-
-  typeInput.value=''; speechFeedback.textContent=''; typeFeedback.textContent='';
-  updateBadges();
-  updateListenVisibility();
-}
-
-function next(){
-  const pool = currentPool();
-  if(pool.length===0){ typeFeedback.textContent='Learn some words first to unlock the quiz!'; typeFeedback.className='feedback warn'; return; }
-  if(order.some(i=>!pool.includes(i)) || pool.some(i=>!order.includes(i))){ order = shuffle([...pool]); idx = 0; }
-  else { idx = (idx + 1) % order.length; }
-  load();
-}
-
-function setMode(newMode){
-  mode = newMode;
-  const pool = currentPool();
-  order = shuffle([...pool]);
-  idx = 0;
-  load();
-}
-
-function reveal(){ const globalIdx = order[idx]; const item = words[globalIdx]; faEl.textContent=item.fa; transEl.textContent=item.translit; }
-
-// ---------------------- Celebration (ding + bottom confetti) ----------------------
-function playDing(){
-  try{
-    const C=window.AudioContext||window.webkitAudioContext; if(!C) return;
-    const ctx=new C(); const o=ctx.createOscillator(); const g=ctx.createGain();
-    o.type='triangle'; o.frequency.value=880; // A5
-    o.connect(g); g.connect(ctx.destination);
-    const t=ctx.currentTime; g.gain.setValueAtTime(0,t);
-    g.gain.linearRampToValueAtTime(0.35,t+0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001,t+0.4);
-    o.start(t); o.stop(t+0.42);
-  }catch(e){}
-}
-function bottomBurst(){
-  if(typeof confetti!=='function') return;
-  const base={origin:{y:1,x:0.5},gravity:1.15,ticks:200,scalar:0.9};
-  confetti({...base, particleCount:60, spread:70,  startVelocity:55});
-  confetti({...base, particleCount:40, spread:100, startVelocity:45, origin:{y:1,x:0.2}});
-  confetti({...base, particleCount:40, spread:100, startVelocity:45, origin:{y:1,x:0.8}});
-}
-function showCelebration(){
-  const msg=$('celebration');
-  msg.style.display='block';
-  bottomBurst();
-  setTimeout(()=>{ msg.classList.add('fade-out'); },700);
-  setTimeout(()=>{ msg.classList.remove('fade-out'); msg.style.display='none'; },1600);
-}
+// ---------------------- Celebration & Sad popup ----------------------
+function playDing(){ try{ const C=window.AudioContext||window.webkitAudioContext; if(!C) return; const ctx=new C(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.type='triangle'; o.frequency.value=880; o.connect(g); g.connect(ctx.destination); const t=ctx.currentTime; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.35,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.4); o.start(t); o.stop(t+0.42);}catch(e){} }
+function bottomBurst(){ if(typeof confetti!=='function') return; const base={origin:{y:1,x:0.5},gravity:1.15,ticks:200,scalar:0.9}; confetti({...base,particleCount:60,spread:70,startVelocity:55}); confetti({...base,particleCount:40,spread:100,startVelocity:45,origin:{y:1,x:0.2}}); confetti({...base,particleCount:40,spread:100,startVelocity:45,origin:{y:1,x:0.8}}); }
+function showCelebration(){ const msg=$('celebration'); msg.style.display='block'; bottomBurst(); setTimeout(()=>{ msg.classList.add('fade-out'); },700); setTimeout(()=>{ msg.classList.remove('fade-out'); msg.style.display='none'; },1600);} 
 function celebrate(){ playDing(); showCelebration(); }
+function showSad(){ sadPop.classList.add('sad-show'); setTimeout(()=>{ sadPop.classList.remove('sad-show'); }, 1200); }
 
-// ---------------------- Audio: your recordings + TTS fallback ----------------------
+// ---------------------- Audio & TTS fallback ----------------------
 function slugifyTranslit(s){ return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-'); }
-let enVoice=null, voicesReady=false;
-function pickEnglishVoice(){ const voices=speechSynthesis.getVoices()||[]; return (voices.find(v=>/^en(-|$)/i.test(v.lang)&&/natural|neural|premium/i.test(v.name))||voices.find(v=>/^en(-|$)/i.test(v.lang))||voices[0]||null); }
-function ensureEnglishVoice(cb){ if(voicesReady&&enVoice){cb();return;} const tryPick=()=>{enVoice=pickEnglishVoice();voicesReady=true;cb();}; const existing=speechSynthesis.getVoices(); if(existing&&existing.length){enVoice=pickEnglishVoice();voicesReady=true;cb();} else {speechSynthesis.onvoiceschanged=tryPick;} }
+let enVoice=null, voicesReady=false; function pickEnglishVoice(){ const v=speechSynthesis.getVoices()||[]; return (v.find(x=>/^en(-|$)/i.test(x.lang)&&/natural|neural|premium/i.test(x.name))||v.find(x=>/^en(-|$)/i.test(x.lang))||v[0]||null);} function ensureEnglishVoice(cb){ if(voicesReady&&enVoice){cb();return;} const tryPick=()=>{enVoice=pickEnglishVoice();voicesReady=true;cb();}; const ex=speechSynthesis.getVoices(); if(ex&&ex.length){enVoice=pickEnglishVoice();voicesReady=true;cb();} else {speechSynthesis.onvoiceschanged=tryPick;} }
 function translitToSpeak(s){ if(!s) return ""; return s.replace(/â|ā/g,"aa").replace(/kh/g,"kha").replace(/gh/g,"gha").replace(/sh/g,"sha").replace(/ch/g,"cha").replace(/j/g,"zhe"); }
 function speakTransliteration(text){ try{ const phrase=translitToSpeak(text); ensureEnglishVoice(()=>{ const u=new SpeechSynthesisUtterance(phrase); if(enVoice){u.voice=enVoice;u.lang=enVoice.lang||"en-US";} else {u.lang="en-US";} u.rate=0.95; try{speechSynthesis.cancel();}catch{} speechSynthesis.speak(u); }); }catch(e){console.warn("TTS error",e);} }
-const audioCache=new Map();
-function getAudioForWord(item){ const explicit=item.audio; const fallback=`audio/${slugifyTranslit(item.translit)}.mp3`; const url=explicit||fallback; if(!audioCache.has(url)){ const a=new Audio(); a.preload='auto'; a.src=url; audioCache.set(url,a); } return audioCache.get(url); }
-async function playYourAudio(){ const globalIdx = order[idx]; const item=words[globalIdx]; const a=getAudioForWord(item); try{ a.currentTime=0; await a.play(); } catch(e){ speakTransliteration(item.translit); } }
+const audioCache=new Map(); function getAudioForWord(item){ const explicit=item.audio; const fallback=`audio/${slugifyTranslit(item.translit)}.mp3`; const url=explicit||fallback; if(!audioCache.has(url)){ const a=new Audio(); a.preload='auto'; a.src=url; audioCache.set(url,a);} return audioCache.get(url);} 
+async function playYourAudio(){ const globalIdx=order[idx]; const item=words[globalIdx]; const a=getAudioForWord(item); try{ a.currentTime=0; await a.play(); } catch(e){ speakTransliteration(item.translit); } }
 listenBtn.addEventListener('click', playYourAudio);
 
-// ---------------------- Speech Recognition (Say it) ----------------------
+// ---------------------- Speech Recognition ----------------------
 function normalizeFa(s){ if(!s) return ''; return s.replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,''); }
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition; let rec=null; let micPrimed=false;
 async function primeMic(){ if(micPrimed||!navigator.mediaDevices?.getUserMedia) return; try{ await navigator.mediaDevices.getUserMedia({audio:true}); micPrimed=true; }catch(e){ speechFeedback.textContent='Microphone permission is blocked. Please allow mic access (click the lock icon).'; speechFeedback.className='feedback err'; } }
-if(SR){
-  rec=new SR(); rec.lang='fa-IR'; rec.interimResults=false; rec.maxAlternatives=3;
-  rec.onresult=(ev)=>{
-    const globalIdx = order[idx];
-    const item=words[globalIdx]; const heard=normalizeFa(ev.results[0][0].transcript); const target=normalizeFa(item.fa);
-    const ok=heard.includes(target)||target.includes(heard);
-    if(ok){ celebrate(); speechFeedback.textContent=`✔️ Heard: ${ev.results[0][0].transcript}`; speechFeedback.className='feedback ok'; score+=10; streak+=1; addCovered(globalIdx); ls.set('score',score); ls.set('streak',streak); updateBadges(); next(); }
-    else { speechFeedback.textContent=`I heard “${ev.results[0][0].transcript}”. Try again!`; speechFeedback.className='feedback warn'; streak=0; ls.set('streak',streak); }
-  };
-  rec.onerror=(e)=>{ const kind=e?.error||'unknown'; const map={'no-speech':'No speech detected. Try speaking closer to the mic.','audio-capture':'No microphone found. Plug in or enable your mic.','not-allowed':'Mic access denied. Click the lock (🔒) in the address bar to allow the mic.','aborted':'Recognition aborted. Tap “Say it” again.'}; speechFeedback.textContent=map[kind]||('Mic error: '+kind); speechFeedback.className='feedback err'; };
-}else{ sayBtn.disabled=true; sayBtn.title='Speech recognition not supported in this browser. Use Chrome on desktop/mobile.'; }
+if(SR){ rec=new SR(); rec.lang='fa-IR'; rec.interimResults=false; rec.maxAlternatives=3; rec.onresult=(ev)=>{ const globalIdx=order[idx]; const item=words[globalIdx]; const heard=normalizeFa(ev.results[0][0].transcript); const target=normalizeFa(item.fa); const ok=heard.includes(target)||target.includes(heard); if(ok){ celebrate(); speechFeedback.textContent=`✔️ Heard: ${ev.results[0][0].transcript}`; speechFeedback.className='feedback ok'; score+=10; streak+=1; addCovered(globalIdx); ls.set('score',score); ls.set('streak',streak); updateBadges(); next(); } else { speechFeedback.textContent=`I heard “${ev.results[0][0].transcript}”. Try again!`; speechFeedback.className='feedback warn'; streak=0; ls.set('streak',streak); } }; rec.onerror=(e)=>{ const kind=e?.error||'unknown'; const map={'no-speech':'No speech detected. Try speaking closer to the mic.','audio-capture':'No microphone found. Plug in or enable your mic.','not-allowed':'Mic access denied. Click the lock (🔒) in the address bar to allow the mic.','aborted':'Recognition aborted. Tap “Say it” again.'}; speechFeedback.textContent=map[kind]||('Mic error: '+kind); speechFeedback.className='feedback err'; }; } else { sayBtn.disabled=true; sayBtn.title='Speech recognition not supported in this browser. Use Chrome on desktop/mobile.'; }
 
-sayBtn.addEventListener('click',async()=>{
-  if(!rec){ speechFeedback.textContent='Speech recognition not supported on this device/browser.'; speechFeedback.className='feedback err'; return; }
-  if(!window.isSecureContext){ speechFeedback.textContent='Mic only works over HTTPS. Open your published site (https).'; speechFeedback.className='feedback err'; return; }
-  await primeMic(); speechFeedback.textContent='Listening… please say the Persian word'; speechFeedback.className='feedback';
-  try{ rec.start(); }catch{}
-});
+sayBtn.addEventListener('click',async()=>{ if(!rec){ speechFeedback.textContent='Speech recognition not supported on this device/browser.'; speechFeedback.className='feedback err'; return; } if(!window.isSecureContext){ speechFeedback.textContent='Mic only works over HTTPS. Open your published site (https).'; speechFeedback.className='feedback err'; return; } await primeMic(); speechFeedback.textContent='Listening… please say the Persian word'; speechFeedback.className='feedback'; try{ rec.start(); }catch{} });
 
 // ---------------------- Typing Check ----------------------
 function normalizeTranslit(s){ return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/\s+/g,''); }
-checkBtn.addEventListener('click',()=>{
-  const globalIdx = order[idx];
-  const item=words[globalIdx]; const guess=normalizeTranslit(typeInput.value); const target=normalizeTranslit(item.translit);
-  if(!guess){ typeFeedback.textContent='Type your guess first!'; typeFeedback.className='feedback warn'; return; }
-  if(guess===target){ typeFeedback.textContent='Great! +10 points'; typeFeedback.className='feedback ok'; celebrate(); score+=10; streak+=1; addCovered(globalIdx); ls.set('score',score); ls.set('streak',streak); updateBadges(); next(); }
-  else { typeFeedback.textContent=`Not quite. Hint: ${item.translit}`; typeFeedback.className='feedback warn'; streak=0; ls.set('streak',streak); }
-});
+checkBtn.addEventListener('click',()=>{ const globalIdx=order[idx]; const item=words[globalIdx]; const guess=normalizeTranslit(typeInput.value); const target=normalizeTranslit(item.translit); if(!guess){ typeFeedback.textContent='Type your guess first!'; typeFeedback.className='feedback warn'; return; } if(guess===target){ typeFeedback.textContent='Great! +10 points'; typeFeedback.className='feedback ok'; celebrate(); score+=10; streak+=1; addCovered(globalIdx); ls.set('score',score); ls.set('streak',streak); updateBadges(); next(); } else { typeFeedback.textContent=`Not quite. Hint: ${item.translit}`; typeFeedback.className='feedback warn'; streak=0; ls.set('streak',streak); } });
 
 skipBtn.addEventListener('click',()=>{ streak=0; ls.set('streak',streak); next(); });
 nextBtn.addEventListener('click',next);
@@ -400,24 +259,13 @@ learnBtn.addEventListener('click',()=> setMode('learn'));
 quizBtn.addEventListener('click',()=> setMode('quiz'));
 
 // ---------------------- Reset Progress ----------------------
-resetBtn.addEventListener('click',()=>{
-  if(!confirm('Reset ALL progress? This clears score, streak, mastered words, and daily unlocks.')) return;
-  // Remove all namespaced keys
-  for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(k&&k.startsWith(STORAGE_PREFIX)){ localStorage.removeItem(k); }}
-  // Reset in-memory state
-  score=0; streak=0; order=[]; idx=0;
-  // Reinitialize daily schedule
-  unlockedCount = initDailyUnlock();
-  // Update UI & mode
-  setMode('learn');
-  alert('Progress reset!');
-});
+resetBtn.addEventListener('click',()=>{ if(!confirm('Reset ALL progress? This clears score, streak, mastered words, and daily unlocks.')) return; for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(k&&k.startsWith(STORAGE_PREFIX)){ localStorage.removeItem(k); }} score=0; streak=0; order=[]; idx=0; unlockedCount=initDailyUnlock(); setMode('learn'); alert('Progress reset!'); });
 
-// ---------------------- Start screen controls ----------------------
+// ---------------------- Start screen ----------------------
 startLearn.addEventListener('click',()=>{ setMode('learn'); startOverlay.style.display='none'; });
 startQuiz.addEventListener('click',()=>{ setMode('quiz'); startOverlay.style.display='none'; });
 
-// Initial load
+// Initial
 updateBadges();
 load();
 </script>
