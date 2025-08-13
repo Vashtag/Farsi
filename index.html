@@ -37,6 +37,8 @@
     .primary{background:linear-gradient(180deg,#22c55e,#16a34a);border-color:#14532d}
     .primary:hover{background:linear-gradient(180deg,#2fe272,#1fb157)}
     .accent{background:linear-gradient(180deg,#38bdf8,#0ea5e9);border-color:#075985}
+    .danger{background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d}
+    .danger:hover{background:linear-gradient(180deg,#f35e5e,#e03a3a)}
 
     .input{background:#0b1229;border:1px solid #1f2937;padding:12px 14px;border-radius:12px;color:var(--text);width:100%;font-size:16px}
 
@@ -99,6 +101,7 @@
     <div class="mode">
       <button id="learnBtn" class="btn">Learn Mode</button>
       <button id="quizBtn" class="btn">Quiz Mode</button>
+      <button id="resetBtn" class="btn danger">♻️ Reset Progress</button>
       <span class="tiny">New words unlock <b>every midnight</b> (your local time). Quiz pulls only from words she has <b>mastered</b> in Learn.</span>
     </div>
 
@@ -246,7 +249,7 @@ const listenBtn=$('listenBtn'), sayBtn=$('sayBtn'), revealBtn=$('revealBtn'), ne
 const typeInput=$('typeInput'), checkBtn=$('checkBtn'), skipBtn=$('skipBtn');
 const speechFeedback=$('speechFeedback'), typeFeedback=$('typeFeedback');
 const scoreBadge=$('scoreBadge'), streakBadge=$('streakBadge'), progressBar=$('progressBar');
-const learnBtn=$('learnBtn'), quizBtn=$('quizBtn');
+const learnBtn=$('learnBtn'), quizBtn=$('quizBtn'), resetBtn=$('resetBtn');
 const startOverlay=$('startOverlay'), startLearn=$('startLearn'), startQuiz=$('startQuiz');
 const unlockedBadge=$('unlockedBadge');
 
@@ -272,6 +275,12 @@ function showImageOrEmoji(item){
   }
 }
 
+function updateListenVisibility(){
+  if(!listenBtn) return;
+  // Hide Listen in Quiz, show in Learn
+  listenBtn.style.display = (mode === 'quiz') ? 'none' : 'inline-flex';
+}
+
 function load(){
   // Recompute daily unlock in case midnight passed while open
   unlockedCount = initDailyUnlock();
@@ -289,6 +298,7 @@ function load(){
 
   typeInput.value=''; speechFeedback.textContent=''; typeFeedback.textContent='';
   updateBadges();
+  updateListenVisibility();
 }
 
 function next(){
@@ -388,6 +398,20 @@ nextBtn.addEventListener('click',next);
 revealBtn.addEventListener('click',reveal);
 learnBtn.addEventListener('click',()=> setMode('learn'));
 quizBtn.addEventListener('click',()=> setMode('quiz'));
+
+// ---------------------- Reset Progress ----------------------
+resetBtn.addEventListener('click',()=>{
+  if(!confirm('Reset ALL progress? This clears score, streak, mastered words, and daily unlocks.')) return;
+  // Remove all namespaced keys
+  for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(k&&k.startsWith(STORAGE_PREFIX)){ localStorage.removeItem(k); }}
+  // Reset in-memory state
+  score=0; streak=0; order=[]; idx=0;
+  // Reinitialize daily schedule
+  unlockedCount = initDailyUnlock();
+  // Update UI & mode
+  setMode('learn');
+  alert('Progress reset!');
+});
 
 // ---------------------- Start screen controls ----------------------
 startLearn.addEventListener('click',()=>{ setMode('learn'); startOverlay.style.display='none'; });
