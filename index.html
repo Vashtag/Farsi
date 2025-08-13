@@ -211,8 +211,6 @@ function reveal(){
 }
 
 // ---------------------- TTS (Speak Persian) ----------------------
-<!-- TTS FIX -->
-<script>
 let faVoice = null;
 let voicesLoaded = false;
 
@@ -220,7 +218,7 @@ function pickFaVoice() {
   const voices = speechSynthesis.getVoices() || [];
   const exact = voices.find(v => (v.lang||'').toLowerCase().startsWith('fa'));
   if (exact) return exact;
-  const fuzzy = voices.find(v => /persian|farsi/i.test((v.name||'') + ' ' + (v.lang||'')));
+  const fuzzy = voices.find(v => /persian|farsi/i.test(((v.name||'') + ' ' + (v.lang||''))));
   return fuzzy || null;
 }
 
@@ -241,7 +239,7 @@ function speakFA(text){
     ensureVoicesReady(() => {
       const u = new SpeechSynthesisUtterance(text);
       if (faVoice) { u.voice = faVoice; u.lang = faVoice.lang || 'fa-IR'; }
-      else { u.lang = 'fa-IR'; } // fallback (still works if browser loads a default voice)
+      else { u.lang = 'fa-IR'; }
       u.rate = 0.9;
       speechSynthesis.cancel();
       speechSynthesis.speak(u);
@@ -253,12 +251,8 @@ listenBtn.addEventListener('click', ()=>{
   const item = words[ order[idx] ];
   speakFA(item.fa);
 });
-</script>
-
 
 // ---------------------- Speech Recognition (Say it) ----------------------
-<!-- SPEECH RECOGNITION FIX -->
-<script>
 function normalizeFa(s){
   if(!s) return '';
   return s
@@ -283,7 +277,7 @@ async function primeMic(){
   }
 }
 
-if (SR) {
+if(SR){
   rec = new SR();
   rec.lang = 'fa-IR';
   rec.interimResults = false;
@@ -335,8 +329,6 @@ sayBtn.addEventListener('click', async ()=>{
   speechFeedback.className = 'feedback';
   try { rec.start(); } catch {}
 });
-</script>
-
 
 // ---------------------- Typing Check ----------------------
 function normalizeTranslit(s){
