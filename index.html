@@ -5,320 +5,283 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Farsi Fun — Learn Persian Basics</title>
   <style>
-    :root{--bg:#0f172a;--card:#111827;--muted:#94a3b8;--text:#e5e7eb;--accent:#22c55e;--accent-2:#38bdf8;--warn:#f59e0b;--err:#ef4444}
-    *{box-sizing:border-box}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Ubuntu,Cantarell,Helvetica Neue,Arial,"Apple Color Emoji","Segoe UI Emoji";margin:0;background:linear-gradient(135deg,#0b1028,#0f172a 25%,#0b1028 100%);color:var(--text)}
-    header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:16px clamp(16px,4vw,32px);position:sticky;top:0;background:rgba(15,23,42,.75);backdrop-filter:blur(10px);border-bottom:1px solid #1f2937}
-    header h1{font-size:clamp(18px,2.5vw,28px);margin:0;letter-spacing:.5px}
-    .stats{display:flex;gap:12px}
-    .badge{background:#111827;border:1px solid #1f2937;padding:6px 10px;border-radius:999px;font-size:14px;color:var(--muted)}
-    main{max-width:960px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 80px}
-    .card{background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:16px;padding:clamp(16px,3vw,28px);box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    .row{display:grid;grid-template-columns:1fr;gap:16px}
-    @media(min-width:820px){.row{grid-template-columns:1fr 1fr}}
-    .emoji{font-size:clamp(64px,12vw,120px);text-align:center;line-height:1;filter:drop-shadow(0 10px 20px rgba(0,0,0,.35))}
-    .word{display:flex;flex-direction:column;gap:6px;align-items:flex-start;justify-content:center}
-    .en{font-size:clamp(18px,2.2vw,22px);color:var(--muted)}
-    .fa{font-size:clamp(36px,6vw,52px);font-weight:700;direction:rtl;text-align:right}
-    .trans{font-size:clamp(16px,2vw,18px);color:#cbd5e1}
-    .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
-    button,.btn{appearance:none;border:none;background:#111827;color:var(--text);border:1px solid #1f2937;padding:10px 14px;border-radius:12px;cursor:pointer;transition:transform .03s ease,background .2s ease,border-color .2s ease}
-    button:hover{background:#0b1229;border-color:#263042}
-    button:active{transform:translateY(1px)}
-    .primary{background:linear-gradient(180deg,#22c55e,#16a34a);border-color:#14532d}
-    .primary:hover{background:linear-gradient(180deg,#2fe272,#1fb157)}
-    .accent{background:linear-gradient(180deg,#38bdf8,#0ea5e9);border-color:#075985}
-    .input{background:#0b1229;border:1px solid #1f2937;padding:12px 14px;border-radius:12px;color:var(--text);width:100%;font-size:16px}
-    .feedback{margin-top:8px;min-height:24px;font-size:15px}
-    .ok{color:var(--accent)}
-    .warn{color:var(--warn)}
-    .err{color:var(--err)}
-    .progress{margin-top:12px;height:10px;background:#0b1229;border-radius:999px;border:1px solid #1f2937;overflow:hidden}
-    .bar{height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#22c55e);transition:width .4s ease}
-    .mode{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-    .tiny{font-size:12px;color:var(--muted)}
-    .tip{margin-top:12px;font-size:14px;color:#a5b4fc}
-    footer{position:fixed;inset-block-end:12px;inset-inline:0;display:flex;justify-content:center;pointer-events:none}
-    .footer-inner{pointer-events:auto;background:rgba(17,24,39,.9);border:1px solid #1f2937;border-radius:999px;padding:8px 14px;font-size:13px;color:var(--muted)}
-    /* celebration UI */
-    .cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.92);border:1px solid #1f2937;padding:14px 18px;border-radius:14px;font-weight:800;letter-spacing:.3px}
-    .fade-out{animation:fadeOut .9s ease forwards}
-    @keyframes fadeOut{0%{opacity:1}100%{opacity:0}}
+    body { font-family: Arial, sans-serif; margin: 0; background: #0f172a; color: white; }
+    h1 { text-align:center; padding:20px; }
+    .toolbar { display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap; }
+    button {
+      background: #38bdf8; border: none; color: #000; font-size: 16px;
+      padding: 10px 16px; margin: 10px 0; border-radius: 8px; cursor: pointer;
+    }
+    button:hover { filter: brightness(0.95); }
+    #celebration {
+      position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85); color: white; padding: 14px 18px;
+      border-radius: 12px; font-size: 20px; z-index: 9999; display: none;
+    }
+    .card {
+      max-width: 720px; margin: 0 auto; padding: 16px 20px 40px;
+      background: #0c1630; border: 1px solid #1f2a44; border-radius: 16px;
+    }
+    .row { display:grid; grid-template-columns: 1fr; gap: 10px; }
+    .fa { font-size: 46px; text-align:center; direction: rtl; }
+    .en { font-size: 18px; text-align:center; color: #9fb2d3; }
+    .trans { font-size: 18px; text-align:center; color: #cfe3ff; }
+    .feedback { text-align:center; min-height: 22px; margin-top: 8px; color: #b0ffce; }
+    .hint { text-align:center; color:#9fb2d3; font-size:14px; margin-top: 8px; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
 <body>
-  <header>
-    <h1>✨ Farsi Fun — Learn Persian Basics</h1>
-    <div class="stats">
-      <div class="badge" id="scoreBadge">Score: 0</div>
-      <div class="badge" id="streakBadge">Streak: 0 🔥</div>
-    </div>
-  </header>
+  <h1>Farsi Fun — Learn Persian Basics</h1>
 
-  <main>
-    <div class="mode">
-      <button id="learnBtn" class="btn">Learn Mode</button>
-      <button id="quizBtn" class="btn">Quiz Mode</button>
-      <span class="tiny">Tip: "Listen" now speaks the phonetic line (English letters). "Say it" uses the mic. Chrome works best.</span>
+  <div class="card">
+    <div class="row">
+      <div class="fa" id="fa">سیب</div>
+      <div class="en" id="en">apple</div>
+      <div class="trans" id="trans">sib</div>
     </div>
 
-    <div class="card">
-      <div class="row">
-        <div class="emoji" id="emoji">🍎</div>
-        <div class="word">
-          <div class="en" id="en">apple</div>
-          <div class="fa" id="fa" dir="rtl">سیب</div>
-          <div class="trans" id="trans">sib</div>
-
-          <div class="controls">
-            <button id="listenBtn" class="accent">🔊 Listen</button>
-            <button id="sayBtn">🎙️ Say it</button>
-            <button id="revealBtn">👀 Reveal</button>
-            <button id="nextBtn" class="primary">➡️ Next</button>
-          </div>
-
-          <div class="feedback" id="speechFeedback"></div>
-
-          <label class="tiny" for="typeInput">Type the pronunciation (English letters):</label>
-          <input class="input" id="typeInput" placeholder="e.g., sib"/>
-          <div class="controls">
-            <button id="checkBtn">✅ Check</button>
-            <button id="skipBtn">⏭️ Skip</button>
-          </div>
-          <div class="feedback" id="typeFeedback"></div>
-
-          <div class="progress"><div class="bar" id="progressBar"></div></div>
-          <div class="tip" id="tip">Pronunciation tip: “kh” ~ German “Bach”; “â” ~ a in “father”.</div>
-        </div>
-      </div>
+    <div class="toolbar">
+      <button id="prevBtn">⬅️ Prev</button>
+      <button id="listenBtn">🔊 Listen (your voice)</button>
+      <button id="listenPhonBtn">🔊 Listen (phonetic)</button>
+      <button id="nextBtn">Next ➡️</button>
     </div>
 
-  </main>
+    <div class="toolbar">
+      <input id="typeInput" placeholder="Type the phonetic (e.g., sib)" style="padding:10px;border-radius:8px;border:1px solid #1f2a44; background:#0a1330; color:#fff; width: min(480px,90%);" />
+      <button id="checkBtn">✅ Check</button>
+    </div>
 
-  <footer>
-    <div class="footer-inner">Edit or add words below — see the <b>words</b> array. All progress is saved in your browser.</div>
-  </footer>
+    <div class="feedback" id="feedback"></div>
+    <div class="hint">Put your audio files in <code>/audio/</code>. The app will look for <code>/audio/&lt;transliteration&gt;.mp3</code> (or the file set per word).</div>
+  </div>
+
+  <div id="celebration">let's goooooo 🎉</div>
 
 <script>
-// ---------------------- Data ----------------------
-// Transliteration guide: a(cat), â(father), e(bed), i(machine), o(note), u(rule)
-// kh=خ, gh=غ/ق, ch=چ, j=ژ, sh=ش
-const words=[
-  {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎"},
-  {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖"},
-  {fa:"گربه", en:"cat", translit:"gorbe", emoji:"🐱"},
-  {fa:"سگ", en:"dog", translit:"sag", emoji:"🐶"},
-  {fa:"آب", en:"water", translit:"âb", emoji:"💧"},
-  {fa:"نان", en:"bread", translit:"nân", emoji:"🍞"},
-  {fa:"چای", en:"tea", translit:"chây", emoji:"🍵"},
-  {fa:"ماشین", en:"car", translit:"mâshin", emoji:"🚗"},
-  {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠"},
-  {fa:"در", en:"door", translit:"dar", emoji:"🚪"},
-  {fa:"خورشید", en:"sun", translit:"khorshid", emoji:"☀️"},
-  {fa:"گل", en:"flower", translit:"gol", emoji:"🌸"},
-  // +50 more common words
-  {fa:"شیر", en:"milk", translit:"shir", emoji:"🥛"},
-  {fa:"قهوه", en:"coffee", translit:"ghahve", emoji:"☕"},
-  {fa:"قاشق", en:"spoon", translit:"ghâshogh", emoji:"🥄"},
-  {fa:"چنگال", en:"fork", translit:"changâl", emoji:"🍴"},
-  {fa:"بشقاب", en:"plate", translit:"boshghâb", emoji:"🍽️"},
-  {fa:"میز", en:"table", translit:"miz", emoji:"🪑"},
-  {fa:"صندلی", en:"chair", translit:"sandali", emoji:"🪑"},
-  {fa:"پنجره", en:"window", translit:"panjare", emoji:"🪟"},
-  {fa:"تلفن", en:"phone", translit:"telefon", emoji:"📞"},
-  {fa:"کامپیوتر", en:"computer", translit:"kâmputer", emoji:"💻"},
-  {fa:"خودکار", en:"pen", translit:"khodkâr", emoji:"🖊️"},
-  {fa:"کاغذ", en:"paper", translit:"kâghaz", emoji:"📄"},
-  {fa:"مدرسه", en:"school", translit:"madrese", emoji:"🏫"},
-  {fa:"معلم", en:"teacher", translit:"mo'allem", emoji:"👩‍🏫"},
-  {fa:"دانشجو", en:"student", translit:"dâneshju", emoji:"🧑‍🎓"},
-  {fa:"شهر", en:"city", translit:"shahr", emoji:"🏙️"},
-  {fa:"خیابان", en:"street", translit:"khiâbân", emoji:"🛣️"},
-  {fa:"اتوبوس", en:"bus", translit:"otobus", emoji:"🚌"},
-  {fa:"قطار", en:"train", translit:"ghatâr", emoji:"🚆"},
-  {fa:"هواپیما", en:"airplane", translit:"havâpeymâ", emoji:"✈️"},
-  {fa:"دوچرخه", en:"bicycle", translit:"docharkhe", emoji:"🚲"},
-  {fa:"کفش", en:"shoe", translit:"kafsh", emoji:"👟"},
-  {fa:"پیراهن", en:"shirt", translit:"pirâhan", emoji:"👕"},
-  {fa:"شلوار", en:"pants", translit:"shalvâr", emoji:"👖"},
-  {fa:"کلاه", en:"hat", translit:"kolâh", emoji:"🎩"},
-  {fa:"پالتو", en:"coat", translit:"pâlto", emoji:"🧥"},
-  {fa:"تخت", en:"bed", translit:"takht", emoji:"🛏️"},
-  {fa:"بالش", en:"pillow", translit:"bâlesh", emoji:"🛌"},
-  {fa:"پتو", en:"blanket", translit:"patu", emoji:"🧣"},
-  {fa:"حمام", en:"bathroom", translit:"hammâm", emoji:"🛁"},
-  {fa:"آشپزخانه", en:"kitchen", translit:"âshpazkhâne", emoji:"🍳"},
-  {fa:"غذا", en:"food", translit:"ghazâ", emoji:"🍽️"},
-  {fa:"صبحانه", en:"breakfast", translit:"sobhâne", emoji:"🍳"},
-  {fa:"ناهار", en:"lunch", translit:"nâhâr", emoji:"🥗"},
-  {fa:"شام", en:"dinner", translit:"shâm", emoji:"🍲"},
-  {fa:"میوه", en:"fruit", translit:"mive", emoji:"🍇"},
-  {fa:"سبزیجات", en:"vegetables", translit:"sabzijât", emoji:"🥦"},
-  {fa:"برنج", en:"rice", translit:"berenj", emoji:"🍚"},
-  {fa:"مرغ", en:"chicken", translit:"morgh", emoji:"🍗"},
-  {fa:"ماهی", en:"fish", translit:"mâhi", emoji:"🐟"},
-  {fa:"تخم‌مرغ", en:"egg", translit:"tokhm-e morgh", emoji:"🥚"},
-  {fa:"نمک", en:"salt", translit:"namak", emoji:"🧂"},
-  {fa:"شکر", en:"sugar", translit:"shekar", emoji:"🧁"},
-  {fa:"فلفل", en:"pepper", translit:"felfel", emoji:"🌶️"},
-  {fa:"پنیر", en:"cheese", translit:"panir", emoji:"🧀"},
-  {fa:"ماست", en:"yogurt", translit:"mâst", emoji:"🥛"},
-  {fa:"بازار", en:"market", translit:"bâzâr", emoji:"🛍️"},
-  {fa:"فروشگاه", en:"store", translit:"forushgâh", emoji:"🏬"},
-  {fa:"پول", en:"money", translit:"pul", emoji:"💰"},
-  {fa:"کتابفروشی", en:"bookshop", translit:"ketâbforushi", emoji:"📚"}
+// ---------------------- Word list ----------------------
+// Add "audio" to any item if you want a custom filename (in /audio/).
+// Otherwise the code will look for /audio/<slugified translit>.mp3
+const words = [
+  {fa: "سیب", en: "apple", translit: "sib"},
+  {fa: "کتاب", en: "book", translit: "ketâb", audio: "ketab.mp3"},
+  {fa: "خانه", en: "house", translit: "khâne", audio: "khane.mp3"},
+  {fa: "ماشین", en: "car", translit: "mâshin", audio: "mashin.mp3"},
+  {fa: "مدرسه", en: "school", translit: "madrese"},
+  {fa: "دوست", en: "friend", translit: "dust"},
+  {fa: "آب", en: "water", translit: "âb", audio: "ab.mp3"},
+  {fa: "نان", en: "bread", translit: "nân", audio: "nan.mp3"},
+  {fa: "چای", en: "tea", translit: "chây", audio: "chay.mp3"},
+  {fa: "قهوه", en: "coffee", translit: "qahve", audio: "ghahve.mp3"},
+  {fa: "خورشید", en: "sun", translit: "khorshid"},
+  {fa: "ماه", en: "moon", translit: "mâh", audio: "mah.mp3"},
+  {fa: "ستاره", en: "star", translit: "setâre", audio: "setare.mp3"},
+  {fa: "آسمان", en: "sky", translit: "âsemân", audio: "aseman.mp3"},
+  {fa: "دریا", en: "sea", translit: "daryâ", audio: "darya.mp3"},
+  {fa: "رودخانه", en: "river", translit: "rudkhâne", audio: "rudkhane.mp3"},
+  {fa: "کوه", en: "mountain", translit: "kuh"},
+  {fa: "درخت", en: "tree", translit: "derakht"},
+  {fa: "گل", en: "flower", translit: "gol"},
+  {fa: "برگ", en: "leaf", translit: "barg"},
+  {fa: "زمین", en: "earth", translit: "zamin"},
+  {fa: "آتش", en: "fire", translit: "âtash", audio: "atash.mp3"},
+  {fa: "باد", en: "wind", translit: "bâd", audio: "bad.mp3"},
+  {fa: "باران", en: "rain", translit: "bârân", audio: "baran.mp3"},
+  {fa: "برف", en: "snow", translit: "barf"},
+  {fa: "گرگ", en: "wolf", translit: "gorg"},
+  {fa: "سگ", en: "dog", translit: "sag"},
+  {fa: "گربه", en: "cat", translit: "gorbe"},
+  {fa: "پرنده", en: "bird", translit: "parande"},
+  {fa: "ماهی", en: "fish", translit: "mâhi", audio: "mahi.mp3"},
+  {fa: "اسب", en: "horse", translit: "asb"},
+  {fa: "شیر", en: "lion/milk", translit: "shir"},
+  {fa: "موز", en: "banana", translit: "moz"},
+  {fa: "پرتقال", en: "orange", translit: "porteghâl", audio: "porteghal.mp3"},
+  {fa: "انگور", en: "grape", translit: "angur"},
+  {fa: "هندوانه", en: "watermelon", translit: "hendevâne", audio: "hendevane.mp3"},
+  {fa: "لیمو", en: "lemon", translit: "limu"},
+  {fa: "توت فرنگی", en: "strawberry", translit: "tut farangi", audio: "tut-farangi.mp3"},
+  {fa: "انار", en: "pomegranate", translit: "anâr", audio: "anar.mp3"},
+  {fa: "خیار", en: "cucumber", translit: "khiâr", audio: "khiar.mp3"},
+  {fa: "گوجه", en: "tomato", translit: "goje"},
+  {fa: "سیب زمینی", en: "potato", translit: "sib zamini", audio: "sib-zamini.mp3"},
+  {fa: "هویج", en: "carrot", translit: "havij"},
+  {fa: "پیاز", en: "onion", translit: "piyâz", audio: "piyaz.mp3"},
+  {fa: "فلفل", en: "pepper", translit: "felfel"},
+  {fa: "کاهو", en: "lettuce", translit: "kâhu", audio: "kahu.mp3"},
+  {fa: "قارچ", en: "mushroom", translit: "ghârch", audio: "gharch.mp3"},
+  {fa: "برنج", en: "rice", translit: "berenj"},
+  {fa: "گوشت", en: "meat", translit: "gusht"},
+  {fa: "مرغ", en: "chicken", translit: "morgh"},
+  {fa: "تخم مرغ", en: "egg", translit: "tokhm morgh", audio: "tokhm-morgh.mp3"},
+  {fa: "پنیر", en: "cheese", translit: "panir"},
+  {fa: "کره", en: "butter", translit: "kare"}
 ];
 
-// ---------------------- State ----------------------
-let idx=0, mode='learn';
-let score=Number(localStorage.getItem('ff_score')||0);
-let streak=Number(localStorage.getItem('ff_streak')||0);
-let completed=new Set(JSON.parse(localStorage.getItem('ff_done')||'[]'));
+// ---------------------- State & DOM ----------------------
+let currentIndex = 0;
+const faEl = document.getElementById('fa');
+const enEl = document.getElementById('en');
+const transEl = document.getElementById('trans');
+const feedbackEl = document.getElementById('feedback');
+const typeInput = document.getElementById('typeInput');
 
-// ---------------------- DOM ----------------------
-const $=id=>document.getElementById(id);
-const emojiEl=$('emoji'), enEl=$('en'), faEl=$('fa'), transEl=$('trans');
-const listenBtn=$('listenBtn'), sayBtn=$('sayBtn'), revealBtn=$('revealBtn'), nextBtn=$('nextBtn');
-const typeInput=$('typeInput'), checkBtn=$('checkBtn'), skipBtn=$('skipBtn');
-const speechFeedback=$('speechFeedback'), typeFeedback=$('typeFeedback');
-const scoreBadge=$('scoreBadge'), streakBadge=$('streakBadge'), progressBar=$('progressBar');
-const learnBtn=$('learnBtn'), quizBtn=$('quizBtn');
+const listenBtn = document.getElementById('listenBtn');
+const listenPhonBtn = document.getElementById('listenPhonBtn');
+const nextBtn = document.getElementById('nextBtn');
+const prevBtn = document.getElementById('prevBtn');
+const checkBtn = document.getElementById('checkBtn');
 
-function saveProgress(){
-  localStorage.setItem('ff_score',String(score));
-  localStorage.setItem('ff_streak',String(streak));
-  localStorage.setItem('ff_done',JSON.stringify([...completed]));
+// ---------------------- Helpers ----------------------
+function slugifyTranslit(s){
+  return (s||'')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0302\u0304]/g,'') // strip diacritics like â/ā marks
+    .replace(/[^a-z0-9\s-]/g,'')   // remove non-latin
+    .trim()
+    .replace(/\s+/g,'-');          // spaces -> dashes
 }
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-let order=shuffle([...words.keys()]);
-function setMode(m){mode=m; idx=0; order=shuffle([...words.keys()]); load();}
-function load(){
-  const item=words[order[idx]];
-  emojiEl.textContent=item.emoji; enEl.textContent=item.en;
-  faEl.textContent=mode==='quiz'?'•••':item.fa;
-  transEl.textContent=mode==='quiz'?'—':item.translit;
-  typeInput.value=''; speechFeedback.textContent=''; typeFeedback.textContent='';
-  scoreBadge.textContent=`Score: ${score}`; streakBadge.textContent=`Streak: ${streak} 🔥`;
-  const donePct=Math.round((completed.size/words.length)*100); progressBar.style.width=donePct+'%';
-}
-function next(){ idx++; if(idx>=order.length){idx=0; order=shuffle(order);} load(); }
-function reveal(){ const item=words[order[idx]]; faEl.textContent=item.fa; transEl.textContent=item.translit; }
 
-// ---------------------- Celebration (ding + bottom confetti) ----------------------
-function playDing(){
-  try{
-    const C=window.AudioContext||window.webkitAudioContext; if(!C) return;
-    const ctx=new C(); const o=ctx.createOscillator(); const g=ctx.createGain();
-    o.type='triangle'; o.frequency.value=880; // A5
-    o.connect(g); g.connect(ctx.destination);
-    const t=ctx.currentTime; g.gain.setValueAtTime(0,t);
-    g.gain.linearRampToValueAtTime(0.35,t+0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001,t+0.4);
-    o.start(t); o.stop(t+0.42);
-  }catch(e){}
-}
-function bottomBurst(){
-  if(typeof confetti!=='function') return;
-  const optsBase={origin:{y:1,x:0.5},gravity:1.15,ticks:200,scalar:0.9};
-  confetti({ ...optsBase, particleCount: 60, spread: 70, startVelocity: 55 });
-  confetti({ ...optsBase, particleCount: 40, spread: 100, startVelocity: 45, origin:{y:1,x:0.2} });
-  confetti({ ...optsBase, particleCount: 40, spread: 100, startVelocity: 45, origin:{y:1,x:0.8} });
-}
-function showCelebration(){
-  const msg=document.createElement('div');
-  msg.className='cele-msg'; msg.textContent="let's goooooo";
-  document.body.appendChild(msg);
-  bottomBurst();
-  setTimeout(()=>{ msg.classList.add('fade-out'); }, 700);
-  setTimeout(()=>{ msg.remove(); }, 1600);
-}
-function celebrate(){ playDing(); showCelebration(); }
-
-// ---------------------- TTS: speak the ENGLISH transliteration (phonetic) ----------------------
-let enVoice=null, voicesReady=false;
-function pickEnglishVoice(){
-  const voices=speechSynthesis.getVoices()||[];
-  return (
-    voices.find(v=>/^en(-|$)/i.test(v.lang)&&/natural|neural|premium/i.test(v.name))||
-    voices.find(v=>/^en(-|$)/i.test(v.lang))||
-    voices[0]||null
-  );
-}
-function ensureEnglishVoice(cb){
-  if(voicesReady&&enVoice){cb();return;}
-  const tryPick=()=>{enVoice=pickEnglishVoice();voicesReady=true;cb();};
-  const existing=speechSynthesis.getVoices();
-  if(existing&&existing.length){enVoice=pickEnglishVoice();voicesReady=true;cb();}
-  else{speechSynthesis.onvoiceschanged=tryPick;}
-}
 function translitToSpeak(s){
   if(!s) return "";
   return s
-    .replace(/â/g,"aa")
-    .replace(/ā/g,"aa")
+    .replace(/â|ā/g,"aa")
     .replace(/kh/g,"kha")
     .replace(/gh/g,"gha")
     .replace(/sh/g,"sha")
     .replace(/ch/g,"cha")
-    .replace(/j/g,"zhe");
+    .replace(/j/g,"zhe"); // for Persian ژ in this list
+}
+
+// Preload audio objects (optional but nice)
+const audioCache = new Map();
+function getAudioForWord(item){
+  const filename = item.audio || (slugifyTranslit(item.translit) + ".mp3");
+  const url = `audio/${filename}`;
+  if(!audioCache.has(url)){
+    const a = new Audio();
+    a.preload = "auto";
+    a.src = url;
+    audioCache.set(url, a);
+  }
+  return audioCache.get(url);
+}
+
+// ---------------------- UI update ----------------------
+function loadWord(i){
+  const item = words[i];
+  faEl.textContent = item.fa;
+  enEl.textContent = item.en;
+  transEl.textContent = item.translit;
+  typeInput.value = '';
+  feedbackEl.textContent = '';
+}
+
+// ---------------------- Celebration ----------------------
+function playDing(){
+  try {
+    const C = window.AudioContext || window.webkitAudioContext; if(!C) return;
+    const ctx = new C();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = 880;
+    o.connect(g); g.connect(ctx.destination);
+    const t = ctx.currentTime;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.35,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.4);
+    o.start(t); o.stop(t+0.42);
+  } catch(e){}
+}
+function bottomBurst(){
+  if(typeof confetti!=='function') return;
+  const base={origin:{y:1,x:0.5},gravity:1.15,ticks:200,scalar:0.9};
+  confetti({...base, particleCount:60, spread:70,  startVelocity:55});
+  confetti({...base, particleCount:40, spread:100, startVelocity:45, origin:{y:1,x:0.2}});
+  confetti({...base, particleCount:40, spread:100, startVelocity:45, origin:{y:1,x:0.8}});
+}
+function celebrate(){
+  playDing();
+  bottomBurst();
+  const msg = document.getElementById('celebration');
+  msg.style.display = 'block';
+  setTimeout(()=> msg.style.display='none', 1500);
+}
+
+// ---------------------- TTS fallback (phonetic) ----------------------
+let enVoice = null, voicesReady = false;
+function pickEnglishVoice(){
+  const voices = speechSynthesis.getVoices()||[];
+  return (
+    voices.find(v=>/^en(-|$)/i.test(v.lang) && /natural|neural|premium/i.test(v.name)) ||
+    voices.find(v=>/^en(-|$)/i.test(v.lang)) ||
+    voices[0] || null
+  );
+}
+function ensureEnglishVoice(cb){
+  if(voicesReady && enVoice){ cb(); return; }
+  const tryPick = () => { enVoice = pickEnglishVoice(); voicesReady = true; cb(); };
+  const existing = speechSynthesis.getVoices();
+  if(existing && existing.length){ enVoice = pickEnglishVoice(); voicesReady = true; cb(); }
+  else { speechSynthesis.onvoiceschanged = tryPick; }
 }
 function speakTransliteration(text){
   try{
-    const phrase=translitToSpeak(text);
+    const phrase = translitToSpeak(text);
     ensureEnglishVoice(()=>{
-      const u=new SpeechSynthesisUtterance(phrase);
-      if(enVoice){u.voice=enVoice;u.lang=enVoice.lang||"en-US";} else {u.lang="en-US";}
-      u.rate=0.95; u.pitch=1.0;
-      try{speechSynthesis.cancel();}catch{}
+      const u = new SpeechSynthesisUtterance(phrase);
+      if(enVoice){ u.voice = enVoice; u.lang = enVoice.lang || "en-US"; }
+      else { u.lang = "en-US"; }
+      u.rate = 0.95;
+      try{ speechSynthesis.cancel(); }catch{}
       speechSynthesis.speak(u);
     });
-  }catch(e){console.warn("TTS error:",e);}
+  }catch(e){ console.warn("TTS error", e); }
 }
-listenBtn.addEventListener('click',()=>{
-  const item=words[order[idx]];
-  speakTransliteration(item.translit);
+
+// ---------------------- Playback handlers ----------------------
+async function playYourAudio(){
+  const item = words[currentIndex];
+  const a = getAudioForWord(item);
+  try {
+    a.currentTime = 0;
+    await a.play();
+  } catch(e){
+    // Could be not found or blocked: fall back to phonetic TTS
+    speakTransliteration(item.translit);
+  }
+}
+
+listenBtn.addEventListener('click', playYourAudio);
+listenPhonBtn.addEventListener('click', ()=>{
+  speakTransliteration(words[currentIndex].translit);
 });
 
-// ---------------------- Speech Recognition (Say it) ----------------------
-function normalizeFa(s){ if(!s) return ''; return s.replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,''); }
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition; let rec=null; let micPrimed=false;
-async function primeMic(){ if(micPrimed||!navigator.mediaDevices?.getUserMedia) return; try{ await navigator.mediaDevices.getUserMedia({audio:true}); micPrimed=true; }catch(e){ speechFeedback.textContent='Microphone permission is blocked. Please allow mic access (click the lock icon).'; speechFeedback.className='feedback err'; } }
-if(SR){
-  rec=new SR(); rec.lang='fa-IR'; rec.interimResults=false; rec.maxAlternatives=3;
-  rec.onresult=(ev)=>{
-    const item=words[order[idx]]; const heard=normalizeFa(ev.results[0][0].transcript); const target=normalizeFa(item.fa);
-    const ok=heard.includes(target)||target.includes(heard);
-    if(ok){ celebrate(); speechFeedback.textContent=`✔️ Heard: ${ev.results[0][0].transcript}`; speechFeedback.className='feedback ok'; score+=10; streak+=1; completed.add(order[idx]); saveProgress(); load(); }
-    else { speechFeedback.textContent=`I heard “${ev.results[0][0].transcript}”. Try again!`; speechFeedback.className='feedback warn'; streak=0; saveProgress(); }
-  };
-  rec.onerror=(e)=>{ const kind=e?.error||'unknown'; const map={'no-speech':'No speech detected. Try speaking closer to the mic.','audio-capture':'No microphone found. Plug in or enable your mic.','not-allowed':'Mic access denied. Click the lock (🔒) in the address bar to allow the mic.','aborted':'Recognition aborted. Tap “Say it” again.'}; speechFeedback.textContent=map[kind]||('Mic error: '+kind); speechFeedback.className='feedback err'; };
-}else{ sayBtn.disabled=true; sayBtn.title='Speech recognition not supported in this browser. Use Chrome on desktop/mobile.'; }
+// ---------------------- Navigation & checking ----------------------
+function next(){ currentIndex = (currentIndex + 1) % words.length; loadWord(currentIndex); }
+function prev(){ currentIndex = (currentIndex - 1 + words.length) % words.length; loadWord(currentIndex); }
 
-sayBtn.addEventListener('click',async()=>{
-  if(!rec){ speechFeedback.textContent='Speech recognition not supported on this device/browser.'; speechFeedback.className='feedback err'; return; }
-  if(!window.isSecureContext){ speechFeedback.textContent='Mic only works over HTTPS. Open your published site (https).'; speechFeedback.className='feedback err'; return; }
-  await primeMic(); speechFeedback.textContent='Listening… please say the Persian word'; speechFeedback.className='feedback';
-  try{ rec.start(); }catch{}
+nextBtn.addEventListener('click', next);
+prevBtn.addEventListener('click', prev);
+
+checkBtn.addEventListener('click', ()=>{
+  const guess = (typeInput.value || '').trim().toLowerCase();
+  const target = (words[currentIndex].translit || '').trim().toLowerCase();
+  if(!guess){ feedbackEl.textContent = 'Type your guess first!'; return; }
+  if(guess === target){
+    feedbackEl.textContent = 'Great! ✅';
+    celebrate();
+    setTimeout(next, 600);
+  } else {
+    feedbackEl.textContent = `Not quite. Hint: ${words[currentIndex].translit}`;
+  }
 });
-
-// ---------------------- Typing Check ----------------------
-function normalizeTranslit(s){ return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/\s+/g,''); }
-checkBtn.addEventListener('click',()=>{
-  const item=words[order[idx]]; const guess=normalizeTranslit(typeInput.value); const target=normalizeTranslit(item.translit);
-  if(!guess){ typeFeedback.textContent='Type your guess first!'; typeFeedback.className='feedback warn'; return; }
-  if(guess===target){ typeFeedback.textContent='Great! +10 points'; typeFeedback.className='feedback ok'; celebrate(); score+=10; streak+=1; completed.add(order[idx]); saveProgress(); next(); }
-  else { typeFeedback.textContent=`Not quite. Hint: ${item.translit}`; typeFeedback.className='feedback warn'; streak=0; saveProgress(); }
-});
-
-skipBtn.addEventListener('click',()=>{ streak=0; saveProgress(); next(); });
-nextBtn.addEventListener('click',next);
-revealBtn.addEventListener('click',reveal);
-learnBtn.addEventListener('click',()=>setMode('learn'));
-quizBtn.addEventListener('click',()=>setMode('quiz'));
 
 // Initial load
-load();
+loadWord(currentIndex);
 </script>
 </body>
 </html>
