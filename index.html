@@ -63,7 +63,6 @@
   .overlay-card{background:linear-gradient(180deg,var(--grad1),var(--grad2));border:1px solid #1f2937;border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:620px;margin:0 16px}
   .overlay .btns{display:flex;gap:12px;flex-wrap:wrap}
 
-  /* Dashboard & Settings modals */
   .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45);z-index:12}
   .modal-card{background:linear-gradient(180deg,var(--grad1),var(--grad2));border:1px solid #1f2937;border-radius:16px;max-width:760px;width:92%;padding:18px 18px 24px}
   .grid{display:grid;gap:10px}
@@ -74,7 +73,6 @@
   .facts{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px;margin-top:6px}
   details summary{cursor:pointer}
 
-  /* Mini-quiz panel */
   .quizpanel{margin-top:16px;padding:12px;border:1px dashed #334155;border-radius:12px;background:#0b1229}
   .qtitle{font-weight:700;margin-bottom:8px}
   .qprogress{height:8px;background:#0a142e;border-radius:999px;overflow:hidden;border:1px solid #1f2937;margin-bottom:10px}
@@ -125,7 +123,6 @@
       <span id="diffLabel" class="badge">Level: Easy</span>
     </label>
     <button id="miniQuizBtn" class="btn">⚡ Mini Quiz (5)</button>
-    <!-- Removed reset & review from here; they live in Settings -->
   </div>
 
   <div class="card">
@@ -185,7 +182,7 @@
 </main>
 
 <footer>
-  <div class="footer-inner">Put images in <b>/images</b> (e.g., <code>images/sib.jpg</code>). Put audio in <b>/audio</b> (e.g., <code>audio/sib.mp3</code>). Optional encouragement in <b>/audio/encouragement/</b>.</div>
+  <div class="footer-inner">Put images in <b>/images</b> (e.g., <code>images/sib.png</code>). Put audio in <b>/audio</b> (e.g., <code>audio/sib.mp3</code>). Optional encouragement in <b>/audio/encouragement/</b>.</div>
 </footer>
 
 <div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
@@ -237,20 +234,20 @@ const STORAGE_PREFIX = 'ff_';
 const SRS_INTERVALS_HOURS = [0, 8, 24, 72, 168, 336];
 const MINI_QUIZ_SIZE = 5;
 
-/** ============ WORDS (sample) ============ */
+/** ============ WORDS (sample with .png images) ============ */
 const words = [
-  {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.jpg", fact:"In Persian cuisine, apple slices often pair with walnuts as a snack."},
-  {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.jpg", fact:"کتاب is from Arabic root k‑t‑b related to writing."},
-  {fa:"گربه", en:"cat", translit:"gorbe", emoji:"🐱", image:"images/gorbe.jpg"},
-  {fa:"سگ", en:"dog", translit:"sag", emoji:"🐶", image:"images/sag.jpg"},
-  {fa:"آب", en:"water", translit:"âb", emoji:"💧", audio:"audio/ab.mp3", image:"images/ab.jpg"},
-  {fa:"نان", en:"bread", translit:"nân", emoji:"🍞", audio:"audio/nan.mp3", image:"images/nan.jpg"},
-  {fa:"چای", en:"tea", translit:"chây", emoji:"🍵", audio:"audio/chay.mp3", image:"images/chay.jpg", fact:"Traditional Persian tea is strong and served with sugar cubes."},
-  {fa:"ماشین", en:"car", translit:"mâshin", emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.jpg"},
-  {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠", audio:"audio/khane.mp3", image:"images/khane.jpg"},
-  {fa:"در", en:"door", translit:"dar", emoji:"🚪", image:"images/dar.jpg"},
-  {fa:"خورشید", en:"sun", translit:"khorshid", emoji:"☀️", image:"images/khorshid.jpg"},
-  {fa:"گل", en:"flower", translit:"gol", emoji:"🌸", image:"images/gol.jpg"},
+  {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.png", fact:"In Persian cuisine, apple slices often pair with walnuts as a snack."},
+  {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.png", fact:"کتاب is from Arabic root k‑t‑b related to writing."},
+  {fa:"گربه", en:"cat", translit:"gorbe", emoji:"🐱", image:"images/gorbe.png"},
+  {fa:"سگ", en:"dog", translit:"sag", emoji:"🐶", image:"images/sag.png"},
+  {fa:"آب", en:"water", translit:"âb", emoji:"💧", audio:"audio/ab.mp3", image:"images/ab.png"},
+  {fa:"نان", en:"bread", translit:"nân", emoji:"🍞", audio:"audio/nan.mp3", image:"images/nan.png"},
+  {fa:"چای", en:"tea", translit:"chây", emoji:"🍵", audio:"audio/chay.mp3", image:"images/chay.png", fact:"Traditional Persian tea is strong and served with sugar cubes."},
+  {fa:"ماشین", en:"car", translit:"mâshin", emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.png"},
+  {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠", audio:"audio/khane.mp3", image:"images/khane.png"},
+  {fa:"در", en:"door", translit:"dar", emoji:"🚪", image:"images/dar.png"},
+  {fa:"خورشید", en:"sun", translit:"khorshid", emoji:"☀️", image:"images/khorshid.png"},
+  {fa:"گل", en:"flower", translit:"gol", emoji:"🌸", image:"images/gol.png"},
 ];
 
 /** ============ STORAGE HELPERS ============ */
@@ -403,11 +400,10 @@ function load(){
   factBox.style.display = item.fact && mode==='learn' && !miniQuizActive ? 'block' : 'none';
   factText.textContent = item.fact || '';
 
-  // Hide main inputs when mini-quiz is active
   const hideWhenMini = miniQuizActive ? 'none' : '';
   typeInput.parentElement.style.display = hideWhenMini;
-  document.querySelectorAll('.controls')[0].style.display = hideWhenMini; // listen/say/reveal/next row
-  document.querySelectorAll('.controls')[1].style.display = hideWhenMini; // check/skip row
+  document.querySelectorAll('.controls')[0].style.display = hideWhenMini;
+  document.querySelectorAll('.controls')[1].style.display = hideWhenMini;
 
   updateBadges(); updateControlVisibility();
 }
@@ -421,11 +417,10 @@ function setMode(m){ mode=m; ensureOrder(); load(); }
 
 /** ============ CELEBRATIONS ============ */
 function happyDing(){
-  // cheerful arpeggio: E5 (659Hz), G5 (784Hz), B5 (988Hz)
   try{
     const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
     const ctx=new AC();
-    const tones=[659,784,988];
+    const tones=[659,784,988]; // E5, G5, B5 (cheery major chord)
     const t0=ctx.currentTime;
     tones.forEach((f,i)=>{
       const o=ctx.createOscillator(), g=ctx.createGain();
@@ -452,7 +447,6 @@ function confettiPop(){
 }
 function celebrate(){
   happyDing();
-  // stronger pop every time, fireworks at streak multiples of 5
   if(streak>0 && streak%5===0) fireworksBurst(); else confettiPop();
   const msg=$('celebration');
   msg.style.display='block';
@@ -549,7 +543,6 @@ function startMiniQuiz(){
 }
 function showMiniPanel(show){
   miniPanel.style.display = show ? 'block' : 'none';
-  // hide main rows when mini active (load() also handles this, but do it now for snappiness)
   document.querySelectorAll('.controls')[0].style.display = show ? 'none' : '';
   document.querySelectorAll('.controls')[1].style.display = show ? 'none' : '';
   $('typeInput').parentElement.style.display = show ? 'none' : '';
