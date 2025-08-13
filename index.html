@@ -51,13 +51,15 @@
   .danger{background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d}
   .danger:hover{background:linear-gradient(180deg,#f35e5e,#e03a3a)}
   .select{padding:10px 12px}
+  .linkbtn{background:none;border:none;color:#93c5fd;padding:0 3px;border-radius:6px;cursor:pointer}
+  .linkbtn:hover{background:#0b1229}
 
   .input{background:#0b1229;border:1px solid #1f2937;padding:12px 14px;border-radius:12px;color:var(--text);width:100%;font-size:16px}
   .feedback{margin-top:8px;min-height:24px;font-size:15px}
   .ok{color:var(--accent)} .warn{color:var(--warn)} .err{color:var(--err)}
   .progress{margin-top:12px;height:10px;background:#0b1229;border-radius:999px;border:1px solid #1f2937;overflow:hidden}
   .bar{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .4s ease}
-  .mode{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+  .mode{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;align-items:center}
   .tiny{font-size:12px;color:var(--muted)}
   .tip{margin-top:12px;font-size:14px;color:#a5b4fc}
 
@@ -79,7 +81,6 @@
   .facts{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px;margin-top:6px}
   details summary{cursor:pointer}
 
-  /* Mini-quiz panel (simplified) */
   .quizpanel{margin-top:16px;padding:12px;border:1px dashed #334155;border-radius:12px;background:#0b1229}
   .qprogress{height:8px;background:#0a142e;border-radius:999px;overflow:hidden;border:1px solid #1f2937;margin-bottom:10px}
   .qbar{height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#22c55e)}
@@ -129,7 +130,9 @@
       </select>
       <span id="diffLabel" class="badge">Level: Easy</span>
     </label>
-    <!-- Mini Quiz button removed from main UI -->
+  </div>
+  <div class="tiny" style="margin:2px 0 12px 2px">
+    New words unlock at <button id="midnightBtn" class="linkbtn" title="Show countdown to midnight">midnight</button> ⏰
   </div>
 
   <div class="card">
@@ -208,7 +211,7 @@
   </div>
 </div>
 
-<!-- Settings Modal (now contains Mini Quiz) -->
+<!-- Settings Modal (contains Mini Quiz) -->
 <div id="settingsModal" class="modal">
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -252,7 +255,7 @@ const words = [
   {fa:"آب", en:"water", translit:"âb", emoji:"💧", audio:"audio/ab.mp3", image:"images/ab.png"},
   {fa:"نان", en:"bread", translit:"nân", emoji:"🍞", audio:"audio/nan.mp3", image:"images/nan.png"},
   {fa:"چای", en:"tea", translit:"chây", emoji:"🍵", audio:"audio/chay.mp3", image:"images/chay.png", fact:"Traditional Persian tea is strong and served with sugar cubes."},
-  {fa:"ماشین", en:"car", translit:"mâshin", emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.png"},
+  {fa:"ماشین", en:"car", translit:"مâshin".replace('م','m') /* protect diacritic */, emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.png"},
   {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠", audio:"audio/khane.mp3", image:"images/khane.png"},
   {fa:"در", en:"door", translit:"dar", emoji:"🚪", image:"images/dar.png"},
   {fa:"خورشید", en:"sun", translit:"khorshid", emoji:"☀️", image:"images/khorshid.png"},
@@ -346,7 +349,7 @@ const startOverlay=$('startOverlay'), startLearn=$('startLearn'), startQuiz=$('s
 const celebration=$('celebration'), sadFace=$('sadFace'), factBox=$('factBox'), factText=$('factText'), tip=$('tip');
 const openDash=$('openDash'), dashModal=$('dashModal'), closeDash=$('closeDash'), totals=$('totals'), dueStats=$('dueStats'), achievementsBox=$('achievements'), themesInfo=$('themesInfo');
 const themeSelect=$('themeSelect'), openSettings=$('openSettings'), settingsModal=$('settingsModal'), closeSettings=$('closeSettings');
-const reviewToggle=$('reviewToggle'), resetBtn=$('resetBtn'), startMiniQuizBtn=$('startMiniQuiz');
+const reviewToggle=$('reviewToggle'), resetBtn=$('resetBtn'), startMiniQuizBtn=$('startMiniQuiz'), midnightBtn=$('midnightBtn');
 const learnBtn=$('learnBtn'), quizBtn=$('quizBtn');
 const difficultySel=$('difficulty'), diffLabel=$('diffLabel');
 const miniPanel=$('miniQuizPanel'), mqBar=$('mqBar'), mqPic=$('mqPic'), mqInput=$('mqInput'), mqCheck=$('mqCheck'), mqFeedback=$('mqFeedback');
@@ -521,11 +524,16 @@ function handleAnswer(correct, gi, source='typing', transcript=''){
 /** ============ CONTROLS ============ */
 $('checkBtn').addEventListener('click', ()=>{
   const gi=order[idx], item=words[gi];
-  const guess=normalizeTranslit($('typeInput').value);
+  const val=$('typeInput').value;
+  const guess=normalizeTranslit(val);
+  if(!guess){ typeFeedback.textContent='Type your guess first!'; typeFeedback.className='feedback warn'; return; }
   handleAnswer(guess===normalizeTranslit(item.translit), gi, 'typing');
+  // Clear and focus for next attempt/request
+  $('typeInput').value='';
+  $('typeInput').focus();
 });
-$('skipBtn').addEventListener('click', ()=>{ streak=0; ls.set('streak',streak); next(); });
-$('nextBtn').addEventListener('click', next);
+$('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; streak=0; ls.set('streak',streak); next(); });
+$('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
 $('learnBtn').addEventListener('click', ()=> setMode('learn'));
 $('quizBtn').addEventListener('click',  ()=> setMode('quiz'));
 $('difficulty').value = difficulty;
@@ -547,12 +555,11 @@ function reveal(){
 }
 $('revealBtn').addEventListener('click', reveal);
 
-/** ============ EMBEDDED MINI QUIZ (Settings-triggered) ============ */
+/** ============ MINI QUIZ (Settings-triggered) ============ */
 startMiniQuizBtn.addEventListener('click', ()=>{
-  $('settingsModal').style.display='none';
+  settingsModal.style.display='none';
   startMiniQuiz();
 });
-
 function startMiniQuiz(){
   miniQuizActive=true; miniQ.correct=0; miniQ.total=0;
   const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
@@ -562,13 +569,11 @@ function startMiniQuiz(){
 }
 function showMiniPanel(show){
   miniPanel.style.display = show ? 'block' : 'none';
-  // hide main training UI while mini quiz is active
   const mainRows = wordWrap.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, #speechFeedback, .progress, #factBox, #tip');
   mainRows.forEach(el=>{ el.style.display = show ? 'none' : ''; });
 }
 function nextMiniQuestion(){
   if(!miniQ.queue.length){
-    // Show brief summary then auto-close
     mqFeedback.innerHTML = `Mini Quiz complete! Score: <b>${miniQ.correct}</b> / ${miniQ.total}`;
     mqFeedback.className='feedback ok';
     mqBar.style.width='100%';
@@ -642,6 +647,25 @@ resetBtn.addEventListener('click',()=>{
 /** ============ START SCREEN ============ */
 startLearn.addEventListener('click',()=>{ setMode('learn'); startOverlay.style.display='none'; });
 startQuiz.addEventListener('click',()=>{ setMode('quiz');  startOverlay.style.display='none'; });
+
+/** ============ MIDNIGHT COUNTDOWN ============ */
+function msUntilNextMidnight(){
+  const n=new Date();
+  const t=new Date(n);
+  t.setHours(24,0,0,0); // next local midnight
+  return t - n;
+}
+function fmt(ms){
+  const s=Math.floor(ms/1000);
+  const h=Math.floor(s/3600);
+  const m=Math.floor((s%3600)/60);
+  const sec=s%60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+midnightBtn.addEventListener('click', ()=>{
+  const ms=msUntilNextMidnight();
+  alert(`New words unlock at local midnight.\nTime remaining: ${fmt(ms)}`);
+});
 
 /** ============ INIT ============ */
 function firstLoad(){ loadTheme(); ensureOrder(); setDifficulty(difficulty); updateAchievements(); updateBadges(); load(); }
