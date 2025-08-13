@@ -32,7 +32,6 @@
   .pic,.mq-pic{width:min(420px,92%);height:min(280px,45vw);object-fit:contain;background:#0b1229;border:1px solid #1f2937;border-radius:16px;display:none}
   .emoji{font-size:clamp(64px,12vw,120px);text-align:center;line-height:1;filter:drop-shadow(0 10px 20px rgba(0,0,0,.35))}
   .word{display:flex;flex-direction:column;gap:6px;align-items:flex-start;justify-content:center}
-  /* Learn-mode typography */
   .en{font-size:clamp(26px,3.4vw,34px);font-weight:700;color:#e2e8f0}
   .fa{font-size:clamp(18px,2.6vw,22px);color:#cbd5e1;direction:rtl;text-align:right}
   .trans{font-size:clamp(26px,3.4vw,34px);font-weight:600;color:#e2e8f0}
@@ -44,7 +43,6 @@
   .bar{height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#22c55e);transition:width .4s ease}
   .mode{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
   .tiny{font-size:12px;color:#94a3b8}
-  .tip{margin-top:12px;font-size:14px;color:#a5b4fc}
   .cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.92);border:1px solid #1f2937;padding:14px 18px;border-radius:14px;font-weight:800;z-index:20}
   .fade-out{animation:fadeOut .9s ease forwards}@keyframes fadeOut{to{opacity:0}}
   /* Overlays / Modals */
@@ -60,6 +58,411 @@
   .tile.unlocked{border-style:solid;color:#e5e7eb}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
+
+<!-- Firebase (modular) -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+/* ===== Paste YOUR Firebase config here ===== */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  appId: "YOUR_APP_ID"
+};
+/* ========================================== */
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+enableIndexedDbPersistence(db).catch(()=>{});
+
+/* ===== Small helpers ===== */
+const $=id=>document.getElementById(id);
+const bySel=s=>document.querySelector(s);
+function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
+function now(){return Date.now()}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/\s+/g,'')}
+async function sha256Hex(input){
+  const data=new TextEncoder().encode(input);
+  const hash=await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ===== Words ===== */
+const words = [
+  {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.png",
+   sentence:{fa:"من سیب می‌خورم.", translit:"man sib mikhoram.", en:"I eat an apple."}},
+  {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.png",
+   sentence:{fa:"این کتاب خوب است.", translit:"in ketâb khub ast.", en:"This book is good."}},
+  {fa:"گربه", en:"cat", translit:"gorbe", emoji:"🐱", image:"images/gorbe.png",
+   sentence:{fa:"آن گربه خواب است.", translit:"ân gorbe khâb ast.", en:"That cat is sleeping."}},
+  {fa:"سگ", en:"dog", translit:"sag", emoji:"🐶", image:"images/sag.png",
+   sentence:{fa:"سگ من بازی می‌کند.", translit:"sag‑e man bâzi mikonad.", en:"My dog is playing."}},
+  {fa:"آب", en:"water", translit:"âb", emoji:"💧", audio:"audio/ab.mp3", image:"images/ab.png",
+   sentence:{fa:"آب سرد است.", translit:"âb sard ast.", en:"The water is cold."}},
+  {fa:"نان", en:"bread", translit:"nân", emoji:"🍞", audio:"audio/nan.mp3", image:"images/nan.png",
+   sentence:{fa:"من نان دوست دارم.", translit:"man nân dust dâram.", en:"I like bread."}},
+  {fa:"چای", en:"tea", translit:"chây", emoji:"🍵", audio:"audio/chay.mp3", image:"images/chay.png",
+   sentence:{fa:"چای می‌نوشم.", translit:"chây minusham.", en:"I drink tea."}},
+  {fa:"ماشین", en:"car", translit:"mâshin", emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.png",
+   sentence:{fa:"ماشین قرمز است.", translit:"mâshin ghermez ast.", en:"The car is red."}},
+  {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠", audio:"audio/khane.mp3", image:"images/khane.png",
+   sentence:{fa:"خانه بزرگ است.", translit:"khâne bozorg ast.", en:"The house is big."}},
+  {fa:"در", en:"door", translit:"dar", emoji:"🚪", image:"images/dar.png",
+   sentence:{fa:"در را ببند.", translit:"dar râ bebande.", en:"Close the door."}},
+];
+
+/* ===== App constants ===== */
+const DAILY_WORDS = 5;
+const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
+const MINI_QUIZ_SIZE = 5;
+
+/* ===== State synced to Firestore ===== */
+const defaultState = ()=>({
+  score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
+  achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
+  difficulty:'easy',
+  mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
+  settings:{reviewAll:false, sentenceMode:true}
+});
+let state = defaultState();
+let ACTIVE_PROFILE = 'Nicole';     // default user: Nicole
+let DEVELOPER_MODE = false;         // hidden toggle
+let mode='learn', order=[], idx=0;
+
+/* ===== Profile doc IDs (no login) =====
+   We derive a stable doc ID from site origin + profile name.
+   That lets multiple devices sync without any code entry.
+*/
+let docIdHash = null;
+async function computeDocId(profile){
+  const origin = location.origin.replace(/^https?:\/\//,'');
+  return await sha256Hex(`${origin}|FarsiFun|${profile.toLowerCase()}`);
+}
+
+/* ===== Firestore read/write ===== */
+function docRef(){ return doc(db, 'profiles', docIdHash); }
+async function loadStateFromCloud(){
+  const snap = await getDoc(docRef());
+  if(snap.exists()){ state = {...defaultState(), ...snap.data()}; }
+  else { state = defaultState(); await setDoc(docRef(), state); }
+  reflectAll();
+}
+async function saveStateToCloud(partial=null){
+  if(partial){ state = {...state, ...partial}; }
+  try{ await updateDoc(docRef(), state); }catch{ await setDoc(docRef(), state, {merge:true}); }
+  reflectAll();
+}
+
+/* ===== Utilities for SRS/pools ===== */
+function ensureSRS(i){ if(!state.srs[i]) state.srs[i]={stage:0,due:0,seen:0,correct:0,wrong:0}; return state.srs[i]; }
+function isDue(i){ return ensureSRS(i).due <= now(); }
+function scheduleAfter(i,h){ ensureSRS(i).due = now()+h*3600*1000; }
+function unlockedCount(){ return state.unlocked_count||Math.min(words.length, DAILY_WORDS); }
+function unlockedIndices(){ return [...Array(unlockedCount()).keys()]; }
+function getCoveredSet(){ return new Set(state.covered||[]); }
+function masteredIndices(){ return [...getCoveredSet()].filter(i=>i<unlockedCount()); }
+function quizPool(){ const due=unlockedIndices().filter(i=>isDue(i)); if(due.length) return due; const m=masteredIndices(); return m.length?m:unlockedIndices(); }
+function learnPool(){ const u=unlockedIndices(), d=u.filter(i=>isDue(i)), r=u.filter(i=>!isDue(i)); return [...d,...r]; }
+function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=pool.slice(); shuffle(order); idx=0; }
+
+/* ===== UI & rendering ===== */
+function reflectAll(){
+  $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}${DEVELOPER_MODE?' (dev)':''}`;
+  $('scoreBadge').textContent   = `Score: ${state.score}`;
+  $('streakBadge').textContent  = `Streak: ${state.streak} 🔥`;
+  $('unlockedBadge').textContent = `${unlockedCount()}/${words.length} unlocked`;
+  renderMap(); reflectBadges();
+  if(order.length===0) ensureOrder();
+  showItem();
+}
+function showImageOrEmoji(item){
+  const pic=$('pic'), emo=$('emoji');
+  if(item.image){ pic.style.display='block'; emo.style.display='none'; pic.src=item.image; pic.alt=item.en; }
+  else { pic.style.display='none'; emo.style.display='block'; emo.textContent=item.emoji||'❓'; }
+}
+function showItem(){
+  const pool = (mode==='quiz')? quizPool(): learnPool();
+  if(order.length===0 || order.some(i=>!pool.includes(i))) ensureOrder();
+  const gi = order[idx % order.length]; const item = words[gi];
+
+  showImageOrEmoji(item);
+  if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
+  else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
+
+  // sentence context
+  const sbox=$('sentBox'), sfa=$('s_fa'), str=$('s_tr'), sen=$('s_en');
+  if(state.settings?.sentenceMode && item.sentence && mode==='learn'){
+    $('sentenceBox').style.display='block';
+    sbox.style.display='block'; sfa.textContent=item.sentence.fa; str.textContent=item.sentence.translit; sen.textContent=item.sentence.en;
+  }else{ sbox.style.display='none'; }
+
+  // controls
+  $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
+  $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
+
+  const pct = Math.round((getCoveredSet().size/Math.max(1,unlockedCount()))*100);
+  $('progressBar').style.width = pct + '%';
+
+  $('typeInput').value=''; $('typeInput').focus();
+}
+function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
+
+/* ===== Daily unlocks ===== */
+function ensureStartAndUnlocks(){
+  if(!state.start_date){ state.start_date=todayISO(); }
+  const startDate = new Date(state.start_date+'T00:00:00');
+  const dNow = new Date(); dNow.setHours(0,0,0,0);
+  const diffDays = Math.floor((dNow - startDate)/86400000);
+  const shouldUnlock = Math.min(words.length, (diffDays+1)*DAILY_WORDS);
+  state.unlocked_count = Math.max(state.unlocked_count||0, shouldUnlock);
+}
+
+/* ===== Celebrations ===== */
+function happyDing(){
+  try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC) return;const ctx=new AC();const tones=[659,784,988];const t0=ctx.currentTime;
+    tones.forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;o.connect(g);g.connect(ctx.destination);
+      const st=t0+i*0.05;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(0.35,st+0.03);g.gain.exponentialRampToValueAtTime(0.0001,st+0.22);
+      o.start(st);o.stop(st+0.25);});}catch{}}
+function confettiPop(){ if(window.confetti) confetti({origin:{y:1,x:0.5},gravity:1.2,ticks:180,scalar:0.9,particleCount:70,spread:75,startVelocity:55}); }
+function fireworks(){ if(!window.confetti) return;
+  const base={origin:{y:1,x:0.5},gravity:1.0,ticks:260,scalar:1.0};
+  confetti({...base,particleCount:180,spread:120,startVelocity:65});
+  confetti({...base,particleCount:140,spread:140,startVelocity:60,origin:{y:1,x:0.2}});
+  confetti({...base,particleCount:140,spread:140,startVelocity:60,origin:{y:1,x:0.8}});
+}
+function celebrateSimple(){ happyDing(); confettiPop(); const c=$('celebration'); c.textContent="let's goooooo 🎉"; c.style.display='block'; setTimeout(()=>c.classList.add('fade-out'),800); setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},1600); }
+function celebrateStreak7(){
+  fireworks();
+  state.achievements.streak7 = true;
+  saveStateToCloud();
+  const c=$('celebration'); c.textContent="7‑day streak! 🏅"; c.style.display='block';
+  setTimeout(()=>c.classList.add('fade-out'),1200);
+  setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},2200);
+}
+
+/* ===== Audio (your recordings) ===== */
+const audioCache=new Map();
+function getAudio(item){ const url=item.audio||`audio/${(item.translit||'').toLowerCase()}.mp3`; if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);} return audioCache.get(url);}
+async function playYourAudio(){ const gi=order[idx], item=words[gi]; try{ const a=getAudio(item); a.currentTime=0; await a.play(); }catch{} }
+
+/* ===== Answering + SRS + Map ===== */
+function checkDailyGoalAndMap(){
+  const today=todayISO();
+  let days = state.mapDays||[];
+  let todayRec = days.find(d=>d.date===today);
+  if(!todayRec){ todayRec={date:today, correct:0, goalMet:false}; days=[...days,todayRec]; }
+  todayRec.correct++;
+  if(!todayRec.goalMet && todayRec.correct>=DAILY_WORDS){
+    todayRec.goalMet=true;
+    state.mapUnlocked = Math.min((state.mapUnlocked||0)+1, 12);
+    if(window.confetti) confetti({origin:{y:1,x:Math.random()},particleCount:60,spread:70,startVelocity:45,scalar:1.1});
+  }
+  state.mapDays = days;
+}
+function handleAnswer(correct, gi){
+  const r=ensureSRS(gi); r.seen++;
+  if(correct){
+    r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1);
+    r.due = now()+ (SRS_INTERVALS_HOURS[r.stage]||24)*3600*1000;
+    state.score+=10; state.streak+=1;
+    const s=new Set(state.covered||[]); s.add(gi); state.covered=[...s];
+    $('typeFeedback').textContent='Great! +10 points'; $('typeFeedback').className='feedback ok';
+    celebrateSimple();
+    if(state.streak===7) celebrateStreak7();
+    ensureStartAndUnlocks(); checkDailyGoalAndMap();
+  }else{
+    r.wrong++; r.stage=Math.max(0,r.stage-1); r.due = now()+2*3600*1000;
+    state.streak=0; $('typeFeedback').textContent='Not quite.'; $('typeFeedback').className='feedback warn';
+  }
+  saveStateToCloud(); setTimeout(next, 450);
+}
+
+/* ===== Map & Badges ===== */
+function renderMap(){
+  const wrap = $('mapGrid'); if(!wrap) return;
+  wrap.innerHTML='';
+  const tiles = 12;
+  for(let i=0;i<tiles;i++){
+    const t=document.createElement('div');
+    t.className='tile'+(i<(state.mapUnlocked||0)?' unlocked':'');
+    t.textContent = i<(state.mapUnlocked||0)?'🐈':'?';
+    wrap.appendChild(t);
+  }
+}
+function reflectBadges(){
+  const a=state.achievements||{};
+  $('achList').innerHTML = `
+    <div class="chip">${a.first10?'🏅':'⬜'} First 10 mastered</div>
+    <div class="chip">${a.perfectMini?'🏅':'⬜'} Perfect Mini Quiz</div>
+    <div class="chip">${a.streak7?'🏅':'⬜'} 7‑day streak</div>
+    <div class="chip">${a.mastered50?'🏅':'⬜'} 50 mastered</div>
+  `;
+}
+
+/* ===== Events ===== */
+$('listenBtn').addEventListener('click', playYourAudio);
+$('checkBtn').addEventListener('click', ()=>{
+  const gi=order[idx], item=words[gi];
+  const v=$('typeInput').value.trim(); if(!v){ $('typeFeedback').textContent='Type your guess first!'; $('typeFeedback').className='feedback warn'; return; }
+  $('typeFeedback').textContent=''; $('typeInput').value=''; $('typeInput').focus();
+  handleAnswer(normalizeTranslit(v)===normalizeTranslit(item.translit), gi);
+});
+$('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.streak=0; saveStateToCloud(); next(); });
+$('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
+$('learnBtn').addEventListener('click', ()=>{ mode='learn'; ensureOrder(); showItem(); });
+$('quizBtn').addEventListener('click',  ()=>{ mode='quiz'; ensureOrder(); showItem(); });
+$('hintBtn').addEventListener('click', ()=>{
+  if(mode!=='learn') return;
+  const gi=order[idx], item=words[gi];
+  $('trans').textContent=item.translit; $('en').textContent=item.en;
+});
+$('revealBtn').addEventListener('click', ()=>{
+  const gi=order[idx], item=words[gi];
+  $('fa').textContent=item.fa; $('trans').textContent=item.translit;
+  const s=$('sadFace'); s.style.display='block'; setTimeout(()=>s.classList.add('fade-out'),700); setTimeout(()=>{s.classList.remove('fade-out'); s.style.display='none';},1500);
+});
+
+$('openAchievements').addEventListener('click', ()=>{ reflectBadges(); $('achModal').style.display='grid'; });
+$('closeAch').addEventListener('click', ()=> $('achModal').style.display='none');
+$('openMap').addEventListener('click', ()=>{ renderMap(); $('mapModal').style.display='grid'; });
+$('closeMap').addEventListener('click', ()=> $('mapModal').style.display='none');
+
+$('openSettings').addEventListener('click', ()=>{ 
+  $('settingsModal').style.display='grid'; 
+  $('reviewToggle').textContent=`Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`;
+});
+
+/* Review toggle */
+$('reviewToggle').addEventListener('click', ()=>{
+  state.settings.reviewAll = !state.settings.reviewAll; saveStateToCloud();
+  $('reviewToggle').textContent=`Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`;
+});
+
+/* Mini Quiz (in Settings) */
+let miniQ={queue:[],current:null,correct:0,total:0};
+$('startMiniQuiz').addEventListener('click', ()=>{
+  $('settingsModal').style.display='none';
+  startMiniQuiz();
+});
+function startMiniQuiz(){
+  const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
+  shuffle(pool); miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
+  $('miniQuizPanel').style.display='block';
+  document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #sentenceBox').forEach(el=> el.style && (el.style.display='none'));
+  nextMiniQuestion();
+}
+function nextMiniQuestion(){
+  if(!miniQ.queue.length){
+    $('mqFeedback').innerHTML=`Mini Quiz complete! Score: <b>${miniQ.correct}</b> / ${miniQ.total}`;
+    $('mqBar').style.width='100%';
+    setTimeout(()=>{ $('miniQuizPanel').style.display='none'; document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #sentenceBox').forEach(el=> el.style && (el.style.display='')); showItem(); }, 1500);
+    return;
+  }
+  miniQ.current = miniQ.queue.shift();
+  const item=words[miniQ.current];
+  $('mqPic').style.display='block'; $('mqPic').src=item.image||''; $('mqPic').alt=item.en||'';
+  $('mqInput').value=''; $('mqFeedback').textContent='';
+  $('mqBar').style.width = `${(miniQ.total/MINI_QUIZ_SIZE)*100}%`;
+  $('mqInput').focus();
+}
+$('mqCheck').addEventListener('click', ()=>{
+  const item=words[miniQ.current]; miniQ.total++;
+  const ok = normalizeTranslit($('mqInput').value)===normalizeTranslit(item.translit);
+  if(ok){ miniQ.correct++; $('mqFeedback').textContent='Nice!'; $('mqFeedback').className='feedback ok'; celebrateSimple(); }
+  else { $('mqFeedback').textContent=`Answer: ${item.translit}`; $('mqFeedback').className='feedback warn'; state.streak=0; saveStateToCloud(); }
+  setTimeout(nextMiniQuestion, 350);
+});
+
+/* Midnight countdown */
+function msUntilNextMidnight(){ const n=new Date(), t=new Date(n); t.setHours(24,0,0,0); return t-n; }
+function fmt(ms){ const s=Math.floor(ms/1000); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; }
+function showMidnight(){ alert(`New words unlock at local midnight.\nTime remaining: ${fmt(msUntilNextMidnight())}`); }
+$('midnightBtn').addEventListener('click', showMidnight);
+
+/* ===== Hidden Developer Mode =====
+   - Click the main title 5x quickly OR
+   - Long-press the Settings title for 2 seconds
+   Reveals a small "Developer" panel inside Settings to switch between Nicole/Sia.
+*/
+let titleClicks=0, titleClickTimer=null;
+document.querySelector('header h1').addEventListener('click', ()=>{
+  titleClicks++;
+  clearTimeout(titleClickTimer);
+  titleClickTimer=setTimeout(()=>{titleClicks=0}, 800);
+  if(titleClicks>=5){ enableDeveloperMode(); }
+});
+
+const settingsModal = $('settingsModal');
+const settingsTitle = settingsModal.querySelector('h3');
+let pressTimer=null;
+settingsTitle.addEventListener('mousedown', ()=>{ pressTimer=setTimeout(enableDeveloperMode, 2000); });
+settingsTitle.addEventListener('mouseup', ()=> clearTimeout(pressTimer));
+settingsTitle.addEventListener('mouseleave', ()=> clearTimeout(pressTimer));
+
+function ensureDevPanel(){
+  let devPanel = document.getElementById('devPanel');
+  if(devPanel) return devPanel;
+  devPanel = document.createElement('div');
+  devPanel.id='devPanel';
+  devPanel.className='stat';
+  devPanel.innerHTML = `
+    <b>Developer</b>
+    <p class="tiny">Switch active profile for testing. (Saved to cloud; no password.)</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button id="useNicole" class="btn">Use Nicole</button>
+      <button id="useSia" class="btn">Use Sia</button>
+    </div>
+  `;
+  settingsModal.querySelector('.grid').appendChild(devPanel);
+  devPanel.querySelector('#useNicole').addEventListener('click', async ()=> switchProfile('Nicole'));
+  devPanel.querySelector('#useSia').addEventListener('click', async ()=> switchProfile('Sia'));
+  return devPanel;
+}
+
+async function enableDeveloperMode(){
+  DEVELOPER_MODE = true;
+  ensureDevPanel().style.display='block';
+  $('settingsModal').style.display='grid';
+  localStorage.setItem('ff_dev_mode','1');
+  $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE} (dev)`;
+}
+
+async function switchProfile(name){
+  if(ACTIVE_PROFILE===name) return;
+  ACTIVE_PROFILE = name;
+  localStorage.setItem('ff_last_profile', ACTIVE_PROFILE);
+  docIdHash = await computeDocId(ACTIVE_PROFILE);
+  await loadStateFromCloud();
+  ensureStartAndUnlocks();
+  await saveStateToCloud();
+  ensureOrder(); showItem();
+  alert(`Switched to profile: ${ACTIVE_PROFILE}`);
+}
+
+/* ===== Auth (anonymous) & auto-start as Nicole ===== */
+onAuthStateChanged(auth, async (u)=>{
+  if(!u){ await signInAnonymously(auth); return; }
+  // Restore last used profile / dev mode if any:
+  const last = localStorage.getItem('ff_last_profile');
+  if(last){ ACTIVE_PROFILE = last; }
+  if(localStorage.getItem('ff_dev_mode')==='1'){ DEVELOPER_MODE=true; ensureDevPanel().style.display='block'; }
+  docIdHash = await computeDocId(ACTIVE_PROFILE);   // default “Nicole” on first visit
+  await loadStateFromCloud();
+  ensureStartAndUnlocks();
+  await saveStateToCloud();
+  ensureOrder(); showItem();
+});
+
+/* ===== Close settings ===== */
+$('closeSettings').addEventListener('click', ()=> settingsModal.style.display='none');
+settingsModal.addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
+
+</script>
 </head>
 <body>
 <header>
@@ -69,51 +472,16 @@
     <div class="badge" id="scoreBadge">Score: 0</div>
     <div class="badge" id="streakBadge">Streak: 0 🔥</div>
     <div class="badge" id="unlockedBadge">0/0 unlocked</div>
-    <button id="openMap" class="icon-btn" title="Bazaar Map">🗺️</button>
-    <button id="openAchievements" class="icon-btn" title="Badges">🏆</button>
+    <button id="openMap" class="icon-btn" title="Bazaar Map" onclick="document.getElementById('mapModal').style.display='grid'">🗺️</button>
+    <button id="openAchievements" class="icon-btn" title="Badges" onclick="document.getElementById('achModal').style.display='grid'">🏆</button>
     <button id="openSettings" class="icon-btn" title="Settings">⚙️</button>
   </div>
 </header>
 
-<!-- Profile chooser (no login, just name) -->
-<div id="profileOverlay" class="overlay" style="display:grid">
-  <div class="overlay-card">
-    <h2>Who’s learning today?</h2>
-    <p class="tiny">Type a name (e.g., <b>Nicole</b> or <b>Sia</b>). Progress is saved per name on this device.</p>
-    <div style="display:flex; gap:10px; flex-wrap:wrap">
-      <input id="profileName" class="input" style="min-width:260px" placeholder="Enter name (e.g., Nicole)"/>
-      <button id="useProfile" class="primary">Continue</button>
-      <button id="quickNicole" class="btn">Nicole</button>
-      <button id="quickSia" class="btn">Sia</button>
-    </div>
-  </div>
-</div>
-
-<!-- Start screen -->
-<div id="startOverlay" class="overlay" style="display:none">
-  <div class="overlay-card">
-    <h2>How do you want to learn today?</h2>
-    <p>Pick a mode to get started. You can switch later.</p>
-    <div style="display:flex; gap:12px; flex-wrap:wrap">
-      <button id="startLearn" class="primary">📚 Learn Mode</button>
-      <button id="startQuiz" class="accent">🎯 Quiz Mode</button>
-    </div>
-    <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s. New words unlock at <button id="midnightBtn0" class="btn" style="padding:2px 6px">midnight</button>.</p>
-  </div>
-</div>
-
 <main>
   <div class="mode">
-    <button id="learnBtn" class="btn">Learn Mode</button>
-    <button id="quizBtn" class="btn">Quiz Mode</button>
-    <label class="tiny" style="display:inline-flex;align-items:center;gap:6px;">
-      Difficulty:
-      <select id="difficulty" class="select">
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
-      </select>
-    </label>
+    <button id="learnBtn" class="btn" onclick="window.mode='learn'; this.blur();">Learn Mode</button>
+    <button id="quizBtn"  class="btn" onclick="window.mode='quiz'; this.blur();">Quiz Mode</button>
     <span class="tiny">New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰</span>
   </div>
 
@@ -130,7 +498,6 @@
 
         <div class="controls">
           <button id="listenBtn" class="accent">🔊 Listen</button>
-          <button id="sayBtn" class="btn" disabled title="(optional speech recog)">🎙️ Say it</button>
           <button id="hintBtn" class="btn">💡 Hint</button>
           <button id="revealBtn" class="btn">👀 Reveal</button>
           <button id="nextBtn" class="primary">➡️ Next</button>
@@ -155,10 +522,11 @@
             <div class="trans" id="s_tr" style="font-size:18px"></div>
             <div class="en" id="s_en" style="font-size:18px"></div>
           </div>
-          <button id="sentenceToggle" class="btn" style="margin-top:6px">Sentence Mode: ON</button>
+          <button id="sentenceToggle" class="btn" style="margin-top:6px"
+            onclick="(state.settings.sentenceMode=!state.settings.sentenceMode, this.textContent='Sentence Mode: '+(state.settings.sentenceMode?'ON':'OFF'), window.saveStateToCloud())">Sentence Mode: ON</button>
         </div>
 
-        <!-- Mini Quiz (image + translit only), launched from Settings -->
+        <!-- Mini Quiz -->
         <div id="miniQuizPanel" class="card" style="display:none; margin-top:14px">
           <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:8px">
             <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
@@ -174,7 +542,7 @@
 </main>
 
 <footer style="padding:16px;text-align:center;color:#94a3b8">
-  Put images in <b>/images</b> (e.g., <code>images/sib.png</code>). Put audio in <b>/audio</b> (e.g., <code>audio/sib.mp3</code>). Optional encouragement in <b>/audio/encouragement/</b>.
+  Put images in <b>/images</b> (e.g., <code>images/sib.png</code>). Put audio in <b>/audio</b> (e.g., <code>audio/sib.mp3</code>).
 </footer>
 
 <div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
@@ -185,7 +553,7 @@
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <h3 style="margin:0">🏆 Badges</h3>
-      <button id="closeAch" class="btn">Close</button>
+      <button id="closeAch" class="btn" onclick="document.getElementById('achModal').style.display='none'">Close</button>
     </div>
     <div id="achList" class="grid"></div>
   </div>
@@ -196,14 +564,14 @@
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <h3 style="margin:0">🗺️ Persian Bazaar Progress</h3>
-      <button id="closeMap" class="btn">Close</button>
+      <button id="closeMap" class="btn" onclick="document.getElementById('mapModal').style.display='none'">Close</button>
     </div>
     <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile. Lots of cats live here 🐈.</p>
     <div id="mapGrid" class="map"></div>
   </div>
 </div>
 
-<!-- Settings Modal -->
+<!-- Settings Modal (Dev panel appears here when enabled) -->
 <div id="settingsModal" class="modal">
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -219,331 +587,9 @@
         <b>Review Mode</b><p class="tiny">Quiz only on words she has mastered (ignores SRS order).</p>
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
-      <div class="stat">
-        <b>Danger zone</b><p class="tiny">Clear this profile’s score, streak, SRS, unlocks, and achievements.</p>
-        <button id="resetBtn" class="btn" style="background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d">♻️ Reset Progress</button>
-      </div>
+      <!-- Developer panel gets injected here when enabled -->
     </div>
   </div>
 </div>
-
-<script>
-/* ===================== PROFILED STORAGE ===================== */
-let ACTIVE_PROFILE = null;
-const GLOBAL_PREFIX = 'ff';
-function PKEY(k){ return `${GLOBAL_PREFIX}:${ACTIVE_PROFILE||'__anon'}:${k}`; }
-const store = {
-  get:(k,def=null)=>{ try{ const v=localStorage.getItem(PKEY(k)); return v===null?def:JSON.parse(v); }catch{ return def; } },
-  set:(k,v)=>{ try{ localStorage.setItem(PKEY(k), JSON.stringify(v)); }catch{} },
-  del:(k)=>{ try{ localStorage.removeItem(PKEY(k)); }catch{} }
-};
-
-/* ===================== CONSTANTS ===================== */
-const DAILY_WORDS = 5;
-const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
-const MINI_QUIZ_SIZE = 5;
-
-/* ===================== WORDS ===================== */
-const words = [
-  {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.png",
-   sentence:{fa:"من سیب می‌خورم.", translit:"man sib mikhoram.", en:"I eat an apple."}},
-  {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.png",
-   sentence:{fa:"این کتاب خوب است.", translit:"in ketâb khub ast.", en:"This book is good."}},
-  {fa:"گربه", en:"cat", translit:"gorbe", emoji:"🐱", image:"images/gorbe.png",
-   sentence:{fa:"آن گربه خواب است.", translit:"ân gorbe khâb ast.", en:"That cat is sleeping."}},
-  {fa:"سگ", en:"dog", translit:"sag", emoji:"🐶", image:"images/sag.png",
-   sentence:{fa:"سگ من بازی می‌کند.", translit:"sag‑e man bâzi mikonad.", en:"My dog is playing."}},
-  {fa:"آب", en:"water", translit:"âb", emoji:"💧", audio:"audio/ab.mp3", image:"images/ab.png",
-   sentence:{fa:"آب سرد است.", translit:"âb sard ast.", en:"The water is cold."}},
-  {fa:"نان", en:"bread", translit:"nân", emoji:"🍞", audio:"audio/nan.mp3", image:"images/nan.png",
-   sentence:{fa:"من نان دوست دارم.", translit:"man nân dust dâram.", en:"I like bread."}},
-  {fa:"چای", en:"tea", translit:"chây", emoji:"🍵", audio:"audio/chay.mp3", image:"images/chay.png",
-   sentence:{fa:"چای می‌نوشم.", translit:"chây minusham.", en:"I drink tea."}},
-  {fa:"ماشین", en:"car", translit:"mâshin", emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.png",
-   sentence:{fa:"ماشین قرمز است.", translit:"mâshin ghermez ast.", en:"The car is red."}},
-  {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠", audio:"audio/khane.mp3", image:"images/khane.png",
-   sentence:{fa:"خانه بزرگ است.", translit:"khâne bozorg ast.", en:"The house is big."}},
-  {fa:"در", en:"door", translit:"dar", emoji:"🚪", image:"images/dar.png",
-   sentence:{fa:"در را ببند.", translit:"dar râ bebande.", en:"Close the door."}},
-];
-
-/* ===================== UTILITIES ===================== */
-const $=id=>document.getElementById(id);
-const bySel=s=>document.querySelector(s);
-function now(){return Date.now()}
-function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
-function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/\s+/g,'')}
-function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
-function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
-
-/* ===================== STATE (per profile) ===================== */
-const defaultState = ()=>({
-  score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
-  achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
-  difficulty:'easy',
-  mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
-  settings:{reviewAll:false, sentenceMode:true}
-});
-let state = defaultState();
-let mode='learn', order=[], idx=0;
-
-/* Helpers for SRS & pools */
-function ensureSRS(i){ if(!state.srs[i]) state.srs[i]={stage:0,due:0,seen:0,correct:0,wrong:0}; return state.srs[i]; }
-function isDue(i){ return ensureSRS(i).due <= now(); }
-function scheduleAfter(i,h){ ensureSRS(i).due = now()+h*3600*1000; }
-function getCoveredSet(){ return new Set(state.covered||[]); }
-function addCovered(i){ const s=getCoveredSet(); s.add(i); state.covered=[...s]; persist(); }
-
-function initDailyUnlock(){
-  if(!state.start_date){ state.start_date=todayISO(); }
-  const startDate = new Date(state.start_date+'T00:00:00');
-  const dNow = new Date(); dNow.setHours(0,0,0,0);
-  const diffDays = Math.floor((dNow - startDate)/86400000);
-  const shouldUnlock = Math.min(words.length, (diffDays+1)*DAILY_WORDS);
-  state.unlocked_count = Math.max(state.unlocked_count||0, shouldUnlock);
-  persist();
-}
-function unlockedCount(){ return state.unlocked_count||Math.min(words.length, DAILY_WORDS); }
-function unlockedIndices(){ return [...Array(unlockedCount()).keys()]; }
-function masteredIndices(){ return [...getCoveredSet()].filter(i=>i<unlockedCount()); }
-function dueIndices(){ return unlockedIndices().filter(i=>isDue(i)); }
-function quizPool(){ const due=dueIndices(); if(due.length) return due; const m=masteredIndices(); return m.length?m:unlockedIndices(); }
-function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return [...due,...rest]; }
-
-/* ===================== PERSIST ===================== */
-function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); }
-function loadState(){ state = store.get('state', defaultState()); initDailyUnlock(); }
-
-/* ===================== UI UPDATE ===================== */
-function updateBadges(){
-  $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE||'—'}`;
-  $('scoreBadge').textContent = `Score: ${state.score}`;
-  $('streakBadge').textContent = `Streak: ${state.streak} 🔥`;
-  $('unlockedBadge').textContent = `${unlockedCount()}/${words.length} unlocked`;
-  const pct = Math.round((getCoveredSet().size/Math.max(1,unlockedCount()))*100);
-  $('progressBar').style.width = pct + '%';
-}
-function showImageOrEmoji(item){
-  const pic=$('pic'), emo=$('emoji');
-  if(item.image){ pic.style.display='block'; emo.style.display='none'; pic.src=item.image; pic.alt=item.en; }
-  else { pic.style.display='none'; emo.style.display='block'; emo.textContent=item.emoji||'❓'; }
-}
-function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=pool.slice(); shuffle(order); idx=0; }
-function showItem(){
-  const pool = (mode==='quiz')? quizPool(): learnPool();
-  if(order.length===0 || order.some(i=>!pool.includes(i))) ensureOrder();
-  const gi = order[idx % order.length]; const item = words[gi];
-
-  showImageOrEmoji(item);
-  if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
-  else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
-
-  // Sentence context
-  const sbox=$('sentBox'), sfa=$('s_fa'), str=$('s_tr'), sen=$('s_en');
-  if(state.settings?.sentenceMode && item.sentence && mode==='learn'){
-    $('sentenceBox').style.display='block';
-    sbox.style.display='block'; sfa.textContent=item.sentence.fa; str.textContent=item.sentence.translit; sen.textContent=item.sentence.en;
-  }else{
-    sbox.style.display='none';
-  }
-
-  // controls visibility
-  $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
-  $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
-
-  $('typeInput').value=''; $('typeInput').focus();
-}
-function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
-
-/* ===================== CELEBRATIONS ===================== */
-function happyDing(){
-  try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC) return;const ctx=new AC();const tones=[659,784,988];const t0=ctx.currentTime;
-    tones.forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;o.connect(g);g.connect(ctx.destination);
-      const st=t0+i*0.05;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(0.35,st+0.03);g.gain.exponentialRampToValueAtTime(0.0001,st+0.22);
-      o.start(st);o.stop(st+0.25);});}catch{}}
-function confettiPop(){ if(window.confetti) confetti({origin:{y:1,x:0.5},gravity:1.2,ticks:180,scalar:0.9,particleCount:70,spread:75,startVelocity:55}); }
-function fireworks(){ if(!window.confetti) return;
-  const base={origin:{y:1,x:0.5},gravity:1.0,ticks:260,scalar:1.0};
-  confetti({...base,particleCount:180,spread:120,startVelocity:65});
-  confetti({...base,particleCount:140,spread:140,startVelocity:60,origin:{y:1,x:0.2}});
-  confetti({...base,particleCount:140,spread:140,startVelocity:60,origin:{y:1,x:0.8}});
-}
-function celebrateSimple(){ happyDing(); confettiPop(); const c=$('celebration'); c.textContent="let's goooooo 🎉"; c.style.display='block'; setTimeout(()=>c.classList.add('fade-out'),800); setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},1600); }
-function celebrateStreak7(){
-  fireworks();
-  state.achievements.streak7 = true; persist();
-  const c=$('celebration'); c.textContent="7‑day streak! 🏅"; c.style.display='block';
-  setTimeout(()=>c.classList.add('fade-out'),1200);
-  setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},2200);
-}
-
-/* ===================== AUDIO (your recordings) ===================== */
-const audioCache=new Map();
-function getAudio(item){ const url=item.audio||`audio/${(item.translit||'').toLowerCase()}.mp3`; if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);} return audioCache.get(url);}
-async function playYourAudio(){ const gi=order[idx], item=words[gi]; try{ const a=getAudio(item); a.currentTime=0; await a.play(); }catch{} }
-
-/* ===================== ANSWERING (SRS + score + map) ===================== */
-function handleAnswer(correct, gi, source='typing', transcript=''){
-  const r=ensureSRS(gi); r.seen++;
-  if(correct){
-    r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1);
-    scheduleAfter(gi,SRS_INTERVALS_HOURS[r.stage]||24);
-    state.score+=10; state.streak+=1; addCovered(gi);
-    $('typeFeedback').textContent='Great! +10 points'; $('typeFeedback').className='feedback ok';
-    celebrateSimple();
-    if(state.streak===7) celebrateStreak7();
-    checkDailyGoalAndMap();
-  }else{
-    r.wrong++; r.stage=Math.max(0,r.stage-1); scheduleAfter(gi,2);
-    state.streak=0; $('typeFeedback').textContent = source==='speech' ? 'Try again!' : 'Not quite.'; $('typeFeedback').className='feedback warn';
-  }
-  persist();
-  setTimeout(next, 450);
-}
-function checkDailyGoalAndMap(){
-  const today=todayISO();
-  let days = state.mapDays||[];
-  let todayRec = days.find(d=>d.date===today);
-  if(!todayRec){ todayRec={date:today, correct:0, goalMet:false}; days=[...days,todayRec]; }
-  todayRec.correct++;
-  if(!todayRec.goalMet && todayRec.correct>=DAILY_WORDS){
-    todayRec.goalMet=true;
-    state.mapUnlocked = Math.min((state.mapUnlocked||0)+1, 12);
-    confetti({origin:{y:1,x:Math.random()},particleCount:60,spread:70,startVelocity:45,scalar:1.1});
-  }
-  state.mapDays = days;
-  persist();
-}
-
-/* ===================== MAP / BADGES RENDER ===================== */
-function renderMap(){
-  const wrap = $('mapGrid'); if(!wrap) return;
-  wrap.innerHTML='';
-  const tiles = 12;
-  for(let i=0;i<tiles;i++){
-    const t=document.createElement('div');
-    t.className='tile'+(i<(state.mapUnlocked||0)?' unlocked':'');
-    t.textContent = i<(state.mapUnlocked||0)?'🐈':'?';
-    wrap.appendChild(t);
-  }
-}
-function reflectBadges(){
-  const a=state.achievements;
-  const list = `
-    <div class="chip">${a.first10?'🏅':'⬜'} First 10 mastered</div>
-    <div class="chip">${a.perfectMini?'🏅':'⬜'} Perfect Mini Quiz</div>
-    <div class="chip">${a.streak7?'🏅':'⬜'} 7‑day streak</div>
-    <div class="chip">${a.mastered50?'🏅':'⬜'} 50 mastered</div>
-  `;
-  $('achList').innerHTML = list;
-}
-
-/* ===================== EVENTS ===================== */
-$('listenBtn').addEventListener('click', playYourAudio);
-$('checkBtn').addEventListener('click', ()=>{
-  const gi=order[idx], item=words[gi];
-  const guess=normalizeTranslit($('typeInput').value);
-  if(!guess){ $('typeFeedback').textContent='Type your guess first!'; $('typeFeedback').className='feedback warn'; return; }
-  $('typeFeedback').textContent=''; $('typeInput').value=''; $('typeInput').focus();
-  handleAnswer(guess===normalizeTranslit(item.translit), gi, 'typing');
-});
-$('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.streak=0; persist(); next(); });
-$('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
-$('learnBtn').addEventListener('click', ()=>{ mode='learn'; ensureOrder(); showItem(); });
-$('quizBtn').addEventListener('click',  ()=>{ mode='quiz'; ensureOrder(); showItem(); });
-$('hintBtn').addEventListener('click', ()=>{
-  if(mode!=='learn') return;
-  const gi=order[idx], item=words[gi];
-  $('trans').textContent=item.translit; $('en').textContent=item.en;
-});
-$('revealBtn').addEventListener('click', ()=>{
-  const gi=order[idx], item=words[gi];
-  $('fa').textContent=item.fa; $('trans').textContent=item.translit;
-  const s=$('sadFace'); s.style.display='block'; setTimeout(()=>s.classList.add('fade-out'),700); setTimeout(()=>{s.classList.remove('fade-out'); s.style.display='none';},1500);
-});
-
-$('openAchievements').addEventListener('click', ()=>{ reflectBadges(); $('achModal').style.display='grid'; });
-$('closeAch').addEventListener('click', ()=> $('achModal').style.display='none');
-
-$('openMap').addEventListener('click', ()=>{ renderMap(); $('mapModal').style.display='grid'; });
-$('closeMap').addEventListener('click', ()=> $('mapModal').style.display='none');
-
-$('openSettings').addEventListener('click', ()=>{ 
-  $('settingsModal').style.display='grid'; 
-  $('reviewToggle').textContent=`Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`;
-});
-$('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
-$('settingsModal').addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
-
-$('reviewToggle').addEventListener('click', ()=>{
-  state.settings.reviewAll = !state.settings.reviewAll; persist();
-  $('reviewToggle').textContent=`Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`;
-});
-
-$('startMiniQuiz').addEventListener('click', ()=>{
-  $('settingsModal').style.display='none';
-  startMiniQuiz();
-});
-let miniQ={queue:[],current:null,correct:0,total:0};
-function startMiniQuiz(){
-  const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
-  shuffle(pool); miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
-  $('miniQuizPanel').style.display='block';
-  document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #factBox, #tip, #sentenceBox').forEach(el=> el.style && (el.style.display='none'));
-  nextMiniQuestion();
-}
-function nextMiniQuestion(){
-  if(!miniQ.queue.length){
-    $('mqFeedback').innerHTML=`Mini Quiz complete! Score: <b>${miniQ.correct}</b> / ${miniQ.total}`;
-    $('mqBar').style.width='100%';
-    setTimeout(()=>{ $('miniQuizPanel').style.display='none'; document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #factBox, #tip, #sentenceBox').forEach(el=> el.style && (el.style.display='')); showItem(); }, 1500);
-    return;
-  }
-  miniQ.current = miniQ.queue.shift();
-  const item=words[miniQ.current];
-  $('mqPic').style.display='block'; $('mqPic').src=item.image||''; $('mqPic').alt=item.en||'';
-  $('mqInput').value=''; $('mqFeedback').textContent='';
-  $('mqBar').style.width = `${(miniQ.total/MINI_QUIZ_SIZE)*100}%`;
-  $('mqInput').focus();
-}
-$('mqCheck').addEventListener('click', ()=>{
-  const item=words[miniQ.current]; miniQ.total++;
-  const ok = normalizeTranslit($('mqInput').value)===normalizeTranslit(item.translit);
-  if(ok){ miniQ.correct++; $('mqFeedback').textContent='Nice!'; $('mqFeedback').className='feedback ok'; celebrateSimple(); }
-  else { $('mqFeedback').textContent=`Answer: ${item.translit}`; $('mqFeedback').className='feedback warn'; state.streak=0; persist(); }
-  setTimeout(nextMiniQuestion, 350);
-});
-
-/* Sentence toggle */
-$('sentenceToggle').addEventListener('click', ()=>{
-  const v = !(state.settings?.sentenceMode); state.settings.sentenceMode=v; persist();
-  $('sentenceToggle').textContent = `Sentence Mode: ${v?'ON':'OFF'}`;
-});
-
-/* Midnight countdown */
-function msUntilNextMidnight(){ const n=new Date(), t=new Date(n); t.setHours(24,0,0,0); return t-n; }
-function fmt(ms){ const s=Math.floor(ms/1000); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; }
-function showMidnight(){ alert(`New words unlock at local midnight.\nTime remaining: ${fmt(msUntilNextMidnight())}`); }
-$('midnightBtn').addEventListener('click', showMidnight);
-$('midnightBtn0').addEventListener('click', showMidnight);
-
-/* ===================== PROFILE FLOW ===================== */
-function useProfile(name){
-  ACTIVE_PROFILE = String(name||'').trim() || 'Guest';
-  loadState();
-  $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
-  $('profileOverlay').style.display='none';
-  $('startOverlay').style.display='grid';
-}
-$('useProfile').addEventListener('click', ()=> useProfile($('profileName').value));
-$('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
-$('quickSia').addEventListener('click', ()=> useProfile('Sia'));
-
-/* Start overlay buttons */
-$('startLearn').addEventListener('click', ()=>{ mode='learn'; ensureOrder(); $('startOverlay').style.display='none'; showItem(); });
-$('startQuiz').addEventListener('click',  ()=>{ mode='quiz'; ensureOrder(); $('startOverlay').style.display='none'; showItem(); });
-
-/* Init (shows profile overlay by default) */
-</script>
 </body>
 </html>
