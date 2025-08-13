@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Farsi Fun — Learn Persian Basics</title>
+  <style>
+    :root {
+      --bg: #0f172a; /* slate-900 */
+      --card: #111827; /* gray-900 */
+      --muted: #94a3b8; /* slate-400 */
+      --text: #e5e7eb; /* gray-200 */
+      --accent: #22c55e; /* green-500 */
+      --accent-2: #38bdf8; /* sky-400 */
+      --warn: #f59e0b; /* amber-500 */
+      --err: #ef4444; /* red-500 */
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Ubuntu, Cantarell, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; margin:0; background:linear-gradient(135deg,#0b1028,#0f172a 25%,#0b1028 100%); color:var(--text); }
+    header { display:flex; gap:12px; align-items:center; justify-content:space-between; padding:16px clamp(16px,4vw,32px); position:sticky; top:0; background:rgba(15,23,42,0.75); backdrop-filter: blur(10px); border-bottom:1px solid #1f2937; }
+    header h1 { font-size: clamp(18px, 2.5vw, 28px); margin:0; letter-spacing:0.5px; }
+    .stats { display:flex; gap:12px; }
+    .badge { background:#111827; border:1px solid #1f2937; padding:6px 10px; border-radius:999px; font-size:14px; color:var(--muted); }
+    main { max-width:960px; margin: 24px auto; padding: 0 clamp(16px,4vw,32px) 80px; }
+
+    .card { background:linear-gradient(180deg,#0b1229,#121a36); border:1px solid #1f2937; border-radius:16px; padding: clamp(16px,3vw,28px); box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+    .row { display:grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 820px){ .row { grid-template-columns: 1fr 1fr; } }
+
+    .emoji { font-size: clamp(64px, 12vw, 120px); text-align:center; line-height:1; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.35)); }
+    .word { display:flex; flex-direction:column; gap:6px; align-items:flex-start; justify-content:center; }
+    .en { font-size: clamp(18px, 2.2vw, 22px); color: var(--muted); }
+    .fa { font-size: clamp(36px, 6vw, 52px); font-weight:700; direction: rtl; text-align:right; }
+    .trans { font-size: clamp(16px, 2vw, 18px); color:#cbd5e1; }
+
+    .controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:10px; }
+    button, .btn { appearance:none; border:none; background:#111827; color:var(--text); border:1px solid #1f2937; padding:10px 14px; border-radius:12px; cursor:pointer; transition: transform .03s ease, background .2s ease, border-color .2s ease; }
+    button:hover { background:#0b1229; border-color:#263042; }
+    button:active { transform: translateY(1px); }
+    .primary { background: linear-gradient(180deg,#22c55e,#16a34a); border-color:#14532d; }
+    .primary:hover { background: linear-gradient(180deg,#2fe272,#1fb157); }
+    .accent { background: linear-gradient(180deg,#38bdf8,#0ea5e9); border-color:#075985; }
+
+    .input { background:#0b1229; border:1px solid #1f2937; padding:12px 14px; border-radius:12px; color:var(--text); width:100%; font-size:16px; }
+
+    .feedback { margin-top: 8px; min-height: 24px; font-size: 15px; }
+    .ok { color: var(--accent); }
+    .warn { color: var(--warn); }
+    .err { color: var(--err); }
+
+    .progress { margin-top:12px; height: 10px; background:#0b1229; border-radius:999px; border:1px solid #1f2937; overflow:hidden; }
+    .bar { height:100%; width:0%; background: linear-gradient(90deg, #38bdf8, #22c55e); transition: width .4s ease; }
+
+    .mode { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+    .tiny { font-size: 12px; color: var(--muted); }
+    .tip { margin-top: 12px; font-size: 14px; color:#a5b4fc; }
+
+    footer { position: fixed; inset-block-end: 12px; inset-inline: 0; display:flex; justify-content:center; pointer-events:none; }
+    .footer-inner { pointer-events:auto; background: rgba(17,24,39,.9); border:1px solid #1f2937; border-radius: 999px; padding: 8px 14px; font-size: 13px; color: var(--muted); }
+    .hide { display:none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>✨ Farsi Fun — Learn Persian Basics</h1>
+    <div class="stats">
+      <div class="badge" id="scoreBadge">Score: 0</div>
+      <div class="badge" id="streakBadge">Streak: 0 🔥</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="mode">
+      <button id="learnBtn" class="btn">Learn Mode</button>
+      <button id="quizBtn" class="btn">Quiz Mode</button>
+      <span class="tiny">Tip: Click “Listen” to hear Persian (fa-IR). “Say it” tests your pronunciation (Chrome works best).</span>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div class="emoji" id="emoji">🍎</div>
+        <div class="word">
+          <div class="en" id="en">apple</div>
+          <div class="fa" id="fa" dir="rtl">سیب</div>
+          <div class="trans" id="trans">sib</div>
+
+          <div class="controls">
+            <button id="listenBtn" class="accent">🔊 Listen</button>
+            <button id="sayBtn">🎙️ Say it</button>
+            <button id="revealBtn">👀 Reveal</button>
+            <button id="nextBtn" class="primary">➡️ Next</button>
+          </div>
+
+          <div class="feedback" id="speechFeedback"></div>
+
+          <label class="tiny" for="typeInput">Type the pronunciation (English letters):</label>
+          <input class="input" id="typeInput" placeholder="e.g., sib"/>
+          <div class="controls">
+            <button id="checkBtn">✅ Check</button>
+            <button id="skipBtn">⏭️ Skip</button>
+          </div>
+          <div class="feedback" id="typeFeedback"></div>
+
+          <div class="progress"><div class="bar" id="progressBar"></div></div>
+          <div class="tip" id="tip">Pronunciation tip: “kh” is like German “Bach”; “â” like a in “father”.</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-inner">Edit or add words in the code — look for the <b>words</b> array. Everything is offline & private.</div>
+  </footer>
+
+<script>
+// ---------------------- Data ----------------------
+// Simple, friendly transliteration guide used below:
+// a (cat), â (father), e (bed), i (machine), o (note), u (rule)
+// kh = خ, gh = غ/ق, ch = چ, j = ژ, sh = ش
+
+const words = [
+  { fa: "سیب", en: "apple", translit: "sib", emoji: "🍎" },
+  { fa: "کتاب", en: "book", translit: "ketâb", emoji: "📖" },
+  { fa: "گربه", en: "cat", translit: "gorbe", emoji: "🐱" },
+  { fa: "سگ", en: "dog", translit: "sag", emoji: "🐶" },
+  { fa: "آب", en: "water", translit: "âb", emoji: "💧" },
+  { fa: "نان", en: "bread", translit: "nân", emoji: "🍞" },
+  { fa: "چای", en: "tea", translit: "chây", emoji: "🍵" },
+  { fa: "ماشین", en: "car", translit: "mâshin", emoji: "🚗" },
+  { fa: "خانه", en: "house", translit: "khâne", emoji: "🏠" },
+  { fa: "در", en: "door", translit: "dar", emoji: "🚪" },
+  { fa: "خورشید", en: "sun", translit: "khorshid", emoji: "☀️" },
+  { fa: "گل", en: "flower", translit: "gol", emoji: "🌸" }
+];
+
+// ---------------------- State ----------------------
+let idx = 0;
+let mode = 'learn'; // 'learn' | 'quiz'
+let score = Number(localStorage.getItem('ff_score')||0);
+let streak = Number(localStorage.getItem('ff_streak')||0);
+let completed = new Set(JSON.parse(localStorage.getItem('ff_done')||'[]'));
+
+// ---------------------- DOM ----------------------
+const el = (id) => document.getElementById(id);
+const emojiEl = el('emoji');
+const enEl = el('en');
+const faEl = el('fa');
+const transEl = el('trans');
+const listenBtn = el('listenBtn');
+const sayBtn = el('sayBtn');
+const revealBtn = el('revealBtn');
+const nextBtn = el('nextBtn');
+const typeInput = el('typeInput');
+const checkBtn = el('checkBtn');
+const skipBtn = el('skipBtn');
+const speechFeedback = el('speechFeedback');
+const typeFeedback = el('typeFeedback');
+const scoreBadge = el('scoreBadge');
+const streakBadge = el('streakBadge');
+const progressBar = el('progressBar');
+const tip = el('tip');
+const learnBtn = el('learnBtn');
+const quizBtn = el('quizBtn');
+
+function saveProgress(){
+  localStorage.setItem('ff_score', String(score));
+  localStorage.setItem('ff_streak', String(streak));
+  localStorage.setItem('ff_done', JSON.stringify([...completed]));
+}
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+let order = shuffle([...words.keys()]);
+
+function setMode(m){
+  mode = m; idx = 0; order = shuffle([...words.keys()]); load();
+}
+
+function load(){
+  const item = words[ order[idx] ];
+  emojiEl.textContent = item.emoji;
+  enEl.textContent = item.en;
+  faEl.textContent = mode==='quiz' ? '•••' : item.fa;
+  transEl.textContent = mode==='quiz' ? '—' : item.translit;
+  typeInput.value = '';
+  speechFeedback.textContent = '';
+  typeFeedback.textContent = '';
+  scoreBadge.textContent = `Score: ${score}`;
+  streakBadge.textContent = `Streak: ${streak} 🔥`;
+  const donePct = Math.round((completed.size / words.length) * 100);
+  progressBar.style.width = donePct + '%';
+}
+
+function next(){
+  idx++;
+  if(idx >= order.length){ idx = 0; order = shuffle(order); }
+  load();
+}
+
+function reveal(){
+  const item = words[ order[idx] ];
+  faEl.textContent = item.fa;
+  transEl.textContent = item.translit;
+}
+
+// ---------------------- TTS (Speak Persian) ----------------------
+function speakFA(text){
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'fa-IR';
+    u.rate = 0.9;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  } catch(e) {
+    console.warn(e);
+  }
+}
+
+listenBtn.addEventListener('click', ()=>{
+  const item = words[ order[idx] ];
+  speakFA(item.fa);
+});
+
+// ---------------------- Speech Recognition (Say it) ----------------------
+function normalizeFa(s){
+  if(!s) return '';
+  return s
+   .replace(/\s+/g,'')
+   .replace(/ي/g,'ی')
+   .replace(/ك/g,'ک')
+   .replace(/[\u200C\u200F\u202A-\u202E]/g,'') // remove RTL/LTR marks
+}
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+
+if(SR){
+  rec = new SR();
+  rec.lang = 'fa-IR';
+  rec.interimResults = false;
+  rec.maxAlternatives = 3;
+  rec.onresult = (ev)=>{
+    const item = words[ order[idx] ];
+    const heard = normalizeFa(ev.results[0][0].transcript);
+    const target = normalizeFa(item.fa);
+    const ok = heard.includes(target) || target.includes(heard);
+    if(ok){
+      speechFeedback.textContent = `✔️ Heard: ${ev.results[0][0].transcript}`;
+      speechFeedback.className = 'feedback ok';
+      score += 10; streak += 1; completed.add(order[idx]); saveProgress(); load();
+    } else {
+      speechFeedback.textContent = `Hmm, I heard “${ev.results[0][0].transcript}”. Try again!`;
+      speechFeedback.className = 'feedback warn';
+      streak = 0; saveProgress();
+    }
+  };
+  rec.onerror = (e)=>{
+    speechFeedback.textContent = 'Mic error: ' + (e.error||'unknown');
+    speechFeedback.className = 'feedback err';
+  };
+} else {
+  sayBtn.disabled = true;
+  sayBtn.title = 'Speech recognition not supported in this browser.';
+}
+
+sayBtn.addEventListener('click', ()=>{
+  if(!rec){ speechFeedback.textContent = 'Speech recognition not supported on this device.'; speechFeedback.className='feedback err'; return; }
+  speechFeedback.textContent = 'Listening… please say the Persian word';
+  speechFeedback.className = 'feedback';
+  try { rec.start(); } catch {}
+});
+
+// ---------------------- Typing Check ----------------------
+function normalizeTranslit(s){
+  return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/\s+/g,'');
+}
+
+checkBtn.addEventListener('click', ()=>{
+  const item = words[ order[idx] ];
+  const guess = normalizeTranslit(typeInput.value);
+  const target = normalizeTranslit(item.translit);
+  if(!guess){ typeFeedback.textContent = 'Type your guess first!'; typeFeedback.className='feedback warn'; return; }
+  if(guess === target){
+    typeFeedback.textContent = 'Great! +10 points';
+    typeFeedback.className = 'feedback ok';
+    score += 10; streak += 1; completed.add(order[idx]); saveProgress(); next();
+  } else {
+    typeFeedback.textContent = `Not quite. Hint: ${item.translit}`;
+    typeFeedback.className = 'feedback warn';
+    streak = 0; saveProgress();
+  }
+});
+
+skipBtn.addEventListener('click', ()=>{ streak = 0; saveProgress(); next(); });
+nextBtn.addEventListener('click', next);
+revealBtn.addEventListener('click', reveal);
+learnBtn.addEventListener('click', ()=> setMode('learn'));
+quizBtn.addEventListener('click', ()=> setMode('quiz'));
+
+// Initial load
+load();
+</script>
+</body>
+</html>
