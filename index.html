@@ -41,12 +41,10 @@
     footer{position:fixed;inset-block-end:12px;inset-inline:0;display:flex;justify-content:center;pointer-events:none}
     .footer-inner{pointer-events:auto;background:rgba(17,24,39,.9);border:1px solid #1f2937;border-radius:999px;padding:8px 14px;font-size:13px;color:var(--muted)}
     /* celebration UI */
-    .cele-wrap{position:fixed;inset:0;pointer-events:none;z-index:9999}
     .cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.92);border:1px solid #1f2937;padding:14px 18px;border-radius:14px;font-weight:800;letter-spacing:.3px}
     .fade-out{animation:fadeOut .9s ease forwards}
     @keyframes fadeOut{0%{opacity:1}100%{opacity:0}}
   </style>
-  <!-- canvas-confetti for bottom-origin bursts -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
 <body>
@@ -62,7 +60,7 @@
     <div class="mode">
       <button id="learnBtn" class="btn">Learn Mode</button>
       <button id="quizBtn" class="btn">Quiz Mode</button>
-      <span class="tiny">Tip: Click “Listen” to hear Persian (fa-IR). “Say it” tests your pronunciation (Chrome works best).</span>
+      <span class="tiny">Tip: "Listen" now speaks the phonetic line (English letters). "Say it" uses the mic. Chrome works best.</span>
     </div>
 
     <div class="card">
@@ -91,7 +89,7 @@
           <div class="feedback" id="typeFeedback"></div>
 
           <div class="progress"><div class="bar" id="progressBar"></div></div>
-          <div class="tip" id="tip">Pronunciation tip: “kh” is like German “Bach”; “â” like a in “father”.</div>
+          <div class="tip" id="tip">Pronunciation tip: “kh” ~ German “Bach”; “â” ~ a in “father”.</div>
         </div>
       </div>
     </div>
@@ -99,26 +97,77 @@
   </main>
 
   <footer>
-    <div class="footer-inner">Edit or add words in the code — look for the <b>words</b> array. Everything is offline & private.</div>
+    <div class="footer-inner">Edit or add words below — see the <b>words</b> array. All progress is saved in your browser.</div>
   </footer>
 
 <script>
 // ---------------------- Data ----------------------
-// a (cat), â (father), e (bed), i (machine), o (note), u (rule)
+// Transliteration guide: a(cat), â(father), e(bed), i(machine), o(note), u(rule)
 // kh=خ, gh=غ/ق, ch=چ, j=ژ, sh=ش
 const words=[
-  {fa:"سیب",en:"apple",translit:"sib",emoji:"🍎"},
-  {fa:"کتاب",en:"book",translit:"ketâb",emoji:"📖"},
-  {fa:"گربه",en:"cat",translit:"gorbe",emoji:"🐱"},
-  {fa:"سگ",en:"dog",translit:"sag",emoji:"🐶"},
-  {fa:"آب",en:"water",translit:"âb",emoji:"💧"},
-  {fa:"نان",en:"bread",translit:"nân",emoji:"🍞"},
-  {fa:"چای",en:"tea",translit:"chây",emoji:"🍵"},
-  {fa:"ماشین",en:"car",translit:"mâshin",emoji:"🚗"},
-  {fa:"خانه",en:"house",translit:"khâne",emoji:"🏠"},
-  {fa:"در",en:"door",translit:"dar",emoji:"🚪"},
-  {fa:"خورشید",en:"sun",translit:"khorshid",emoji:"☀️"},
-  {fa:"گل",en:"flower",translit:"gol",emoji:"🌸"}
+  {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎"},
+  {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖"},
+  {fa:"گربه", en:"cat", translit:"gorbe", emoji:"🐱"},
+  {fa:"سگ", en:"dog", translit:"sag", emoji:"🐶"},
+  {fa:"آب", en:"water", translit:"âb", emoji:"💧"},
+  {fa:"نان", en:"bread", translit:"nân", emoji:"🍞"},
+  {fa:"چای", en:"tea", translit:"chây", emoji:"🍵"},
+  {fa:"ماشین", en:"car", translit:"mâshin", emoji:"🚗"},
+  {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠"},
+  {fa:"در", en:"door", translit:"dar", emoji:"🚪"},
+  {fa:"خورشید", en:"sun", translit:"khorshid", emoji:"☀️"},
+  {fa:"گل", en:"flower", translit:"gol", emoji:"🌸"},
+  // +50 more common words
+  {fa:"شیر", en:"milk", translit:"shir", emoji:"🥛"},
+  {fa:"قهوه", en:"coffee", translit:"ghahve", emoji:"☕"},
+  {fa:"قاشق", en:"spoon", translit:"ghâshogh", emoji:"🥄"},
+  {fa:"چنگال", en:"fork", translit:"changâl", emoji:"🍴"},
+  {fa:"بشقاب", en:"plate", translit:"boshghâb", emoji:"🍽️"},
+  {fa:"میز", en:"table", translit:"miz", emoji:"🪑"},
+  {fa:"صندلی", en:"chair", translit:"sandali", emoji:"🪑"},
+  {fa:"پنجره", en:"window", translit:"panjare", emoji:"🪟"},
+  {fa:"تلفن", en:"phone", translit:"telefon", emoji:"📞"},
+  {fa:"کامپیوتر", en:"computer", translit:"kâmputer", emoji:"💻"},
+  {fa:"خودکار", en:"pen", translit:"khodkâr", emoji:"🖊️"},
+  {fa:"کاغذ", en:"paper", translit:"kâghaz", emoji:"📄"},
+  {fa:"مدرسه", en:"school", translit:"madrese", emoji:"🏫"},
+  {fa:"معلم", en:"teacher", translit:"mo'allem", emoji:"👩‍🏫"},
+  {fa:"دانشجو", en:"student", translit:"dâneshju", emoji:"🧑‍🎓"},
+  {fa:"شهر", en:"city", translit:"shahr", emoji:"🏙️"},
+  {fa:"خیابان", en:"street", translit:"khiâbân", emoji:"🛣️"},
+  {fa:"اتوبوس", en:"bus", translit:"otobus", emoji:"🚌"},
+  {fa:"قطار", en:"train", translit:"ghatâr", emoji:"🚆"},
+  {fa:"هواپیما", en:"airplane", translit:"havâpeymâ", emoji:"✈️"},
+  {fa:"دوچرخه", en:"bicycle", translit:"docharkhe", emoji:"🚲"},
+  {fa:"کفش", en:"shoe", translit:"kafsh", emoji:"👟"},
+  {fa:"پیراهن", en:"shirt", translit:"pirâhan", emoji:"👕"},
+  {fa:"شلوار", en:"pants", translit:"shalvâr", emoji:"👖"},
+  {fa:"کلاه", en:"hat", translit:"kolâh", emoji:"🎩"},
+  {fa:"پالتو", en:"coat", translit:"pâlto", emoji:"🧥"},
+  {fa:"تخت", en:"bed", translit:"takht", emoji:"🛏️"},
+  {fa:"بالش", en:"pillow", translit:"bâlesh", emoji:"🛌"},
+  {fa:"پتو", en:"blanket", translit:"patu", emoji:"🧣"},
+  {fa:"حمام", en:"bathroom", translit:"hammâm", emoji:"🛁"},
+  {fa:"آشپزخانه", en:"kitchen", translit:"âshpazkhâne", emoji:"🍳"},
+  {fa:"غذا", en:"food", translit:"ghazâ", emoji:"🍽️"},
+  {fa:"صبحانه", en:"breakfast", translit:"sobhâne", emoji:"🍳"},
+  {fa:"ناهار", en:"lunch", translit:"nâhâr", emoji:"🥗"},
+  {fa:"شام", en:"dinner", translit:"shâm", emoji:"🍲"},
+  {fa:"میوه", en:"fruit", translit:"mive", emoji:"🍇"},
+  {fa:"سبزیجات", en:"vegetables", translit:"sabzijât", emoji:"🥦"},
+  {fa:"برنج", en:"rice", translit:"berenj", emoji:"🍚"},
+  {fa:"مرغ", en:"chicken", translit:"morgh", emoji:"🍗"},
+  {fa:"ماهی", en:"fish", translit:"mâhi", emoji:"🐟"},
+  {fa:"تخم‌مرغ", en:"egg", translit:"tokhm-e morgh", emoji:"🥚"},
+  {fa:"نمک", en:"salt", translit:"namak", emoji:"🧂"},
+  {fa:"شکر", en:"sugar", translit:"shekar", emoji:"🧁"},
+  {fa:"فلفل", en:"pepper", translit:"felfel", emoji:"🌶️"},
+  {fa:"پنیر", en:"cheese", translit:"panir", emoji:"🧀"},
+  {fa:"ماست", en:"yogurt", translit:"mâst", emoji:"🥛"},
+  {fa:"بازار", en:"market", translit:"bâzâr", emoji:"🛍️"},
+  {fa:"فروشگاه", en:"store", translit:"forushgâh", emoji:"🏬"},
+  {fa:"پول", en:"money", translit:"pul", emoji:"💰"},
+  {fa:"کتابفروشی", en:"bookshop", translit:"ketâbforushi", emoji:"📚"}
 ];
 
 // ---------------------- State ----------------------
@@ -170,51 +219,66 @@ function playDing(){
   }catch(e){}
 }
 function bottomBurst(){
+  if(typeof confetti!=='function') return;
   const optsBase={origin:{y:1,x:0.5},gravity:1.15,ticks:200,scalar:0.9};
   confetti({ ...optsBase, particleCount: 60, spread: 70, startVelocity: 55 });
-  // side flares
   confetti({ ...optsBase, particleCount: 40, spread: 100, startVelocity: 45, origin:{y:1,x:0.2} });
   confetti({ ...optsBase, particleCount: 40, spread: 100, startVelocity: 45, origin:{y:1,x:0.8} });
 }
 function showCelebration(){
-  // message chip near bottom
   const msg=document.createElement('div');
   msg.className='cele-msg'; msg.textContent="let's goooooo";
   document.body.appendChild(msg);
-  // fire confetti from bottom & let gravity drop it off-screen
   bottomBurst();
-  // fade out and remove
   setTimeout(()=>{ msg.classList.add('fade-out'); }, 700);
   setTimeout(()=>{ msg.remove(); }, 1600);
 }
 function celebrate(){ playDing(); showCelebration(); }
 
-// ---------------------- TTS (Speak Persian) ----------------------
-let faVoice=null, voicesLoaded=false;
-function pickFaVoice(){
+// ---------------------- TTS: speak the ENGLISH transliteration (phonetic) ----------------------
+let enVoice=null, voicesReady=false;
+function pickEnglishVoice(){
   const voices=speechSynthesis.getVoices()||[];
-  const exact=voices.find(v=> (v.lang||'').toLowerCase().startsWith('fa'));
-  if(exact) return exact;
-  const fuzzy=voices.find(v=> /persian|farsi/i.test(((v.name||'')+' '+(v.lang||''))));
-  return fuzzy||null;
+  return (
+    voices.find(v=>/^en(-|$)/i.test(v.lang)&&/natural|neural|premium/i.test(v.name))||
+    voices.find(v=>/^en(-|$)/i.test(v.lang))||
+    voices[0]||null
+  );
 }
-function ensureVoicesReady(cb){
-  if(voicesLoaded && faVoice){ cb(); return; }
-  const tryPick=()=>{ faVoice=pickFaVoice(); voicesLoaded=true; cb(); };
+function ensureEnglishVoice(cb){
+  if(voicesReady&&enVoice){cb();return;}
+  const tryPick=()=>{enVoice=pickEnglishVoice();voicesReady=true;cb();};
   const existing=speechSynthesis.getVoices();
-  if(existing && existing.length){ faVoice=pickFaVoice(); voicesLoaded=true; cb(); }
-  else { speechSynthesis.onvoiceschanged=tryPick; }
+  if(existing&&existing.length){enVoice=pickEnglishVoice();voicesReady=true;cb();}
+  else{speechSynthesis.onvoiceschanged=tryPick;}
 }
-function speakFA(text){
+function translitToSpeak(s){
+  if(!s) return "";
+  return s
+    .replace(/â/g,"aa")
+    .replace(/ā/g,"aa")
+    .replace(/kh/g,"kha")
+    .replace(/gh/g,"gha")
+    .replace(/sh/g,"sha")
+    .replace(/ch/g,"cha")
+    .replace(/j/g,"zhe");
+}
+function speakTransliteration(text){
   try{
-    ensureVoicesReady(()=>{
-      const u=new SpeechSynthesisUtterance(text);
-      if(faVoice){ u.voice=faVoice; u.lang=faVoice.lang||'fa-IR'; } else { u.lang='fa-IR'; }
-      u.rate=0.9; speechSynthesis.cancel(); speechSynthesis.speak(u);
+    const phrase=translitToSpeak(text);
+    ensureEnglishVoice(()=>{
+      const u=new SpeechSynthesisUtterance(phrase);
+      if(enVoice){u.voice=enVoice;u.lang=enVoice.lang||"en-US";} else {u.lang="en-US";}
+      u.rate=0.95; u.pitch=1.0;
+      try{speechSynthesis.cancel();}catch{}
+      speechSynthesis.speak(u);
     });
-  }catch(e){}
+  }catch(e){console.warn("TTS error:",e);}
 }
-listenBtn.addEventListener('click',()=>{ const item=words[order[idx]]; speakFA(item.fa); });
+listenBtn.addEventListener('click',()=>{
+  const item=words[order[idx]];
+  speakTransliteration(item.translit);
+});
 
 // ---------------------- Speech Recognition (Say it) ----------------------
 function normalizeFa(s){ if(!s) return ''; return s.replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,''); }
@@ -233,7 +297,7 @@ if(SR){
 
 sayBtn.addEventListener('click',async()=>{
   if(!rec){ speechFeedback.textContent='Speech recognition not supported on this device/browser.'; speechFeedback.className='feedback err'; return; }
-  if(!window.isSecureContext){ speechFeedback.textContent='Mic only works over HTTPS. Open your published GitHub Pages link (https).'; speechFeedback.className='feedback err'; return; }
+  if(!window.isSecureContext){ speechFeedback.textContent='Mic only works over HTTPS. Open your published site (https).'; speechFeedback.className='feedback err'; return; }
   await primeMic(); speechFeedback.textContent='Listening… please say the Persian word'; speechFeedback.className='feedback';
   try{ rec.start(); }catch{}
 });
