@@ -16,7 +16,7 @@
   *{box-sizing:border-box}
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Ubuntu,Cantarell,Helvetica Neue,Arial,"Apple Color Emoji","Segoe UI Emoji";margin:0;background:linear-gradient(135deg,var(--bg),#0b1028);color:var(--text)}
   header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:16px clamp(16px,4vw,32px);position:sticky;top:0;background:rgba(15,23,42,.75);backdrop-filter:blur(10px);border-bottom:1px solid #1f2937;z-index:5}
-  header h1{font-size:clamp(18px,2.5vw,28px);margin:0;letter-spacing:.5px}
+  header h1{font-size:clamp(18px,2.5vw,28px);margin:0;letter-spacing:.5px;cursor:pointer}
   .stats{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .badge{background:#111827;border:1px solid #1f2937;padding:6px 10px;border-radius:999px;font-size:14px;color:var(--muted)}
   .clicky{cursor:pointer}
@@ -79,7 +79,7 @@
 </head>
 <body>
 <header>
-  <h1 class="clicky" id="openDash">✨ Farsi Fun — Learn Persian Basics</h1>
+  <h1 id="openDash">✨ Farsi Fun — Learn Persian Basics</h1>
   <div class="stats">
     <div class="badge" id="scoreBadge">Score: 0</div>
     <div class="badge" id="streakBadge">Streak: 0 🔥</div>
@@ -246,6 +246,7 @@ let unlockedCount=initDailyUnlock();
 let idx=0;
 let order=[]; // indices into words (current pool)
 let miniQuizQueue=[]; // active mini quiz items
+let miniCorrect=0, miniTotal=0;
 let correctThisSession=0; // counts to suggest mini quiz
 
 /** SRS memory: { [index]: {stage:0..5, due:ms, seen:int, correct:int, wrong:int} } */
@@ -290,7 +291,6 @@ function initDailyUnlock(){
 function unlockedIndices(){ return [...Array(unlockedCount).keys()]; }
 function masteredIndices(){ return [...getCoveredSet()].filter(i=>i<unlockedCount); }
 function dueIndices(){
-  // Priority: all due mastered items, then other due unlocked
   const u=unlockedIndices();
   return u.filter(i=>isDue(i));
 }
@@ -305,7 +305,6 @@ function quizPool(){
   return m.length? m : unlockedIndices();
 }
 function learnPool(){
-  // Learn cycles through unlocked words; SRS: if an item is due show it earlier
   const u = unlockedIndices();
   const due=u.filter(i=>isDue(i));
   const rest=u.filter(i=>!isDue(i));
@@ -360,11 +359,10 @@ function showImageOrEmoji(item){
     picEl.src=item.image; picEl.alt=item.en;
   } else { picEl.style.display='none'; emojiEl.style.display='block'; }
 }
+// Hide Listen in Quiz; Hide Reveal in Learn; Hint only in Learn & (Medium/Hard)
 function updateControlVisibility(){
-  // Listen hidden in Quiz; Reveal hidden in Learn
   listenBtn.style.display = (mode==='quiz') ? 'none' : 'inline-flex';
   revealBtn.style.display = (mode==='quiz') ? 'inline-flex' : 'none';
-  // Hint visible only when info is hidden (Medium/Hard) and in Learn
   hintBtn.style.display = (mode==='learn' && (difficulty!=='easy')) ? 'inline-flex' : 'none';
 }
 function setDifficulty(d){
@@ -378,7 +376,6 @@ function currentPool(){
 function ensureOrder(){
   const pool=currentPool();
   order = pool.slice();
-  // Slight shuffle but keep dues earlier in learn
   if(mode==='quiz' || (mode==='learn' && !dueIndices().length)) shuffle(order);
   idx=0;
 }
@@ -466,7 +463,13 @@ function randomEncouragement(){
 }
 function showCelebration(){
   celebration.style.display='block';
-  fireworks();
+  // fireworks for streak milestones
+  if(FIREWORK_STREAKS.includes(streak)) fireworks();
+  // baseline confetti burst
+  if(typeof confetti==='function'){
+    const base={origin:{y:1,x:0.5},gravity:1.15,ticks:200,scalar:0.95};
+    confetti({...base, particleCount:60, spread:70, startVelocity:55});
+  }
   setTimeout(()=>{ celebration.classList.add('fade-out'); },700);
   setTimeout(()=>{ celebration.classList.remove('fade-out'); celebration.style.display='none'; },1600);
 }
@@ -514,24 +517,18 @@ function handleAnswer(correct, gi, source='typing', transcript=''){
   const rec=ensureSRS(gi); rec.seen++;
   if(correct){
     rec.correct++;
-    // SRS promote
     rec.stage=Math.min(rec.stage+1, SRS_INTERVALS_HOURS.length-1);
     scheduleAfter(gi, SRS_INTERVALS_HOURS[rec.stage]||24);
     celebrate();
     score+=10; streak+=1; correctThisSession++;
     addCovered(gi);
-    // Fireworks on milestones
-    if(FIREWORK_STREAKS.includes(streak)) fireworks();
-    // Mini quiz suggestion optional (we show button always; you can trigger auto)
     typeFeedback.textContent = 'Great! +10 points'; typeFeedback.className='feedback ok';
     ls.set('score',score); ls.set('streak',streak); ls.set('srs',srs); updateAchievements(); updateBadges();
-    // progress next
     setTimeout(next, 500);
   } else {
     rec.wrong++;
-    // SRS demote slightly and schedule soon
     rec.stage=Math.max(0, rec.stage-1);
-    scheduleAfter(gi, 2); // 2 hours retry
+    scheduleAfter(gi, 2); // retry soon
     streak=0;
     typeFeedback.textContent = source==='speech' ? `Heard “${transcript}”. Try again!` : `Not quite. Hint: ${item.translit}`;
     typeFeedback.className='feedback warn';
@@ -550,7 +547,7 @@ skipBtn.addEventListener('click', ()=>{ streak=0; ls.set('streak',streak); next(
 nextBtn.addEventListener('click', next);
 learnBtn.addEventListener('click', ()=> setMode('learn'));
 quizBtn.addEventListener('click',  ()=> setMode('quiz'));
-difficultySel.value=difficulty;
+difficultySel.value = difficulty;
 difficultySel.addEventListener('change', e=> setDifficulty(e.target.value));
 reviewToggle.addEventListener('click', ()=>{
   reviewAll=!reviewAll;
@@ -559,7 +556,6 @@ reviewToggle.addEventListener('click', ()=>{
 });
 hintBtn.addEventListener('click', ()=>{
   if(mode!=='learn') return;
-  // show hidden pieces per difficulty
   const gi=order[idx], item=words[gi];
   if(difficulty==='medium'){ transEl.textContent=item.translit; }
   if(difficulty==='hard'){ enEl.textContent=item.en; transEl.textContent=item.translit; }
@@ -567,7 +563,6 @@ hintBtn.addEventListener('click', ()=>{
 function reveal(){
   const gi=order[idx], item=words[gi];
   faEl.textContent=item.fa; transEl.textContent=item.translit;
-  // Sad popup in Quiz
   if(mode==='quiz'){
     sadFace.style.display='block';
     setTimeout(()=>sadFace.classList.add('fade-out'), 700);
@@ -579,21 +574,20 @@ revealBtn.addEventListener('click', reveal);
 /** ================== MINI QUIZ ================== **/
 miniQuizBtn.addEventListener('click', startMiniQuiz);
 function startMiniQuiz(){
-  // Build a 5-item set from SRS due + mastered; fallback to unlocked
   const pool = [...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
   shuffle(pool);
   miniQuizQueue = pool.slice(0, MINI_QUIZ_SIZE);
   if(!miniQuizQueue.length){ alert('Nothing to quiz yet! Learn a few words first.'); return; }
   alert('Mini Quiz: 5 questions. Type the transliteration!');
+  miniCorrect=0; miniTotal=0;
   runMiniQuestion();
 }
-let miniCorrect=0, miniTotal=0;
 function runMiniQuestion(){
   if(!miniQuizQueue.length){
     const perfect = miniCorrect===miniTotal && miniTotal>0;
     if(perfect){ achievements.perfectMini=true; ls.set('ach',achievements); fireworks(); }
     alert(`Mini Quiz complete! Score: ${miniCorrect}/${miniTotal}${perfect?' (Perfect!)':''}`);
-    miniCorrect=0; miniTotal=0; updateBadges(); return;
+    updateBadges(); return;
   }
   const gi=miniQuizQueue.shift(); const item=words[gi];
   const ans = prompt(`Mini Quiz: What is the transliteration for “${item.en}” (${item.fa})?`, '');
@@ -658,10 +652,6 @@ resetBtn.addEventListener('click',()=>{
 /** ================== START SCREEN ================== **/
 startLearn.addEventListener('click',()=>{ setMode('learn'); startOverlay.style.display='none'; });
 startQuiz.addEventListener('click',()=>{ setMode('quiz');  startOverlay.style.display='none'; });
-
-/** ================== LISTEN/REVEAL VISIBILITY & INIT ================== **/
-function updateControlVisibilityWrapper(){ updateControlVisibility(); }
-document.addEventListener('visibilitychange', updateControlVisibilityWrapper);
 
 /** ================== INIT ================== **/
 function firstLoad(){
