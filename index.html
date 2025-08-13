@@ -211,37 +211,79 @@ function reveal(){
 }
 
 // ---------------------- TTS (Speak Persian) ----------------------
+<!-- TTS FIX -->
+<script>
+let faVoice = null;
+let voicesLoaded = false;
+
+function pickFaVoice() {
+  const voices = speechSynthesis.getVoices() || [];
+  const exact = voices.find(v => (v.lang||'').toLowerCase().startsWith('fa'));
+  if (exact) return exact;
+  const fuzzy = voices.find(v => /persian|farsi/i.test((v.name||'') + ' ' + (v.lang||'')));
+  return fuzzy || null;
+}
+
+function ensureVoicesReady(cb){
+  if (voicesLoaded && faVoice) { cb(); return; }
+  const tryPick = () => {
+    faVoice = pickFaVoice();
+    voicesLoaded = true;
+    cb();
+  };
+  const existing = speechSynthesis.getVoices();
+  if (existing && existing.length) { faVoice = pickFaVoice(); voicesLoaded = true; cb(); }
+  else { speechSynthesis.onvoiceschanged = tryPick; }
+}
+
 function speakFA(text){
   try {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'fa-IR';
-    u.rate = 0.9;
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  } catch(e) {
-    console.warn(e);
-  }
+    ensureVoicesReady(() => {
+      const u = new SpeechSynthesisUtterance(text);
+      if (faVoice) { u.voice = faVoice; u.lang = faVoice.lang || 'fa-IR'; }
+      else { u.lang = 'fa-IR'; } // fallback (still works if browser loads a default voice)
+      u.rate = 0.9;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    });
+  } catch(e) { console.warn(e); }
 }
 
 listenBtn.addEventListener('click', ()=>{
   const item = words[ order[idx] ];
   speakFA(item.fa);
 });
+</script>
+
 
 // ---------------------- Speech Recognition (Say it) ----------------------
+<!-- SPEECH RECOGNITION FIX -->
+<script>
 function normalizeFa(s){
   if(!s) return '';
   return s
    .replace(/\s+/g,'')
    .replace(/ي/g,'ی')
    .replace(/ك/g,'ک')
-   .replace(/[\u200C\u200F\u202A-\u202E]/g,'') // remove RTL/LTR marks
+   .replace(/[\u200C\u200F\u202A-\u202E]/g,''); // remove RTL/LTR marks
 }
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
+let micPrimed = false;
 
-if(SR){
+async function primeMic(){
+  if (micPrimed || !navigator.mediaDevices?.getUserMedia) return;
+  try {
+    await navigator.mediaDevices.getUserMedia({audio:true});
+    micPrimed = true;
+  } catch (e) {
+    speechFeedback.textContent = 'Microphone permission is blocked. Please allow mic access (click the lock icon).';
+    speechFeedback.className = 'feedback err';
+  }
+}
+
+if (SR) {
   rec = new SR();
   rec.lang = 'fa-IR';
   rec.interimResults = false;
@@ -256,26 +298,45 @@ if(SR){
       speechFeedback.className = 'feedback ok';
       score += 10; streak += 1; completed.add(order[idx]); saveProgress(); load();
     } else {
-      speechFeedback.textContent = `Hmm, I heard “${ev.results[0][0].transcript}”. Try again!`;
+      speechFeedback.textContent = `I heard “${ev.results[0][0].transcript}”. Try again!`;
       speechFeedback.className = 'feedback warn';
       streak = 0; saveProgress();
     }
   };
   rec.onerror = (e)=>{
-    speechFeedback.textContent = 'Mic error: ' + (e.error||'unknown');
+    const kind = e?.error || 'unknown';
+    const map = {
+      'no-speech': 'No speech detected. Try speaking closer to the mic.',
+      'audio-capture': 'No microphone found. Plug in or enable your mic.',
+      'not-allowed': 'Mic access denied. Click the lock (🔒) in the address bar to allow the mic.',
+      'aborted': 'Recognition aborted. Tap “Say it” again.'
+    };
+    speechFeedback.textContent = map[kind] || ('Mic error: ' + kind);
     speechFeedback.className = 'feedback err';
   };
 } else {
   sayBtn.disabled = true;
-  sayBtn.title = 'Speech recognition not supported in this browser.';
+  sayBtn.title = 'Speech recognition not supported in this browser. Use Chrome on desktop/mobile.';
 }
 
-sayBtn.addEventListener('click', ()=>{
-  if(!rec){ speechFeedback.textContent = 'Speech recognition not supported on this device.'; speechFeedback.className='feedback err'; return; }
+sayBtn.addEventListener('click', async ()=>{
+  if(!rec){
+    speechFeedback.textContent = 'Speech recognition not supported on this device/browser.';
+    speechFeedback.className='feedback err';
+    return;
+  }
+  if(!window.isSecureContext){
+    speechFeedback.textContent = 'Mic only works over HTTPS. Open your published GitHub Pages link (https).';
+    speechFeedback.className='feedback err';
+    return;
+  }
+  await primeMic();
   speechFeedback.textContent = 'Listening… please say the Persian word';
   speechFeedback.className = 'feedback';
   try { rec.start(); } catch {}
 });
+</script>
+
 
 // ---------------------- Typing Check ----------------------
 function normalizeTranslit(s){
