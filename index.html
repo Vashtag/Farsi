@@ -58,390 +58,33 @@
   .map{display:grid;grid-template-columns:repeat(4, minmax(60px,1fr));gap:8px;margin-top:10px}
   .tile{aspect-ratio:1/1;background:#0b1229;border:1px dashed #334155;border-radius:10px;display:grid;place-items:center;font-size:28px;color:#334155}
   .tile.unlocked{border-style:solid;color:#e5e7eb}
-  /* Mix & Match */
-  .m2m{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .slot,.drag{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px;min-height:52px;display:flex;align-items:center;justify-content:center}
-  .drag{cursor:grab}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
-
-<!-- Firebase (v10 modular) -->
-<script type="module">
-/* ===================== FIREBASE BOOTSTRAP ===================== */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
-/* Replace this with YOUR config from Firebase console */
-const firebaseConfig = {
-  // TODO: paste your Firebase config here
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  appId: "YOUR_APP_ID"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db   = getFirestore(app);
-enableIndexedDbPersistence(db).catch(()=>{});
-
-/* Simple store that syncs a single user document */
-const defaultDoc = {
-  score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
-  achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
-  theme:'default', difficulty:'easy',
-  mapUnlocked:0, mapDays:[], // record days with goal met
-  settings:{reviewAll:false, sentenceMode:true},
-};
-let userRef=null, cache={...defaultDoc};
-
-async function storeLoad(uid){
-  userRef = doc(db,'users',uid);
-  const snap = await getDoc(userRef);
-  if(!snap.exists()){ await setDoc(userRef, defaultDoc); cache={...defaultDoc}; }
-  else { cache = {...defaultDoc, ...snap.data()}; }
-  reflectUIFromStore();
-}
-async function storeSave(partial){
-  cache = {...cache, ...partial};
-  if(userRef) await updateDoc(userRef, partial).catch(async ()=>{
-    // If doc might not exist yet (race), set it
-    await setDoc(userRef, cache, {merge:true});
-  });
-  reflectUIFromStore();
-}
-
-/* ===================== APP LOGIC (from earlier) ===================== */
-const DAILY_WORDS = 5;
-const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
-const MINI_QUIZ_SIZE = 5;
-const words = [
-  {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.png",
-   sentence:{fa:"من سیب می‌خورم.", translit:"man sib mikhoram.", en:"I eat an apple."}},
-  {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.png",
-   sentence:{fa:"این کتاب خوب است.", translit:"in ketâb khub ast.", en:"This book is good."}},
-  {fa:"گربه", en:"cat", translit:"gorbe", emoji:"🐱", image:"images/gorbe.png",
-   sentence:{fa:"آن گربه خواب است.", translit:"ân gorbe khâb ast.", en:"That cat is sleeping."}},
-  {fa:"سگ", en:"dog", translit:"sag", emoji:"🐶", image:"images/sag.png",
-   sentence:{fa:"سگ من بازی می‌کند.", translit:"sag‑e man bâzi mikonad.", en:"My dog is playing."}},
-  {fa:"آب", en:"water", translit:"âb", emoji:"💧", audio:"audio/ab.mp3", image:"images/ab.png",
-   sentence:{fa:"آب سرد است.", translit:"âb sard ast.", en:"The water is cold."}},
-  {fa:"نان", en:"bread", translit:"nân", emoji:"🍞", audio:"audio/nan.mp3", image:"images/nan.png",
-   sentence:{fa:"من نان دوست دارم.", translit:"man nân dust dâram.", en:"I like bread."}},
-  {fa:"چای", en:"tea", translit:"chây", emoji:"🍵", audio:"audio/chay.mp3", image:"images/chay.png",
-   sentence:{fa:"چای می‌نوشم.", translit:"chây minusham.", en:"I drink tea."}},
-  {fa:"ماشین", en:"car", translit:"mâshin", emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.png",
-   sentence:{fa:"ماشین قرمز است.", translit:"mâshin gherme z ast.".replace(' ',' '), en:"The car is red."}},
-  {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠", audio:"audio/khane.mp3", image:"images/khane.png",
-   sentence:{fa:"خانه بزرگ است.", translit:"khâne bozorg ast.", en:"The house is big."}},
-  {fa:"در", en:"door", translit:"dar", emoji:"🚪", image:"images/dar.png",
-   sentence:{fa:"در را ببند.", translit:"dar râ beb band.", en:"Close the door."}},
-];
-
-const $=id=>document.getElementById(id);
-const bySel=s=>document.querySelector(s);
-
-let order=[], idx=0, mode='learn';
-function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/\s+/g,'')}
-function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
-function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
-function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
-function ensureSRS(i){ if(!cache.srs[i]) cache.srs[i]={stage:0,due:0,seen:0,correct:0,wrong:0}; return cache.srs[i]; }
-function isDue(i){ return ensureSRS(i).due <= Date.now(); }
-function scheduleAfter(i,h){ ensureSRS(i).due = Date.now()+h*3600*1000; }
-function getCoveredSet(){ return new Set(cache.covered||[]); }
-function addCovered(i){ const s=getCoveredSet(); s.add(i); storeSave({covered:[...s]}); }
-function unlockedCount(){ return cache.unlocked_count||Math.min(words.length, DAILY_WORDS); }
-function unlockedIndices(){ return [...Array(unlockedCount()).keys()]; }
-function masteredIndices(){ return [...getCoveredSet()].filter(i=>i<unlockedCount()); }
-function dueIndices(){ return unlockedIndices().filter(i=>isDue(i)); }
-function quizPool(){ const due=dueIndices(); if(due.length) return due; const m=masteredIndices(); return m.length?m:unlockedIndices(); }
-function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return [...due,...rest]; }
-
-function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=pool.slice(); shuffle(order); idx=0; }
-
-function showItem(){
-  const pool = (mode==='quiz')? quizPool(): learnPool();
-  if(order.length===0 || order.some(i=>!pool.includes(i))) ensureOrder();
-  const gi = order[idx % order.length]; const item = words[gi];
-
-  // image/emoji
-  const pic=$('pic'), emo=$('emoji');
-  if(item.image){ pic.style.display='block'; emo.style.display='none'; pic.src=item.image; pic.alt=item.en; }
-  else { pic.style.display='none'; emo.style.display='block'; emo.textContent=item.emoji||'❓'; }
-
-  // text
-  if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
-  else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
-
-  // sentence context (toggle in settings)
-  const sbox=$('sentBox'), sfa=$('s_fa'), str=$('s_tr'), sen=$('s_en');
-  if(cache.settings?.sentenceMode && item.sentence && mode==='learn'){
-    sbox.style.display='block'; sfa.textContent=item.sentence.fa; str.textContent=item.sentence.translit; sen.textContent=item.sentence.en;
-  } else { sbox.style.display='none'; }
-
-  // progress & badges
-  $('scoreBadge').textContent = `Score: ${cache.score||0}`;
-  $('streakBadge').textContent = `Streak: ${cache.streak||0} 🔥`;
-  $('unlockedBadge').textContent = `${unlockedCount()}/${words.length} unlocked`;
-  const pct = Math.round((getCoveredSet().size/Math.max(1,unlockedCount()))*100);
-  $('progressBar').style.width = pct+'%';
-
-  // controls: hide listen in quiz
-  $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
-  $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
-
-  // focus typing input
-  $('typeInput').value=''; $('typeInput').focus();
-}
-function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
-
-/* ======= Celebrations ======= */
-function happyDing(){
-  try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC) return;const ctx=new AC();const tones=[659,784,988];const t0=ctx.currentTime;
-    tones.forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;o.connect(g);g.connect(ctx.destination);
-      const st=t0+i*0.05;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(0.35,st+0.03);g.gain.exponentialRampToValueAtTime(0.0001,st+0.22);
-      o.start(st);o.stop(st+0.25);});}catch{}}
-function confettiPop(){ if(window.confetti) confetti({origin:{y:1,x:0.5},gravity:1.2,ticks:180,scalar:0.9,particleCount:70,spread:75,startVelocity:55}); }
-function fireworks(){ if(!window.confetti) return;
-  const base={origin:{y:1,x:0.5},gravity:1.0,ticks:260,scalar:1.0};
-  confetti({...base,particleCount:180,spread:120,startVelocity:65});
-  confetti({...base,particleCount:140,spread:140,startVelocity:60,origin:{y:1,x:0.2}});
-  confetti({...base,particleCount:140,spread:140,startVelocity:60,origin:{y:1,x:0.8}});
-}
-function celebrateSimple(){ happyDing(); confettiPop(); const c=$('celebration'); c.textContent="let's goooooo 🎉"; c.style.display='block'; setTimeout(()=>c.classList.add('fade-out'),800); setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},1600); }
-function celebrateStreak7(){
-  fireworks();
-  cache.achievements.streak7 = true;
-  storeSave({achievements:cache.achievements});
-  const c=$('celebration'); c.textContent="7‑day streak! 🏅"; c.style.display='block';
-  setTimeout(()=>c.classList.add('fade-out'),1200);
-  setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},2200);
-}
-
-/* ======= Audio (your voice or TTS fallback) ======= */
-const audioCache=new Map();
-function getAudio(item){ const url=item.audio||`audio/${(item.translit||'').toLowerCase()}.mp3`; if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);} return audioCache.get(url);}
-async function playYourAudio(){ const gi=order[idx], item=words[gi]; try{ const a=getAudio(item); a.currentTime=0; await a.play(); }catch{ /* optional: TTS fallback omitted for brevity */ } }
-
-/* ======= Answer handling (SRS + score + streak + map goal) ======= */
-function handleAnswer(correct, gi, source='typing', transcript=''){
-  const r=ensureSRS(gi); r.seen++;
-  if(correct){
-    r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1);
-    scheduleAfter(gi,SRS_INTERVALS_HOURS[r.stage]||24);
-    const newScore=(cache.score||0)+10, newStreak=(cache.streak||0)+1;
-    addCovered(gi);
-    storeSave({score:newScore, streak:newStreak, srs:cache.srs});
-    celebrateSimple();
-    // Massive fireworks at 7-day streak:
-    if(newStreak===7) celebrateStreak7();
-    checkDailyGoalAndMap();
-  }else{
-    r.wrong++; r.stage=Math.max(0,r.stage-1); scheduleAfter(gi,2);
-    storeSave({streak:0, srs:cache.srs});
-    $('typeFeedback').textContent = (source==='speech'?'Try again!':'Not quite.'); $('typeFeedback').className='feedback warn';
-  }
-  setTimeout(next, 450);
-}
-
-/* Daily unlocks + map: mark goal (DAILY_WORDS correct in a day) to unlock one bazaar tile */
-function checkDailyGoalAndMap(){
-  const today=todayISO();
-  let days = cache.mapDays||[];
-  let todayRec = days.find(d=>d.date===today);
-  if(!todayRec){ todayRec={date:today, correct:0, goalMet:false}; days=[...days,todayRec]; }
-  todayRec.correct++;
-  if(!todayRec.goalMet && todayRec.correct>=DAILY_WORDS){
-    todayRec.goalMet=true;
-    const newTiles = Math.min((cache.mapUnlocked||0)+1, 12);
-    storeSave({mapDays:days, mapUnlocked:newTiles});
-    // cute cat burst per tile
-    confetti({origin:{y:1,x:Math.random()},particleCount:60,spread:70,startVelocity:45,scalar:1.1});
-  }else{
-    storeSave({mapDays:days});
-  }
-}
-
-/* ======= UI wiring ======= */
-function reflectUIFromStore(){
-  // theme & difficulty
-  bySel('#themeSelect').value = cache.theme||'default';
-  bySel('#difficulty').value  = cache.difficulty||'easy';
-  // badges
-  bySel('#scoreBadge').textContent = `Score: ${cache.score||0}`;
-  bySel('#streakBadge').textContent = `Streak: ${cache.streak||0} 🔥`;
-  bySel('#unlockedBadge').textContent = `${unlockedCount()}/${words.length} unlocked`;
-  // map tiles
-  renderMap();
-}
-
-function renderMap(){
-  const wrap = $('mapGrid'); if(!wrap) return;
-  wrap.innerHTML='';
-  const tiles = 12;
-  for(let i=0;i<tiles;i++){
-    const t=document.createElement('div');
-    t.className='tile'+(i<(cache.mapUnlocked||0)?' unlocked':'');
-    t.textContent = i<(cache.mapUnlocked||0)?'🐈':'?';
-    wrap.appendChild(t);
-  }
-}
-
-/* ======= DOM refs & events ======= */
-const listenBtn=$('listenBtn'), sayBtn=$('sayBtn'), hintBtn=$('hintBtn'), revealBtn=$('revealBtn'), nextBtn=$('nextBtn');
-const typeInput=$('typeInput'), checkBtn=$('checkBtn'), skipBtn=$('skipBtn');
-listenBtn.addEventListener('click', playYourAudio);
-checkBtn.addEventListener('click', ()=>{
-  const gi=order[idx], item=words[gi];
-  const guess=normalizeTranslit(typeInput.value);
-  if(!guess){ $('typeFeedback').textContent='Type your guess first!'; $('typeFeedback').className='feedback warn'; return; }
-  $('typeFeedback').textContent=''; typeInput.value=''; typeInput.focus();
-  handleAnswer(guess===normalizeTranslit(item.translit), gi, 'typing');
-});
-skipBtn.addEventListener('click', ()=>{ typeInput.value=''; storeSave({streak:0}); next(); });
-nextBtn.addEventListener('click', ()=>{ typeInput.value=''; next(); });
-$('learnBtn').addEventListener('click', ()=>{ mode='learn'; ensureOrder(); showItem(); });
-$('quizBtn').addEventListener('click',  ()=>{ mode='quiz'; ensureOrder(); showItem(); });
-$('hintBtn').addEventListener('click', ()=>{
-  if(mode!=='learn') return;
-  const gi=order[idx], item=words[gi];
-  bySel('#trans').textContent=item.translit; bySel('#en').textContent=item.en;
-});
-$('revealBtn').addEventListener('click', ()=>{
-  const gi=order[idx], item=words[gi];
-  bySel('#fa').textContent=item.fa; bySel('#trans').textContent=item.translit;
-  const s=$('sadFace'); s.style.display='block'; setTimeout(()=>s.classList.add('fade-out'),700); setTimeout(()=>{s.classList.remove('fade-out'); s.style.display='none';},1500);
-});
-$('themeSelect').addEventListener('change', e=> storeSave({theme:e.target.value}));
-$('difficulty').addEventListener('change', e=> storeSave({difficulty:e.target.value}));
-
-/* ======= Mini-quiz (image + transliteration) in Settings ======= */
-$('startMiniQuiz').addEventListener('click', ()=>{ bySel('#settingsModal').style.display='none'; startMini(); });
-let miniQ={queue:[],current:null,correct:0,total:0};
-function startMini(){
-  const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
-  shuffle(pool); miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
-  const panel=$('miniQuizPanel'); panel.style.display='block';
-  // hide main controls
-  document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, #speechFeedback, .progress, #factBox, #tip, #sentenceBox').forEach(el=> el.style.display='none');
-  nextMiniQ();
-}
-function nextMiniQ(){
-  if(!miniQ.queue.length){
-    $('mqFeedback').innerHTML=`Mini Quiz complete! Score: <b>${miniQ.correct}</b> / ${miniQ.total}`;
-    $('mqBar').style.width='100%';
-    setTimeout(()=>{ $('miniQuizPanel').style.display='none'; document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, #speechFeedback, .progress, #factBox, #tip, #sentenceBox').forEach(el=> el.style.display=''); showItem(); }, 1500);
-    return;
-  }
-  miniQ.current = miniQ.queue.shift();
-  const item=words[miniQ.current];
-  $('mqPic').style.display='block'; $('mqPic').src=item.image||''; $('mqPic').alt=item.en||'';
-  $('mqInput').value=''; $('mqFeedback').textContent='';
-  $('mqBar').style.width = `${(miniQ.total/MINI_QUIZ_SIZE)*100}%`;
-  $('mqInput').focus();
-}
-$('mqCheck').addEventListener('click', ()=>{
-  const item=words[miniQ.current]; miniQ.total++;
-  const ok = normalizeTranslit($('mqInput').value)===normalizeTranslit(item.translit);
-  if(ok){ miniQ.correct++; $('mqFeedback').textContent='Nice!'; $('mqFeedback').className='feedback ok'; celebrateSimple(); }
-  else { $('mqFeedback').textContent=`Answer: ${item.translit}`; $('mqFeedback').className='feedback warn'; storeSave({streak:0}); }
-  setTimeout(nextMiniQ, 350);
-});
-
-/* ======= Badges modal ======= */
-$('openAchievements').addEventListener('click', ()=>{ renderBadges(); $('achModal').style.display='grid'; });
-$('closeAch').addEventListener('click', ()=> $('achModal').style.display='none');
-function renderBadges(){
-  const a=cache.achievements||defaultDoc.achievements;
-  $('achList').innerHTML = `
-    <div class="chip">${a.first10?'🏅':'⬜'} First 10 mastered</div>
-    <div class="chip">${a.perfectMini?'🏅':'⬜'} Perfect Mini Quiz</div>
-    <div class="chip">${a.streak7?'🏅':'⬜'} 7‑day streak</div>
-    <div class="chip">${a.mastered50?'🏅':'⬜'} 50 mastered</div>
-  `;
-}
-
-/* ======= Bazaar Map modal ======= */
-$('openMap').addEventListener('click', ()=>{ renderMap(); $('mapModal').style.display='grid'; });
-$('closeMap').addEventListener('click', ()=> $('mapModal').style.display='none');
-
-/* ======= Midnight countdown ======= */
-$('midnightBtn').addEventListener('click', ()=>{
-  const n=new Date(), t=new Date(n); t.setHours(24,0,0,0);
-  const ms=t-n; const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
-  alert(`New words unlock at local midnight.\nTime remaining: ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`);
-});
-
-/* ======= Auth UI ======= */
-const authOverlay = $('authOverlay');
-$('loginBtn').addEventListener('click', async ()=>{
-  const email=$('email').value.trim(), pass=$('pass').value;
-  if(!email||!pass) return alert('Enter email & password.');
-  try{ await signInWithEmailAndPassword(auth,email,pass); }catch(e){ alert(e.message); }
-});
-$('signupBtn').addEventListener('click', async ()=>{
-  const email=$('email').value.trim(), pass=$('pass').value;
-  if(!email||!pass) return alert('Enter email & password.');
-  try{ await createUserWithEmailAndPassword(auth,email,pass); }catch(e){ alert(e.message); }
-});
-$('logoutBtn').addEventListener('click', async ()=>{ await signOut(auth); });
-
-onAuthStateChanged(auth, async (user)=>{
-  if(!user){ authOverlay.style.display='grid'; return; }
-  authOverlay.style.display='none';
-  await storeLoad(user.uid);
-  ensureOrder(); showItem();
-});
-
-/* ======= Sentence toggle, Review mode ======= */
-$('sentenceToggle').addEventListener('click', ()=>{
-  const v = !(cache.settings?.sentenceMode); storeSave({settings:{...cache.settings, sentenceMode:v}});
-  $('sentenceToggle').textContent = `Sentence Mode: ${v?'ON':'OFF'}`;
-});
-$('openSettings').addEventListener('click', ()=>{ 
-  $('settingsModal').style.display='grid'; 
-  $('sentenceToggle').textContent=`Sentence Mode: ${(cache.settings?.sentenceMode)!==false?'ON':'OFF'}`;
-  $('reviewToggle').textContent=`Review All Mastered: ${cache.settings?.reviewAll?'ON':'OFF'}`;
-});
-$('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
-$('settingsModal').addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
-$('reviewToggle').addEventListener('click', ()=>{
-  const v=!(cache.settings?.reviewAll); storeSave({settings:{...cache.settings, reviewAll:v}});
-  $('reviewToggle').textContent=`Review All Mastered: ${v?'ON':'OFF'}`;
-});
-
-</script>
 </head>
 <body>
 <header>
   <h1>✨ Farsi Fun — Learn Persian Basics</h1>
   <div class="stats">
+    <div class="badge" id="profileBadge">Profile: —</div>
     <div class="badge" id="scoreBadge">Score: 0</div>
     <div class="badge" id="streakBadge">Streak: 0 🔥</div>
     <div class="badge" id="unlockedBadge">0/0 unlocked</div>
-    <select id="themeSelect" class="select" title="Theme">
-      <option value="default">Theme: Ocean</option>
-    </select>
     <button id="openMap" class="icon-btn" title="Bazaar Map">🗺️</button>
     <button id="openAchievements" class="icon-btn" title="Badges">🏆</button>
     <button id="openSettings" class="icon-btn" title="Settings">⚙️</button>
-    <button id="logoutBtn" class="icon-btn" title="Log out">🚪</button>
   </div>
 </header>
 
-<!-- Auth overlay -->
-<div id="authOverlay" class="overlay" style="display:grid">
+<!-- Profile chooser (no login, just name) -->
+<div id="profileOverlay" class="overlay" style="display:grid">
   <div class="overlay-card">
-    <h2>Sign in</h2>
-    <p class="tiny">Use Email/Password. You can make one for you and one for Nicole — progress is separate.</p>
+    <h2>Who’s learning today?</h2>
+    <p class="tiny">Type a name (e.g., <b>Nicole</b> or <b>Sia</b>). Progress is saved per name on this device.</p>
     <div style="display:flex; gap:10px; flex-wrap:wrap">
-      <input id="email" class="input" style="min-width:260px" placeholder="email@example.com"/>
-      <input id="pass" type="password" class="input" style="min-width:220px" placeholder="password"/>
-      <button id="loginBtn" class="primary">Log in</button>
-      <button id="signupBtn" class="accent">Sign up</button>
+      <input id="profileName" class="input" style="min-width:260px" placeholder="Enter name (e.g., Nicole)"/>
+      <button id="useProfile" class="primary">Continue</button>
+      <button id="quickNicole" class="btn">Nicole</button>
+      <button id="quickSia" class="btn">Sia</button>
     </div>
   </div>
 </div>
@@ -451,11 +94,11 @@ $('reviewToggle').addEventListener('click', ()=>{
   <div class="overlay-card">
     <h2>How do you want to learn today?</h2>
     <p>Pick a mode to get started. You can switch later.</p>
-    <div class="btns" style="display:flex; gap:12px; flex-wrap:wrap">
-      <button id="learnBtn" class="primary">📚 Learn Mode</button>
-      <button id="quizBtn" class="accent">🎯 Quiz Mode</button>
+    <div style="display:flex; gap:12px; flex-wrap:wrap">
+      <button id="startLearn" class="primary">📚 Learn Mode</button>
+      <button id="startQuiz" class="accent">🎯 Quiz Mode</button>
     </div>
-    <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s. New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button>.</p>
+    <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s. New words unlock at <button id="midnightBtn0" class="btn" style="padding:2px 6px">midnight</button>.</p>
   </div>
 </div>
 
@@ -517,7 +160,9 @@ $('reviewToggle').addEventListener('click', ()=>{
 
         <!-- Mini Quiz (image + translit only), launched from Settings -->
         <div id="miniQuizPanel" class="card" style="display:none; margin-top:14px">
-          <div class="qprogress"><div id="mqBar" class="bar" style="height:8px;width:0%"></div></div>
+          <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:8px">
+            <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
+          </div>
           <img id="mqPic" class="mq-pic" alt="" />
           <input id="mqInput" class="input" placeholder="Type the transliteration…"/>
           <div class="controls"><button id="mqCheck" class="primary">Check</button></div>
@@ -529,7 +174,7 @@ $('reviewToggle').addEventListener('click', ()=>{
 </main>
 
 <footer style="padding:16px;text-align:center;color:#94a3b8">
-  Put images in <b>/images</b> (e.g., <code>images/sib.png</code>). Put audio in <b>/audio</b> (e.g., <code>audio/sib.mp3</code>).
+  Put images in <b>/images</b> (e.g., <code>images/sib.png</code>). Put audio in <b>/audio</b> (e.g., <code>audio/sib.mp3</code>). Optional encouragement in <b>/audio/encouragement/</b>.
 </footer>
 
 <div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
@@ -575,11 +220,330 @@ $('reviewToggle').addEventListener('click', ()=>{
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
       <div class="stat">
-        <b>Sentence Context</b><p class="tiny">Show simple example sentences after you learn a word.</p>
-        <button id="sentenceToggle2" class="btn" style="display:none"></button>
+        <b>Danger zone</b><p class="tiny">Clear this profile’s score, streak, SRS, unlocks, and achievements.</p>
+        <button id="resetBtn" class="btn" style="background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d">♻️ Reset Progress</button>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+/* ===================== PROFILED STORAGE ===================== */
+let ACTIVE_PROFILE = null;
+const GLOBAL_PREFIX = 'ff';
+function PKEY(k){ return `${GLOBAL_PREFIX}:${ACTIVE_PROFILE||'__anon'}:${k}`; }
+const store = {
+  get:(k,def=null)=>{ try{ const v=localStorage.getItem(PKEY(k)); return v===null?def:JSON.parse(v); }catch{ return def; } },
+  set:(k,v)=>{ try{ localStorage.setItem(PKEY(k), JSON.stringify(v)); }catch{} },
+  del:(k)=>{ try{ localStorage.removeItem(PKEY(k)); }catch{} }
+};
+
+/* ===================== CONSTANTS ===================== */
+const DAILY_WORDS = 5;
+const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
+const MINI_QUIZ_SIZE = 5;
+
+/* ===================== WORDS ===================== */
+const words = [
+  {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.png",
+   sentence:{fa:"من سیب می‌خورم.", translit:"man sib mikhoram.", en:"I eat an apple."}},
+  {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.png",
+   sentence:{fa:"این کتاب خوب است.", translit:"in ketâb khub ast.", en:"This book is good."}},
+  {fa:"گربه", en:"cat", translit:"gorbe", emoji:"🐱", image:"images/gorbe.png",
+   sentence:{fa:"آن گربه خواب است.", translit:"ân gorbe khâb ast.", en:"That cat is sleeping."}},
+  {fa:"سگ", en:"dog", translit:"sag", emoji:"🐶", image:"images/sag.png",
+   sentence:{fa:"سگ من بازی می‌کند.", translit:"sag‑e man bâzi mikonad.", en:"My dog is playing."}},
+  {fa:"آب", en:"water", translit:"âb", emoji:"💧", audio:"audio/ab.mp3", image:"images/ab.png",
+   sentence:{fa:"آب سرد است.", translit:"âb sard ast.", en:"The water is cold."}},
+  {fa:"نان", en:"bread", translit:"nân", emoji:"🍞", audio:"audio/nan.mp3", image:"images/nan.png",
+   sentence:{fa:"من نان دوست دارم.", translit:"man nân dust dâram.", en:"I like bread."}},
+  {fa:"چای", en:"tea", translit:"chây", emoji:"🍵", audio:"audio/chay.mp3", image:"images/chay.png",
+   sentence:{fa:"چای می‌نوشم.", translit:"chây minusham.", en:"I drink tea."}},
+  {fa:"ماشین", en:"car", translit:"mâshin", emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.png",
+   sentence:{fa:"ماشین قرمز است.", translit:"mâshin ghermez ast.", en:"The car is red."}},
+  {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠", audio:"audio/khane.mp3", image:"images/khane.png",
+   sentence:{fa:"خانه بزرگ است.", translit:"khâne bozorg ast.", en:"The house is big."}},
+  {fa:"در", en:"door", translit:"dar", emoji:"🚪", image:"images/dar.png",
+   sentence:{fa:"در را ببند.", translit:"dar râ bebande.", en:"Close the door."}},
+];
+
+/* ===================== UTILITIES ===================== */
+const $=id=>document.getElementById(id);
+const bySel=s=>document.querySelector(s);
+function now(){return Date.now()}
+function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
+function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/\s+/g,'')}
+function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+
+/* ===================== STATE (per profile) ===================== */
+const defaultState = ()=>({
+  score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
+  achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
+  difficulty:'easy',
+  mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
+  settings:{reviewAll:false, sentenceMode:true}
+});
+let state = defaultState();
+let mode='learn', order=[], idx=0;
+
+/* Helpers for SRS & pools */
+function ensureSRS(i){ if(!state.srs[i]) state.srs[i]={stage:0,due:0,seen:0,correct:0,wrong:0}; return state.srs[i]; }
+function isDue(i){ return ensureSRS(i).due <= now(); }
+function scheduleAfter(i,h){ ensureSRS(i).due = now()+h*3600*1000; }
+function getCoveredSet(){ return new Set(state.covered||[]); }
+function addCovered(i){ const s=getCoveredSet(); s.add(i); state.covered=[...s]; persist(); }
+
+function initDailyUnlock(){
+  if(!state.start_date){ state.start_date=todayISO(); }
+  const startDate = new Date(state.start_date+'T00:00:00');
+  const dNow = new Date(); dNow.setHours(0,0,0,0);
+  const diffDays = Math.floor((dNow - startDate)/86400000);
+  const shouldUnlock = Math.min(words.length, (diffDays+1)*DAILY_WORDS);
+  state.unlocked_count = Math.max(state.unlocked_count||0, shouldUnlock);
+  persist();
+}
+function unlockedCount(){ return state.unlocked_count||Math.min(words.length, DAILY_WORDS); }
+function unlockedIndices(){ return [...Array(unlockedCount()).keys()]; }
+function masteredIndices(){ return [...getCoveredSet()].filter(i=>i<unlockedCount()); }
+function dueIndices(){ return unlockedIndices().filter(i=>isDue(i)); }
+function quizPool(){ const due=dueIndices(); if(due.length) return due; const m=masteredIndices(); return m.length?m:unlockedIndices(); }
+function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return [...due,...rest]; }
+
+/* ===================== PERSIST ===================== */
+function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); }
+function loadState(){ state = store.get('state', defaultState()); initDailyUnlock(); }
+
+/* ===================== UI UPDATE ===================== */
+function updateBadges(){
+  $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE||'—'}`;
+  $('scoreBadge').textContent = `Score: ${state.score}`;
+  $('streakBadge').textContent = `Streak: ${state.streak} 🔥`;
+  $('unlockedBadge').textContent = `${unlockedCount()}/${words.length} unlocked`;
+  const pct = Math.round((getCoveredSet().size/Math.max(1,unlockedCount()))*100);
+  $('progressBar').style.width = pct + '%';
+}
+function showImageOrEmoji(item){
+  const pic=$('pic'), emo=$('emoji');
+  if(item.image){ pic.style.display='block'; emo.style.display='none'; pic.src=item.image; pic.alt=item.en; }
+  else { pic.style.display='none'; emo.style.display='block'; emo.textContent=item.emoji||'❓'; }
+}
+function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=pool.slice(); shuffle(order); idx=0; }
+function showItem(){
+  const pool = (mode==='quiz')? quizPool(): learnPool();
+  if(order.length===0 || order.some(i=>!pool.includes(i))) ensureOrder();
+  const gi = order[idx % order.length]; const item = words[gi];
+
+  showImageOrEmoji(item);
+  if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
+  else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
+
+  // Sentence context
+  const sbox=$('sentBox'), sfa=$('s_fa'), str=$('s_tr'), sen=$('s_en');
+  if(state.settings?.sentenceMode && item.sentence && mode==='learn'){
+    $('sentenceBox').style.display='block';
+    sbox.style.display='block'; sfa.textContent=item.sentence.fa; str.textContent=item.sentence.translit; sen.textContent=item.sentence.en;
+  }else{
+    sbox.style.display='none';
+  }
+
+  // controls visibility
+  $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
+  $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
+
+  $('typeInput').value=''; $('typeInput').focus();
+}
+function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
+
+/* ===================== CELEBRATIONS ===================== */
+function happyDing(){
+  try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC) return;const ctx=new AC();const tones=[659,784,988];const t0=ctx.currentTime;
+    tones.forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;o.connect(g);g.connect(ctx.destination);
+      const st=t0+i*0.05;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(0.35,st+0.03);g.gain.exponentialRampToValueAtTime(0.0001,st+0.22);
+      o.start(st);o.stop(st+0.25);});}catch{}}
+function confettiPop(){ if(window.confetti) confetti({origin:{y:1,x:0.5},gravity:1.2,ticks:180,scalar:0.9,particleCount:70,spread:75,startVelocity:55}); }
+function fireworks(){ if(!window.confetti) return;
+  const base={origin:{y:1,x:0.5},gravity:1.0,ticks:260,scalar:1.0};
+  confetti({...base,particleCount:180,spread:120,startVelocity:65});
+  confetti({...base,particleCount:140,spread:140,startVelocity:60,origin:{y:1,x:0.2}});
+  confetti({...base,particleCount:140,spread:140,startVelocity:60,origin:{y:1,x:0.8}});
+}
+function celebrateSimple(){ happyDing(); confettiPop(); const c=$('celebration'); c.textContent="let's goooooo 🎉"; c.style.display='block'; setTimeout(()=>c.classList.add('fade-out'),800); setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},1600); }
+function celebrateStreak7(){
+  fireworks();
+  state.achievements.streak7 = true; persist();
+  const c=$('celebration'); c.textContent="7‑day streak! 🏅"; c.style.display='block';
+  setTimeout(()=>c.classList.add('fade-out'),1200);
+  setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},2200);
+}
+
+/* ===================== AUDIO (your recordings) ===================== */
+const audioCache=new Map();
+function getAudio(item){ const url=item.audio||`audio/${(item.translit||'').toLowerCase()}.mp3`; if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);} return audioCache.get(url);}
+async function playYourAudio(){ const gi=order[idx], item=words[gi]; try{ const a=getAudio(item); a.currentTime=0; await a.play(); }catch{} }
+
+/* ===================== ANSWERING (SRS + score + map) ===================== */
+function handleAnswer(correct, gi, source='typing', transcript=''){
+  const r=ensureSRS(gi); r.seen++;
+  if(correct){
+    r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1);
+    scheduleAfter(gi,SRS_INTERVALS_HOURS[r.stage]||24);
+    state.score+=10; state.streak+=1; addCovered(gi);
+    $('typeFeedback').textContent='Great! +10 points'; $('typeFeedback').className='feedback ok';
+    celebrateSimple();
+    if(state.streak===7) celebrateStreak7();
+    checkDailyGoalAndMap();
+  }else{
+    r.wrong++; r.stage=Math.max(0,r.stage-1); scheduleAfter(gi,2);
+    state.streak=0; $('typeFeedback').textContent = source==='speech' ? 'Try again!' : 'Not quite.'; $('typeFeedback').className='feedback warn';
+  }
+  persist();
+  setTimeout(next, 450);
+}
+function checkDailyGoalAndMap(){
+  const today=todayISO();
+  let days = state.mapDays||[];
+  let todayRec = days.find(d=>d.date===today);
+  if(!todayRec){ todayRec={date:today, correct:0, goalMet:false}; days=[...days,todayRec]; }
+  todayRec.correct++;
+  if(!todayRec.goalMet && todayRec.correct>=DAILY_WORDS){
+    todayRec.goalMet=true;
+    state.mapUnlocked = Math.min((state.mapUnlocked||0)+1, 12);
+    confetti({origin:{y:1,x:Math.random()},particleCount:60,spread:70,startVelocity:45,scalar:1.1});
+  }
+  state.mapDays = days;
+  persist();
+}
+
+/* ===================== MAP / BADGES RENDER ===================== */
+function renderMap(){
+  const wrap = $('mapGrid'); if(!wrap) return;
+  wrap.innerHTML='';
+  const tiles = 12;
+  for(let i=0;i<tiles;i++){
+    const t=document.createElement('div');
+    t.className='tile'+(i<(state.mapUnlocked||0)?' unlocked':'');
+    t.textContent = i<(state.mapUnlocked||0)?'🐈':'?';
+    wrap.appendChild(t);
+  }
+}
+function reflectBadges(){
+  const a=state.achievements;
+  const list = `
+    <div class="chip">${a.first10?'🏅':'⬜'} First 10 mastered</div>
+    <div class="chip">${a.perfectMini?'🏅':'⬜'} Perfect Mini Quiz</div>
+    <div class="chip">${a.streak7?'🏅':'⬜'} 7‑day streak</div>
+    <div class="chip">${a.mastered50?'🏅':'⬜'} 50 mastered</div>
+  `;
+  $('achList').innerHTML = list;
+}
+
+/* ===================== EVENTS ===================== */
+$('listenBtn').addEventListener('click', playYourAudio);
+$('checkBtn').addEventListener('click', ()=>{
+  const gi=order[idx], item=words[gi];
+  const guess=normalizeTranslit($('typeInput').value);
+  if(!guess){ $('typeFeedback').textContent='Type your guess first!'; $('typeFeedback').className='feedback warn'; return; }
+  $('typeFeedback').textContent=''; $('typeInput').value=''; $('typeInput').focus();
+  handleAnswer(guess===normalizeTranslit(item.translit), gi, 'typing');
+});
+$('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.streak=0; persist(); next(); });
+$('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
+$('learnBtn').addEventListener('click', ()=>{ mode='learn'; ensureOrder(); showItem(); });
+$('quizBtn').addEventListener('click',  ()=>{ mode='quiz'; ensureOrder(); showItem(); });
+$('hintBtn').addEventListener('click', ()=>{
+  if(mode!=='learn') return;
+  const gi=order[idx], item=words[gi];
+  $('trans').textContent=item.translit; $('en').textContent=item.en;
+});
+$('revealBtn').addEventListener('click', ()=>{
+  const gi=order[idx], item=words[gi];
+  $('fa').textContent=item.fa; $('trans').textContent=item.translit;
+  const s=$('sadFace'); s.style.display='block'; setTimeout(()=>s.classList.add('fade-out'),700); setTimeout(()=>{s.classList.remove('fade-out'); s.style.display='none';},1500);
+});
+
+$('openAchievements').addEventListener('click', ()=>{ reflectBadges(); $('achModal').style.display='grid'; });
+$('closeAch').addEventListener('click', ()=> $('achModal').style.display='none');
+
+$('openMap').addEventListener('click', ()=>{ renderMap(); $('mapModal').style.display='grid'; });
+$('closeMap').addEventListener('click', ()=> $('mapModal').style.display='none');
+
+$('openSettings').addEventListener('click', ()=>{ 
+  $('settingsModal').style.display='grid'; 
+  $('reviewToggle').textContent=`Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`;
+});
+$('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
+$('settingsModal').addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
+
+$('reviewToggle').addEventListener('click', ()=>{
+  state.settings.reviewAll = !state.settings.reviewAll; persist();
+  $('reviewToggle').textContent=`Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`;
+});
+
+$('startMiniQuiz').addEventListener('click', ()=>{
+  $('settingsModal').style.display='none';
+  startMiniQuiz();
+});
+let miniQ={queue:[],current:null,correct:0,total:0};
+function startMiniQuiz(){
+  const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
+  shuffle(pool); miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
+  $('miniQuizPanel').style.display='block';
+  document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #factBox, #tip, #sentenceBox').forEach(el=> el.style && (el.style.display='none'));
+  nextMiniQuestion();
+}
+function nextMiniQuestion(){
+  if(!miniQ.queue.length){
+    $('mqFeedback').innerHTML=`Mini Quiz complete! Score: <b>${miniQ.correct}</b> / ${miniQ.total}`;
+    $('mqBar').style.width='100%';
+    setTimeout(()=>{ $('miniQuizPanel').style.display='none'; document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #factBox, #tip, #sentenceBox').forEach(el=> el.style && (el.style.display='')); showItem(); }, 1500);
+    return;
+  }
+  miniQ.current = miniQ.queue.shift();
+  const item=words[miniQ.current];
+  $('mqPic').style.display='block'; $('mqPic').src=item.image||''; $('mqPic').alt=item.en||'';
+  $('mqInput').value=''; $('mqFeedback').textContent='';
+  $('mqBar').style.width = `${(miniQ.total/MINI_QUIZ_SIZE)*100}%`;
+  $('mqInput').focus();
+}
+$('mqCheck').addEventListener('click', ()=>{
+  const item=words[miniQ.current]; miniQ.total++;
+  const ok = normalizeTranslit($('mqInput').value)===normalizeTranslit(item.translit);
+  if(ok){ miniQ.correct++; $('mqFeedback').textContent='Nice!'; $('mqFeedback').className='feedback ok'; celebrateSimple(); }
+  else { $('mqFeedback').textContent=`Answer: ${item.translit}`; $('mqFeedback').className='feedback warn'; state.streak=0; persist(); }
+  setTimeout(nextMiniQuestion, 350);
+});
+
+/* Sentence toggle */
+$('sentenceToggle').addEventListener('click', ()=>{
+  const v = !(state.settings?.sentenceMode); state.settings.sentenceMode=v; persist();
+  $('sentenceToggle').textContent = `Sentence Mode: ${v?'ON':'OFF'}`;
+});
+
+/* Midnight countdown */
+function msUntilNextMidnight(){ const n=new Date(), t=new Date(n); t.setHours(24,0,0,0); return t-n; }
+function fmt(ms){ const s=Math.floor(ms/1000); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; }
+function showMidnight(){ alert(`New words unlock at local midnight.\nTime remaining: ${fmt(msUntilNextMidnight())}`); }
+$('midnightBtn').addEventListener('click', showMidnight);
+$('midnightBtn0').addEventListener('click', showMidnight);
+
+/* ===================== PROFILE FLOW ===================== */
+function useProfile(name){
+  ACTIVE_PROFILE = String(name||'').trim() || 'Guest';
+  loadState();
+  $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
+  $('profileOverlay').style.display='none';
+  $('startOverlay').style.display='grid';
+}
+$('useProfile').addEventListener('click', ()=> useProfile($('profileName').value));
+$('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
+$('quickSia').addEventListener('click', ()=> useProfile('Sia'));
+
+/* Start overlay buttons */
+$('startLearn').addEventListener('click', ()=>{ mode='learn'; ensureOrder(); $('startOverlay').style.display='none'; showItem(); });
+$('startQuiz').addEventListener('click',  ()=>{ mode='quiz'; ensureOrder(); $('startOverlay').style.display='none'; showItem(); });
+
+/* Init (shows profile overlay by default) */
+</script>
 </body>
 </html>
