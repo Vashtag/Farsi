@@ -152,16 +152,6 @@
 
         <div class="progress"><div class="bar" id="progressBar"></div></div>
 
-        <!-- Sentence Context Mode -->
-        <div id="sentenceBox" class="card" style="margin-top:10px;padding:12px">
-          <div id="sentBox" style="display:none">
-            <div class="fa" id="s_fa" dir="rtl" style="font-size:20px"></div>
-            <div class="trans" id="s_tr" style="font-size:18px"></div>
-            <div class="en" id="s_en" style="font-size:18px"></div>
-          </div>
-          <button id="sentenceToggle" class="btn" style="margin-top:6px">Sentence Mode: ON</button>
-        </div>
-
         <!-- Mini Quiz (image + translit only), launched from Settings -->
         <div id="miniQuizPanel" class="card" style="display:none; margin-top:14px">
           <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:8px">
@@ -184,6 +174,47 @@
 <div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
 <div id="sadFace" class="cele-msg" style="display:none">😢</div>
 
+
+  function openSentences(){
+  const cont = $('sentencesBody');
+  cont.innerHTML = '';
+  // Show sentences only for unlocked words; respect Sentence Mode setting
+  const show = !!(state.settings && state.settings.sentenceMode);
+  if(!show){
+    const note = document.createElement('div');
+    note.className = 'stat';
+    note.innerHTML = `<b>Sentence Mode is OFF</b><div class="tiny">Turn it ON in Settings to view example sentences.</div>`;
+    cont.appendChild(note);
+  }else{
+    unlockedIndices().forEach(i=>{
+      const w = words[i];
+      if(!w.sentence) return;
+      const row = document.createElement('div');
+      row.className = 'stat';
+      row.innerHTML = `
+        <div class="fa" dir="rtl" style="font-size:20px">${w.sentence.fa}</div>
+        <div class="trans" style="font-size:18px">${w.sentence.translit}</div>
+        <div class="en" style="font-size:18px">${w.sentence.en}</div>
+      `;
+      cont.appendChild(row);
+    });
+    if(!cont.children.length){
+      const empty = document.createElement('div');
+      empty.className = 'stat';
+      empty.innerHTML = `<b>No sentences available yet</b><div class="tiny">Unlock more words to see sentences.</div>`;
+      cont.appendChild(empty);
+    }
+  }
+  $('sentencesModal').style.display='grid';
+}
+$('openSentences').addEventListener('click', ()=>{
+  // Close settings and open sentence window
+  $('settingsModal').style.display='none';
+  openSentences();
+});
+$('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.display='none');
+
+  
 <!-- Achievements Modal -->
 <div id="achModal" class="modal">
   <div class="modal-card">
@@ -227,11 +258,33 @@
         <b>Danger zone</b><p class="tiny">Clear this profile’s score, streak, SRS, unlocks, and achievements.</p>
         <button id="resetBtn" class="btn" style="background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d">♻️ Reset Progress</button>
       </div>
+      <div class="stat">
+  <b>Sentence Mode</b>
+  <p class="tiny">Show example sentences in a separate window.</p>
+  <button id="sentenceToggle" class="btn">Sentence Mode: ON</button>
+</div>
+
+<div class="stat">
+  <b>Sentence Practice</b>
+  <p class="tiny">Read sentences & translations for unlocked words.</p>
+  <button id="openSentences" class="btn">📖 Open Sentence Window</button>
+</div>
     </div>
   </div>
 </div>
-
 <script>
+  
+<!-- Sentence Practice Modal -->
+<div id="sentencesModal" class="modal">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h3 style="margin:0">📖 Sentence Practice</h3>
+      <button id="closeSentences" class="btn">Close</button>
+    </div>
+    <div id="sentencesBody" class="grid"></div>
+  </div>
+</div>
+
 /* ===================== PROFILED STORAGE ===================== */
 let ACTIVE_PROFILE = null;
 const GLOBAL_PREFIX = 'ff';
@@ -342,14 +395,6 @@ function showItem(){
   if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
   else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
 
-  // Sentence context
-  const sbox=$('sentBox'), sfa=$('s_fa'), str=$('s_tr'), sen=$('s_en');
-  if(state.settings?.sentenceMode && item.sentence && mode==='learn'){
-    $('sentenceBox').style.display='block';
-    sbox.style.display='block'; sfa.textContent=item.sentence.fa; str.textContent=item.sentence.translit; sen.textContent=item.sentence.en;
-  }else{
-    sbox.style.display='none';
-  }
 
   // controls visibility
   $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
@@ -493,7 +538,7 @@ function startMiniQuiz(){
   const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
   shuffle(pool); miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
   $('miniQuizPanel').style.display='block';
-  document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #factBox, #tip, #sentenceBox').forEach(el=> el.style && (el.style.display='none'));
+ document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #factBox, #tip').forEach(el=> el.style && (el.style.display='none'));
   nextMiniQuestion();
 }
 function nextMiniQuestion(){
