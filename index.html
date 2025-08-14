@@ -218,6 +218,12 @@
         <button id="openSentences" class="btn">📖 Open Sentence Practice</button>
       </div>
 
+      <!-- Lifetime Stats -->
+      <div class="stat">
+        <b>Lifetime Stats</b>
+        <div id="lifetimeStats" style="margin-top:8px"></div>
+      </div>
+
       <div class="stat">
         <b>Danger zone</b><p class="tiny">Clear this profile’s score, streak, SRS, unlocks, and achievements.</p>
         <button id="resetBtn" class="btn" style="background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d">♻️ Reset Progress</button>
@@ -425,7 +431,8 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.rando
 
 /* ===================== STATE (per profile) ===================== */
 const defaultState = ()=>({
-  score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
+  score:0, streak:0, bestStreak:0,        // ← added bestStreak
+  srs:{}, covered:[], start_date:null, unlocked_count:0,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
   mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
   settings:{reviewAll:false},
@@ -458,13 +465,13 @@ function quizPool(){ const due=dueIndices(); if(due.length) return due; const m=
 function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return [...due,...rest]; }
 
 /* ===================== PERSIST ===================== */
-function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); populateThemeDropdown(); }
+function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); populateThemeDropdown(); renderLifetimeStats(); }
 function loadState(){ state = store.get('state', defaultState()); initDailyUnlock(); applyTheme(state.theme||'default'); }
 
 /* ======== SHARED NICOLE SYNC (no login; safe no-op until configured) ======== */
-const SYNC_ENDPOINT = "https://ff-sync.9rmcqs6hjc.workers.dev"; // e.g., "https://ff-sync.yourname.workers.dev" — leave empty to disable
-const SYNC_DOC_ID = "nicole"; // everyone pressing Nicole shares this doc
-const SYNC_WRITE_TOKEN = "Gravity123!!";  // set to your Worker WRITE_TOKEN (optional guard)
+const SYNC_ENDPOINT = "https://ff-sync.9rmcqs6hjc.workers.dev";
+const SYNC_DOC_ID = "nicole";
+const SYNC_WRITE_TOKEN = "Gravity123!!";
 
 function mergeStates(local, remote){
   if(!remote || !remote.updated_at) return local;
@@ -476,7 +483,6 @@ function mergeStates(local, remote){
 
   newer.score = Math.max(local.score||0, remote.score||0);
   newer.streak = (newer===local ? local.streak : remote.streak) || 0;
-  // Keep SRS from newer for simplicity
   return newer;
 }
 
@@ -646,7 +652,8 @@ function handleAnswer(correct, gi, source='typing'){
   if(correct){
     r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1);
     scheduleAfter(gi,SRS_INTERVALS_HOURS[r.stage]||24);
-    state.score+=10; state.streak+=1; addCovered(gi);
+    state.score+=10; state.streak+=1; if(state.streak > (state.bestStreak||0)) state.bestStreak = state.streak;  // track longest streak
+    addCovered(gi);
     if(source!=='speech'){ $('typeFeedback').textContent='Great! +10 points'; $('typeFeedback').className='feedback ok'; }
     celebrateSimple();
     if(state.streak===7) celebrateStreak7();
@@ -695,6 +702,57 @@ function reflectBadges(){
     <div class="chip">${a.mastered50?'🏅':'⬜'} 50 mastered</div>
   `;
   $('achList').innerHTML = list;
+}
+
+/* ===================== LIFETIME STATS ===================== */
+function computeLifetimeStats(){
+  let correct = 0, wrong = 0, mastered = 0;
+  const maxStage = SRS_INTERVALS_HOURS.length - 1;
+  for (const k in state.srs) {
+    const r = state.srs[k];
+    correct += r.correct || 0;
+    wrong   += r.wrong   || 0;
+    if ((r.stage || 0) >= maxStage) mastered++;
+  }
+  const attempts = correct + wrong;
+  const accuracy = attempts ? Math.round((correct / attempts) * 1000) / 10 : 0;
+  const learned  = (state.covered || []).length;
+  const goalDays = (state.mapDays || []).filter(d => d.goalMet).length;
+  const bestStreak = state.bestStreak || 0;
+  return { accuracy, learned, mastered, attempts, goalDays, bestStreak };
+}
+function renderLifetimeStats(){
+  const box = $('lifetimeStats');
+  if (!box) return;
+  const s = computeLifetimeStats();
+  box.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+      <div style="background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:12px;text-align:center">
+        <div style="font-weight:800;font-size:22px">${s.accuracy}%</div>
+        <div class="tiny">Accuracy</div>
+      </div>
+      <div style="background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:12px;text-align:center">
+        <div style="font-weight:800;font-size:22px">${s.learned}</div>
+        <div class="tiny">Words learned</div>
+      </div>
+      <div style="background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:12px;text-align:center">
+        <div style="font-weight:800;font-size:22px">${s.mastered}</div>
+        <div class="tiny">Words mastered</div>
+      </div>
+      <div style="background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:12px;text-align:center">
+        <div style="font-weight:800;font-size:22px">${s.bestStreak}</div>
+        <div class="tiny">Longest streak</div>
+      </div>
+      <div style="background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:12px;text-align:center">
+        <div style="font-weight:800;font-size:22px">${s.goalDays}</div>
+        <div class="tiny">Daily goals met</div>
+      </div>
+      <div style="background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:12px;text-align:center">
+        <div style="font-weight:800;font-size:22px">${s.attempts}</div>
+        <div class="tiny">Total answers</div>
+      </div>
+    </div>
+  `;
 }
 
 /* ===================== SENTENCE PRACTICE (one at a time) ===================== */
@@ -810,6 +868,7 @@ $('openSettings').addEventListener('click', ()=>{
   $('settingsModal').style.display='grid'; 
   $('reviewToggle').textContent=`Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`;
   populateThemeDropdown();
+  renderLifetimeStats();     // refresh stats when opening
 });
 $('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
 $('settingsModal').addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
