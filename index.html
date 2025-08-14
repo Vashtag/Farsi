@@ -55,6 +55,15 @@
   .map{display:grid;grid-template-columns:repeat(4, minmax(60px,1fr));gap:8px;margin-top:10px}
   .tile{aspect-ratio:1/1;background:#0b1229;border:1px dashed #334155;border-radius:10px;display:grid;place-items:center;font-size:28px;color:#334155}
   .tile.unlocked{border-style:solid;color:#e5e7eb}
+
+  /* >>> ADDED: heavy blur behind the profile chooser only <<< */
+  #profileOverlay{
+    background:
+      radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%),
+      rgba(15,23,42,.60);         /* lighter so the blur shows through */
+    backdrop-filter: blur(28px) saturate(120%);
+    -webkit-backdrop-filter: blur(28px) saturate(120%); /* Safari */
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
@@ -344,7 +353,7 @@ const THEMES = [
   {key:'sunset',  name:'Sunset',          unlockAt:50, vars:{'--grad1':'#2a0f1b','--grad2':'#3a1f2a','--accent-2':'#fb923c','--accent':'#f59e0b','--bg':'#1a0c12'}},
   {key:'mint',    name:'Mint',            unlockAt:100,vars:{'--grad1':'#0d1f1a','--grad2':'#123227','--accent-2':'#34d399','--accent':'#10b981','--bg':'#0b1814'}},
   {key:'amethyst',name:'Amethyst',        unlockAt:150,vars:{'--grad1':'#1b1330','--grad2':'#2a1f4d','--accent-2':'#a78bfa','--accent':'#8b5cf6','--bg':'#130f24'}},
-  {key:'night',   name:'Night Bazaar',    unlockAt:200,vars:{'--grad1':'#0a0a0f','--grad2':'#15151f','--accent-2':'#60a5fa','--accent':'#22d3ee','--bg':'#0a0b12'}},
+  {key:'night',   name:'Night Bazaar',    unlockAt:200,vars:{'--grad1':'#0a0a0f','--grad2':'#15151f','--accent-2':'#60a5fa','--accent':'#22d3ee','--bg':'#0a0b12'}}
 ];
 function applyTheme(key){
   const t = THEMES.find(x=>x.key===key) || THEMES[0];
@@ -683,7 +692,7 @@ function useProfile(name){
   ACTIVE_PROFILE = String(name||'').trim() || 'Guest';
   loadState();
   $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
-  $('profileOverlay').style.display='none';
+  $('profileOverlay').style.display='none';    // blur disappears here
   $('startOverlay').style.display='grid';
 }
 $('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
