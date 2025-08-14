@@ -75,7 +75,7 @@
   </div>
 </header>
 
-<!-- Profile chooser (two buttons only) -->
+<!-- Profile chooser (hidden dev mode) -->
 <div id="profileOverlay" class="overlay" style="display:grid">
   <div class="overlay-card" style="position:relative; text-align:center">
     <h2 style="margin-top:0">Who are you?</h2>
@@ -84,10 +84,10 @@
     <!-- Big Nicole button -->
     <button id="quickNicole" class="primary" style="font-size:20px; padding:14px 28px;">Nicole</button>
 
-    <!-- Small Siyavash button in corner -->
+    <!-- Hidden dev button (revealed by key combo 3232) -->
     <button id="quickSia"
-      style="position:absolute; bottom:10px; right:10px; font-size:12px; padding:4px 8px; opacity:0.7;"
-      class="btn">
+      style="position:absolute; bottom:10px; right:10px; font-size:12px; padding:4px 8px; opacity:0.75; display:none;"
+      class="btn" title="Developer">
       Siyavash
     </button>
   </div>
@@ -540,7 +540,43 @@ function useProfile(name){
   $('startOverlay').style.display='grid';
 }
 $('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
-$('quickSia').addEventListener('click', ()=> useProfile('Sia'));
+$('quickSia').addEventListener('click', ()=>{
+  const pin = prompt('Enter developer PIN:');
+  if(pin === '3232'){ useProfile('Sia'); }
+  else{ alert('Incorrect PIN.'); }
+});
+
+  // === Hidden dev reveal: type 3232 while profile overlay is visible ===
+(function(){
+  const overlay = $('profileOverlay');
+  const devBtn = $('quickSia');
+  let seq = '';
+  let timer = null;
+  let revealed = false;
+
+  window.addEventListener('keydown', (e)=>{
+    // Only listen while the profile overlay is up
+    if(!overlay || overlay.style.display !== 'grid' || revealed) return;
+
+    // Only digits for this secret
+    if(!/^[0-9]$/.test(e.key)) return;
+
+    seq += e.key;
+    clearTimeout(timer);
+    timer = setTimeout(()=>{ seq = ''; }, 1500); // reset if paused too long
+
+    if(seq.endsWith('3232')){
+      revealed = true;
+      devBtn.style.display = 'inline-block';
+      // Optional: tiny toast to confirm unlock
+      const note = document.createElement('div');
+      note.className = 'tiny';
+      note.textContent = 'Developer button unlocked';
+      note.style.marginTop = '10px';
+      overlay.querySelector('.overlay-card').appendChild(note);
+    }
+  });
+})();
 
 /* Start overlay buttons */
 $('startLearn').addEventListener('click', ()=>{ mode='learn'; ensureOrder(); $('startOverlay').style.display='none'; showItem(); });
