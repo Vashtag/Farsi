@@ -56,13 +56,21 @@
   .tile{aspect-ratio:1/1;background:#0b1229;border:1px dashed #334155;border-radius:10px;display:grid;place-items:center;font-size:28px;color:#334155}
   .tile.unlocked{border-style:solid;color:#e5e7eb}
 
-  /* Super‑blur behind the profile chooser only */
+  /* Heavy blur behind the profile chooser */
   #profileOverlay{
     background:
       radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%),
       rgba(15,23,42,.60);
     backdrop-filter: blur(28px) saturate(120%);
-    -webkit-backdrop-filter: blur(25px) saturate(120%);
+    -webkit-backdrop-filter: blur(28px) saturate(120%);
+  }
+  /* SAME blur for the start screen */
+  #startOverlay{
+    background:
+      radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%),
+      rgba(15,23,42,.60);
+    backdrop-filter: blur(28px) saturate(120%);
+    -webkit-backdrop-filter: blur(28px) saturate(120%);
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
@@ -81,7 +89,7 @@
   </div>
 </header>
 
-<!-- Profile chooser (hidden dev mode) -->
+<!-- Profile chooser -->
 <div id="profileOverlay" class="overlay" style="display:grid">
   <div class="overlay-card" style="position:relative; text-align:center">
     <h2 style="margin-top:0">Who are you?</h2>
@@ -144,7 +152,7 @@
 
         <div class="progress"><div class="bar" id="progressBar"></div></div>
 
-        <!-- Mini Quiz -->
+        <!-- Mini Quiz (image + translit only) -->
         <div id="miniQuizPanel" class="card" style="display:none; margin-top:14px">
           <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:8px">
             <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
@@ -184,7 +192,7 @@
       <h3 style="margin:0">🗺️ Persian Bazaar Progress</h3>
       <button id="closeMap" class="btn">Close</button>
     </div>
-    <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile.</p>
+    <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile. Lots of cats live here 🐈.</p>
     <div id="mapGrid" class="map"></div>
   </div>
 </div>
@@ -209,7 +217,7 @@
         <button id="startMiniQuiz" class="btn">⚡ Start Mini Quiz</button>
       </div>
       <div class="stat">
-        <b>Review Mode</b><p class="tiny">Quiz only on words she has mastered.</p>
+        <b>Review Mode</b><p class="tiny">Quiz only on words she has mastered (ignores SRS order).</p>
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
 
@@ -225,7 +233,7 @@
       </div>
 
       <div class="stat">
-        <b>Danger zone</b><p class="tiny">Clear this profile’s data.</p>
+        <b>Danger zone</b><p class="tiny">Clear this profile’s score, streak, SRS, unlocks, and achievements.</p>
         <button id="resetBtn" class="btn" style="background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d">♻️ Reset Progress</button>
       </div>
     </div>
@@ -311,38 +319,7 @@ const words = [
   {fa:"پارک", en:"park", translit:"pârk", emoji:"🌳", audio:"audio/pârk.mp3", image:"images/pârk.png"},
   {fa:"بیمارستان", en:"hospital", translit:"bimârestân", emoji:"🏥", audio:"audio/bimârestân.mp3", image:"images/bimârestân.png"},
   {fa:"داروخانه", en:"pharmacy", translit:"dârukhâne", emoji:"💊", audio:"audio/dârukhâne.mp3", image:"images/dârukhâne.png"},
-  {fa:"کتابخانه", en:"library", translit:"ketâbkhâne", emoji:"📚", audio:"audio/ketâbkhâne.mp3", image:"images/ketâbkhâne.png"},
-  {fa:"ایستگاه", en:"station", translit:"istgâh", emoji:"🚉", audio:"audio/istgâh.mp3", image:"images/istgâh.png"},
-  {fa:"فرودگاه", en:"airport", translit:"forudgâh", emoji:"✈️", audio:"audio/forudgâh.mp3", image:"images/forudgâh.png"},
-  {fa:"اتوبوس", en:"bus", translit:"otobus", emoji:"🚌", audio:"audio/otobus.mp3", image:"images/otobus.png"},
-  {fa:"تاکسی", en:"taxi", translit:"tâxi", emoji:"🚕", audio:"audio/tâxi.mp3", image:"images/tâxi.png"},
-  {fa:"قطار", en:"train", translit:"ghatâr", emoji:"🚆", audio:"audio/ghatâr.mp3", image:"images/ghatâr.png"},
-  {fa:"دوچرخه", en:"bicycle", translit:"docharkhe", emoji:"🚲", audio:"audio/docharkhe.mp3", image:"images/docharkhe.png"},
-  {fa:"هواپیما", en:"airplane", translit:"havâpeymâ", emoji:"✈️", audio:"audio/havâpeymâ.mp3", image:"images/havâpeymâ.png"},
-  {fa:"کفش", en:"shoe", translit:"kafsh", emoji:"👟", audio:"audio/kafsh.mp3", image:"images/kafsh.png"},
-  {fa:"لباس", en:"clothes", translit:"lebâs", emoji:"👕", audio:"audio/lebâس.mp3", image:"images/lebâس.png"},
-  {fa:"شلوار", en:"pants", translit:"shalvâr", emoji:"👖", audio:"audio/shalvâr.mp3", image:"images/shalvâr.png"},
-  {fa:"پیراهن", en:"shirt", translit:"pirâhan", emoji:"👔", audio:"audio/pirâhan.mp3", image:"images/pirâhan.png"},
-  {fa:"کلاه", en:"hat", translit:"kolâh", emoji:"🎩", audio:"audio/kolâh.mp3", image:"images/kolâh.png"},
-  {fa:"عینک", en:"glasses", translit:"eynâk", emoji:"👓", audio:"audio/eynâk.mp3", image:"images/eynâk.png"},
-  {fa:"ساعت", en:"clock", translit:"sâ'at", emoji:"⏰", audio:"audio/sâ'at.mp3", image:"images/sâ'at.png"},
-  {fa:"روز", en:"day", translit:"ruz", emoji:"🌞", audio:"audio/ruz.mp3", image:"images/ruz.png"},
-  {fa:"شب", en:"night", translit:"shab", emoji:"🌙", audio:"audio/shab.mp3", image:"images/shab.png"},
-  {fa:"صبح", en:"morning", translit:"sobh", emoji:"🌅", audio:"audio/sobh.mp3", image:"images/sobh.png"},
-  {fa:"عصر", en:"evening", translit:"asr", emoji:"🌆", audio:"audio/asr.mp3", image:"images/asr.png"},
-  {fa:"هفته", en:"week", translit:"hafte", emoji:"📅", audio:"audio/hafte.mp3", image:"images/hafte.png"},
-  {fa:"ماه", en:"month", translit:"mâh", emoji:"📆", audio:"audio/mâh.mp3", image:"images/mâh.png"},
-  {fa:"سال", en:"year", translit:"sâl", emoji:"📆", audio:"audio/sâl.mp3", image:"images/sâl.png"},
-  {fa:"یک", en:"one", translit:"yek", emoji:"1️⃣", audio:"audio/yek.mp3", image:"images/yek.png"},
-  {fa:"دو", en:"two", translit:"do", emoji:"2️⃣", audio:"audio/do.mp3", image:"images/do.png"},
-  {fa:"سه", en:"three", translit:"se", emoji:"3️⃣", audio:"audio/se.mp3", image:"images/se.png"},
-  {fa:"چهار", en:"four", translit:"chahâr", emoji:"4️⃣", audio:"audio/chahâr.mp3", image:"images/chahâr.png"},
-  {fa:"پنج", en:"five", translit:"panj", emoji:"5️⃣", audio:"audio/panj.mp3", image:"images/panj.png"},
-  {fa:"شش", en:"six", translit:"shesh", emoji:"6️⃣", audio:"audio/shesh.mp3", image:"images/shesh.png"},
-  {fa:"هفت", en:"seven", translit:"haft", emoji:"7️⃣", audio:"audio/haft.mp3", image:"images/haft.png"},
-  {fa:"هشت", en:"eight", translit:"hasht", emoji:"8️⃣", audio:"audio/hasht.mp3", image:"images/hasht.png"},
-  {fa:"نه", en:"nine", translit:"noh", emoji:"9️⃣", audio:"audio/noh.mp3", image:"images/noh.png"},
-  {fa:"ده", en:"ten", translit:"dah", emoji:"🔟", audio:"audio/dah.mp3", image:"images/dah.png"}
+  {fa:"کتابخانه", en:"library", translit:"ketâbkhâne", emoji:"📚", audio:"audio/ketâبkhâne.mp3", image:"images/ketâبkhâne.png"}
 ];
 
 /* ===================== THEMES (rewards) ===================== */
@@ -385,8 +362,8 @@ const $=id=>document.getElementById(id);
 const bySel=s=>document.querySelector(s);
 function now(){return Date.now()}
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
-function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'').trim()}
-function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
+function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'')}
+function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/[ي‍]/g,'ی').replace(/[ك]/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
 
 /* ===================== STATE (per profile) ===================== */
@@ -485,7 +462,7 @@ const audioCache=new Map();
 function getAudio(item){ const url=item.audio||`audio/${(item.translit||'').toLowerCase()}.mp3`; if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);} return audioCache.get(url);}
 async function playYourAudio(){ const gi=order[idx], item=words[gi]; try{ const a=getAudio(item); a.currentTime=0; await a.play(); }catch{} }
 
-/* ===================== SPEECH RECOGNITION ===================== */
+/* ===================== SPEECH RECOGNITION (fa-IR first) ===================== */
 let SR=null, recognizing=false;
 function levenshtein(a,b){
   const m=a.length, n=b.length;
@@ -500,44 +477,56 @@ function levenshtein(a,b){
   }
   return dp[m][n];
 }
-function closeEnough(a,b){
-  if(!a||!b) return false;
-  if(a===b) return true;
-  const d=levenshtein(a,b);
-  return d<=1; // forgiving by one edit
-}
+function closeEnough(a,b){ if(!a||!b) return false; if(a===b) return true; return levenshtein(a,b)<=1; }
+function hasPersian(s){ return /[\u0600-\u06FF]/.test(s||''); }
+
 function initSpeech(){
   const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
   const btn = $('sayBtn');
   if(!SRClass){ btn.disabled=true; btn.title='Speech not supported (try Chrome).'; return; }
+
   SR = new SRClass();
-  SR.lang = 'en-US';              // user speaks transliteration (English letters)
+  SR.lang = 'fa-IR';              // Persian first
   SR.interimResults = false;
-  SR.maxAlternatives = 3;
+  SR.maxAlternatives = 4;
 
   btn.disabled=false;
-  btn.title='Say the transliteration (e.g., "sib")';
+  btn.title='Say the word in Persian (e.g., «خانه»). Speaking the transliteration also works.';
 
-  SR.onstart = ()=>{ recognizing=true; $('speechFeedback').textContent='Listening…'; $('speechFeedback').className='feedback tiny'; };
+  SR.onstart = ()=>{ recognizing=true; $('speechFeedback').textContent='🎙️ Listening…'; $('speechFeedback').className='feedback tiny'; };
   SR.onerror = (e)=>{ recognizing=false; $('speechFeedback').textContent='Mic error. Try again.'; $('speechFeedback').className='feedback err'; console.warn(e.error); };
-  SR.onend = ()=>{ recognizing=false; if($('speechFeedback').textContent==='Listening…'){ $('speechFeedback').textContent='Didn’t catch that—try again.'; $('speechFeedback').className='feedback warn'; } };
+  SR.onend = ()=>{ recognizing=false; if($('speechFeedback').textContent.includes('Listening')){ $('speechFeedback').textContent='Didn’t catch that—try again.'; $('speechFeedback').className='feedback warn'; } };
 
   SR.onresult = (event)=>{
     recognizing=false;
     const gi=order[idx], item=words[gi];
+    const targetFa = normalizeFa(item.fa);
+    const targetTr = normalizeTranslit(item.translit);
+
     const heard = [];
     for(let i=0;i<event.results[0].length;i++){
       heard.push(event.results[0][i].transcript);
     }
-    // pick best alt that matches (or first if none)
-    const target = normalizeTranslit(item.translit);
-    let ok=false, picked='';
+
+    // evaluate each alternative: prefer Persian match, then transliteration
+    let ok=false, picked='', reason='';
     for(const h of heard){
-      const n=normalizeTranslit(h);
-      picked = picked || n;
-      if(closeEnough(n,target)){ ok=true; picked=n; break; }
+      const t = h.trim();
+      if(hasPersian(t)){
+        const nfa = normalizeFa(t);
+        if(closeEnough(nfa, targetFa)){ ok=true; picked=t; reason='fa'; break; }
+      }
     }
-    $('speechFeedback').innerHTML = ok ? `Heard: "<b>${picked}</b>" ✓` : `Heard: "<b>${picked||'(nothing)'}"</b> ✗ — target is "<b>${item.translit}</b>"`;
+    if(!ok){
+      for(const h of heard){
+        const nl = normalizeTranslit(h);
+        if(closeEnough(nl, targetTr)){ ok=true; picked=h.trim(); reason='lat'; break; }
+      }
+    }
+
+    $('speechFeedback').innerHTML = ok
+      ? `Heard: "<b>${picked}</b>" ✓`
+      : `Heard: "<b>${(heard[0]||'(nothing)').trim()}</b>" ✗ — target is "<b>${item.fa}</b>" (${item.translit})`;
     $('speechFeedback').className = 'feedback ' + (ok?'ok':'warn');
     handleAnswer(ok, gi, 'speech', picked);
   };
@@ -795,7 +784,7 @@ $('quickSia').addEventListener('click', ()=>{
   });
 })();
 
-/* Start overlay fallback */
+/* Start overlay fallback (ensures buttons always work) */
 function startAs(m){ mode=m; ensureOrder(); $('startOverlay').style.display='none'; showItem(); }
 ['startLearn','startQuiz'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
 $('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); });
