@@ -75,17 +75,21 @@
   </div>
 </header>
 
-<!-- Profile chooser (no login, just name) -->
+<!-- Profile chooser (two buttons only) -->
 <div id="profileOverlay" class="overlay" style="display:grid">
-  <div class="overlay-card">
-    <h2>Who’s learning today?</h2>
-    <p class="tiny">Type a name (e.g., <b>Nicole</b> or <b>Sia</b>). Progress is saved per name on this device.</p>
-    <div style="display:flex; gap:10px; flex-wrap:wrap">
-      <input id="profileName" class="input" style="min-width:260px" placeholder="Enter name (e.g., Nicole)"/>
-      <button id="useProfile" class="primary">Continue</button>
-      <button id="quickNicole" class="btn">Nicole</button>
-      <button id="quickSia" class="btn">Sia</button>
-    </div>
+  <div class="overlay-card" style="position:relative; text-align:center">
+    <h2 style="margin-top:0">Who are you?</h2>
+    <p class="tiny" style="margin-bottom:20px">Choose your profile to continue</p>
+
+    <!-- Big Nicole button -->
+    <button id="quickNicole" class="primary" style="font-size:20px; padding:14px 28px;">Nicole</button>
+
+    <!-- Small Siyavash button in corner -->
+    <button id="quickSia"
+      style="position:absolute; bottom:10px; right:10px; font-size:12px; padding:4px 8px; opacity:0.7;"
+      class="btn">
+      Siyavash
+    </button>
   </div>
 </div>
 
@@ -535,7 +539,6 @@ function useProfile(name){
   $('profileOverlay').style.display='none';
   $('startOverlay').style.display='grid';
 }
-$('useProfile').addEventListener('click', ()=> useProfile($('profileName').value));
 $('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
 $('quickSia').addEventListener('click', ()=> useProfile('Sia'));
 
