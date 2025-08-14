@@ -174,47 +174,6 @@
 <div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
 <div id="sadFace" class="cele-msg" style="display:none">😢</div>
 
-
-  function openSentences(){
-  const cont = $('sentencesBody');
-  cont.innerHTML = '';
-  // Show sentences only for unlocked words; respect Sentence Mode setting
-  const show = !!(state.settings && state.settings.sentenceMode);
-  if(!show){
-    const note = document.createElement('div');
-    note.className = 'stat';
-    note.innerHTML = `<b>Sentence Mode is OFF</b><div class="tiny">Turn it ON in Settings to view example sentences.</div>`;
-    cont.appendChild(note);
-  }else{
-    unlockedIndices().forEach(i=>{
-      const w = words[i];
-      if(!w.sentence) return;
-      const row = document.createElement('div');
-      row.className = 'stat';
-      row.innerHTML = `
-        <div class="fa" dir="rtl" style="font-size:20px">${w.sentence.fa}</div>
-        <div class="trans" style="font-size:18px">${w.sentence.translit}</div>
-        <div class="en" style="font-size:18px">${w.sentence.en}</div>
-      `;
-      cont.appendChild(row);
-    });
-    if(!cont.children.length){
-      const empty = document.createElement('div');
-      empty.className = 'stat';
-      empty.innerHTML = `<b>No sentences available yet</b><div class="tiny">Unlock more words to see sentences.</div>`;
-      cont.appendChild(empty);
-    }
-  }
-  $('sentencesModal').style.display='grid';
-}
-$('openSentences').addEventListener('click', ()=>{
-  // Close settings and open sentence window
-  $('settingsModal').style.display='none';
-  openSentences();
-});
-$('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.display='none');
-
-  
 <!-- Achievements Modal -->
 <div id="achModal" class="modal">
   <div class="modal-card">
@@ -254,26 +213,27 @@ $('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.dis
         <b>Review Mode</b><p class="tiny">Quiz only on words she has mastered (ignores SRS order).</p>
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
+
+      <!-- NEW: Sentence Mode + Sentence Practice -->
+      <div class="stat">
+        <b>Sentence Mode</b>
+        <p class="tiny">Show example sentences in a separate window.</p>
+        <button id="sentenceToggle" class="btn">Sentence Mode: ON</button>
+      </div>
+      <div class="stat">
+        <b>Sentence Practice</b>
+        <p class="tiny">Read sentences & translations for unlocked words.</p>
+        <button id="openSentences" class="btn">📖 Open Sentence Window</button>
+      </div>
+
       <div class="stat">
         <b>Danger zone</b><p class="tiny">Clear this profile’s score, streak, SRS, unlocks, and achievements.</p>
         <button id="resetBtn" class="btn" style="background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d">♻️ Reset Progress</button>
       </div>
-      <div class="stat">
-  <b>Sentence Mode</b>
-  <p class="tiny">Show example sentences in a separate window.</p>
-  <button id="sentenceToggle" class="btn">Sentence Mode: ON</button>
-</div>
-
-<div class="stat">
-  <b>Sentence Practice</b>
-  <p class="tiny">Read sentences & translations for unlocked words.</p>
-  <button id="openSentences" class="btn">📖 Open Sentence Window</button>
-</div>
     </div>
   </div>
 </div>
-<script>
-  
+
 <!-- Sentence Practice Modal -->
 <div id="sentencesModal" class="modal">
   <div class="modal-card">
@@ -285,6 +245,7 @@ $('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.dis
   </div>
 </div>
 
+<script>
 /* ===================== PROFILED STORAGE ===================== */
 let ACTIVE_PROFILE = null;
 const GLOBAL_PREFIX = 'ff';
@@ -395,7 +356,6 @@ function showItem(){
   if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
   else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
 
-
   // controls visibility
   $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
@@ -487,6 +447,43 @@ function reflectBadges(){
   $('achList').innerHTML = list;
 }
 
+/* ===================== SENTENCE WINDOW (modal) ===================== */
+function reflectSentenceToggle(){
+  const on = !!(state.settings && state.settings.sentenceMode);
+  $('sentenceToggle').textContent = `Sentence Mode: ${on ? 'ON' : 'OFF'}`;
+}
+function openSentences(){
+  const cont = $('sentencesBody');
+  cont.innerHTML = '';
+  const show = !!(state.settings && state.settings.sentenceMode);
+  if(!show){
+    const note = document.createElement('div');
+    note.className = 'stat';
+    note.innerHTML = `<b>Sentence Mode is OFF</b><div class="tiny">Turn it ON in Settings to view example sentences.</div>`;
+    cont.appendChild(note);
+  }else{
+    unlockedIndices().forEach(i=>{
+      const w = words[i];
+      if(!w.sentence) return;
+      const row=document.createElement('div');
+      row.className='stat';
+      row.innerHTML = `
+        <div class="fa" dir="rtl" style="font-size:20px">${w.sentence.fa}</div>
+        <div class="trans" style="font-size:18px">${w.sentence.translit}</div>
+        <div class="en" style="font-size:18px">${w.sentence.en}</div>
+      `;
+      cont.appendChild(row);
+    });
+    if(!cont.children.length){
+      const empty=document.createElement('div');
+      empty.className='stat';
+      empty.innerHTML = `<b>No sentences available yet</b><div class="tiny">Unlock more words to see sentences.</div>`;
+      cont.appendChild(empty);
+    }
+  }
+  $('sentencesModal').style.display='grid';
+}
+
 /* ===================== EVENTS ===================== */
 $('listenBtn').addEventListener('click', playYourAudio);
 $('checkBtn').addEventListener('click', ()=>{
@@ -520,6 +517,7 @@ $('closeMap').addEventListener('click', ()=> $('mapModal').style.display='none')
 $('openSettings').addEventListener('click', ()=>{ 
   $('settingsModal').style.display='grid'; 
   $('reviewToggle').textContent=`Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`;
+  reflectSentenceToggle();
 });
 $('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
 $('settingsModal').addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
@@ -529,23 +527,41 @@ $('reviewToggle').addEventListener('click', ()=>{
   $('reviewToggle').textContent=`Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`;
 });
 
-$('startMiniQuiz').addEventListener('click', ()=>{
-  $('settingsModal').style.display='none';
-  startMiniQuiz();
+/* Sentence controls now live in Settings */
+$('sentenceToggle').addEventListener('click', ()=>{
+  const v = !(state.settings?.sentenceMode);
+  state.settings.sentenceMode = v;
+  persist();
+  reflectSentenceToggle();
+  openSentences(); // open the window when toggled
 });
+$('openSentences').addEventListener('click', ()=>{
+  $('settingsModal').style.display='none';
+  openSentences();
+});
+$('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.display='none');
+
+/* Mini Quiz */
+$('startMiniQuiz').addEventListener('click', ()=>{ $('settingsModal').style.display='none'; startMiniQuiz(); });
 let miniQ={queue:[],current:null,correct:0,total:0};
 function startMiniQuiz(){
   const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
   shuffle(pool); miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
   $('miniQuizPanel').style.display='block';
- document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #factBox, #tip').forEach(el=> el.style && (el.style.display='none'));
+  document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #factBox, #tip')
+    .forEach(el=> el && el.style && (el.style.display='none'));
   nextMiniQuestion();
 }
 function nextMiniQuestion(){
   if(!miniQ.queue.length){
     $('mqFeedback').innerHTML=`Mini Quiz complete! Score: <b>${miniQ.correct}</b> / ${miniQ.total}`;
     $('mqBar').style.width='100%';
-    setTimeout(()=>{ $('miniQuizPanel').style.display='none'; document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #factBox, #tip, #sentenceBox').forEach(el=> el.style && (el.style.display='')); showItem(); }, 1500);
+    setTimeout(()=>{
+      $('miniQuizPanel').style.display='none';
+      document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #factBox, #tip')
+        .forEach(el=> el && el.style && (el.style.display=''));
+      showItem();
+    }, 1500);
     return;
   }
   miniQ.current = miniQ.queue.shift();
@@ -561,12 +577,6 @@ $('mqCheck').addEventListener('click', ()=>{
   if(ok){ miniQ.correct++; $('mqFeedback').textContent='Nice!'; $('mqFeedback').className='feedback ok'; celebrateSimple(); }
   else { $('mqFeedback').textContent=`Answer: ${item.translit}`; $('mqFeedback').className='feedback warn'; state.streak=0; persist(); }
   setTimeout(nextMiniQuestion, 350);
-});
-
-/* Sentence toggle */
-$('sentenceToggle').addEventListener('click', ()=>{
-  const v = !(state.settings?.sentenceMode); state.settings.sentenceMode=v; persist();
-  $('sentenceToggle').textContent = `Sentence Mode: ${v?'ON':'OFF'}`;
 });
 
 /* Midnight countdown */
@@ -591,7 +601,7 @@ $('quickSia').addEventListener('click', ()=>{
   else{ alert('Incorrect PIN.'); }
 });
 
-  // === Hidden dev reveal: type 3232 while profile overlay is visible ===
+/* Hidden dev reveal: type 3232 while profile overlay is visible */
 (function(){
   const overlay = $('profileOverlay');
   const devBtn = $('quickSia');
@@ -600,20 +610,14 @@ $('quickSia').addEventListener('click', ()=>{
   let revealed = false;
 
   window.addEventListener('keydown', (e)=>{
-    // Only listen while the profile overlay is up
     if(!overlay || overlay.style.display !== 'grid' || revealed) return;
-
-    // Only digits for this secret
     if(!/^[0-9]$/.test(e.key)) return;
-
     seq += e.key;
     clearTimeout(timer);
-    timer = setTimeout(()=>{ seq = ''; }, 1500); // reset if paused too long
-
+    timer = setTimeout(()=>{ seq = ''; }, 1500);
     if(seq.endsWith('3232')){
       revealed = true;
       devBtn.style.display = 'inline-block';
-      // Optional: tiny toast to confirm unlock
       const note = document.createElement('div');
       note.className = 'tiny';
       note.textContent = 'Developer button unlocked';
@@ -623,9 +627,13 @@ $('quickSia').addEventListener('click', ()=>{
   });
 })();
 
-/* Start overlay buttons */
-$('startLearn').addEventListener('click', ()=>{ mode='learn'; ensureOrder(); $('startOverlay').style.display='none'; showItem(); });
-$('startQuiz').addEventListener('click',  ()=>{ mode='quiz'; ensureOrder(); $('startOverlay').style.display='none'; showItem(); });
+/* Close modals on backdrop click (sentences/map/achievements/settings) */
+document.addEventListener('click', (e)=>{
+  if(e.target.id==='settingsModal') e.target.style.display='none';
+  if(e.target.id==='sentencesModal') e.target.style.display='none';
+  if(e.target.id==='achModal') e.target.style.display='none';
+  if(e.target.id==='mapModal') e.target.style.display='none';
+});
 
 /* Init (shows profile overlay by default) */
 </script>
