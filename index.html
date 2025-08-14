@@ -26,8 +26,9 @@
   .primary{background:linear-gradient(180deg,var(--accent),#16a34a);border-color:#14532d}
   .accent{background:linear-gradient(180deg,var(--accent-2),#0ea5e9);border-color:#075985}
   main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
-  .card{background:linear-gradient(180deg,var(--grad1),var(--grad2));border:1px solid #1f2937;border-radius:16px;padding:clamp(16px,3vw,28px)}
-  .row{display:grid;grid-template-columns:1fr;gap:16px}
+  .card{background:linear-gradient(180deg,var(--grad1),var(--grad2));border:1px solid #1f2937;border-radius:16px;padding:clamp(16px,3vw,28px);
+        max-width:980px;margin-left:auto;margin-right:auto;} /* centered card */
+  .row{display:grid;grid-template-columns:1fr;gap:16px;place-items:center;} /* centered contents */
   @media(min-width:860px){.row{grid-template-columns:1fr 1fr}}
   .media-wrap{display:grid;place-items:center}
   .pic,.mq-pic{width:min(420px,92%);height:min(280px,45vw);object-fit:contain;background:#0b1229;border:1px solid #1f2937;border-radius:16px;display:none}
@@ -140,11 +141,11 @@ const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
   mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
-  settings:{reviewAll:false},   // sentence page lives separately now
+  settings:{reviewAll:false},
   theme:'ocean'
 });
 let state = defaultState();
-let ACTIVE_PROFILE = 'Nicole';     // Default user (no explicit profile UI)
+let ACTIVE_PROFILE = 'Nicole';     // Default user
 let DEVELOPER_MODE = false;        // Sia only when PIN is entered
 let mode='learn', order=[], idx=0;
 let docIdHash = null;
@@ -198,7 +199,6 @@ function ensureStartAndUnlocks(){
   const diffDays = Math.floor((dNow - startDate)/86400000);
   const shouldUnlock = Math.min(words.length, (diffDays+1)*DAILY_WORDS);
   state.unlocked_count = Math.max(state.unlocked_count||0, shouldUnlock);
-  // Sia (dev) = full unlocks
   if(ACTIVE_PROFILE==='Sia'){
     state.unlocked_count = words.length;
     state.mapUnlocked = 12;
@@ -214,7 +214,7 @@ function reflectAll(){
   $('streakBadge').textContent  = `Streak: ${state.streak} 🔥`;
   $('unlockedBadge').textContent = `${unlockedCount()}/${words.length} unlocked`;
   applyTheme(state.theme||'ocean');
-  populateThemeDropdown();  // dropdown
+  populateThemeDropdown();
   renderMap();
   reflectBadges();
   if(order.length===0) ensureOrder();
@@ -222,10 +222,25 @@ function reflectAll(){
   $('devBanner').style.display = (DEVELOPER_MODE && ACTIVE_PROFILE==='Sia') ? 'block' : 'none';
 }
 
+/* === FIX #2: Robust image/emoji loader === */
 function showImageOrEmoji(item){
-  const pic=$('pic'), emo=$('emoji');
-  if(item.image){ pic.style.display='block'; emo.style.display='none'; pic.src=item.image; pic.alt=item.en; }
-  else { pic.style.display='none'; emo.style.display='block'; emo.textContent=item.emoji||'❓'; }
+  const pic = $('pic'), emo = $('emoji');
+
+  // reset both
+  emo.style.display = 'none';
+  pic.style.display = 'none';
+  pic.removeAttribute('src');
+  pic.onload = null;
+  pic.onerror = null;
+
+  if (item.image){
+    pic.onload = () => { pic.style.display='block'; emo.style.display='none'; };
+    pic.onerror = () => { pic.removeAttribute('src'); emo.textContent=item.emoji||'❓'; emo.style.display='block'; };
+    pic.src = item.image + '?v=' + Date.now(); // cache-bust old 404s
+  } else {
+    emo.textContent = item.emoji || '❓';
+    emo.style.display = 'block';
+  }
 }
 
 function showItem(){
@@ -360,20 +375,36 @@ function populateThemeDropdown(){
 
 /* ===== Events (main) ===== */
 $('listenBtn').addEventListener('click', playYourAudio);
+
+/* === FIX #3: Make sure pool exists before first Check === */
 $('checkBtn').addEventListener('click', ()=>{
-  if(order.length===0){ $('typeFeedback').textContent='No items yet.'; return; }
-  const gi=order[idx%order.length], item=words[gi];
-  const v=$('typeInput').value.trim(); if(!v){ $('typeFeedback').textContent='Type your guess first!'; $('typeFeedback').className='feedback warn'; return; }
-  $('typeFeedback').textContent=''; $('typeInput').value=''; $('typeInput').focus();
+  if (order.length === 0) { ensureOrder(); }
+  if (order.length === 0) { // truly empty words array
+    $('typeFeedback').textContent='No items yet.';
+    $('typeFeedback').className='feedback warn';
+    return;
+  }
+  const gi = order[idx % order.length];
+  const item = words[gi];
+  const v = $('typeInput').value.trim();
+  if(!v){
+    $('typeFeedback').textContent='Type your guess first!';
+    $('typeFeedback').className='feedback warn';
+    return;
+  }
+  $('typeFeedback').textContent='';
+  $('typeInput').value='';
+  $('typeInput').focus();
   handleAnswer(normalizeTranslit(v)===normalizeTranslit(item.translit), gi);
 });
+
 $('typeInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('checkBtn').click(); }});
 $('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.streak=0; saveStateToCloud(); next(); });
 $('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
 $('learnBtn').addEventListener('click', ()=>{ mode='learn'; ensureOrder(); showItem(); });
 $('quizBtn').addEventListener('click',  ()=>{ mode='quiz'; ensureOrder(); showItem(); });
 
-/* ===== Mini Quiz (clean, no conflicts) ===== */
+/* ===== Mini Quiz ===== */
 let miniQ={queue:[],current:null,correct:0,total:0};
 $('startMiniQuiz').addEventListener('click', ()=>{
   $('settingsModal').style.display='none';
@@ -384,7 +415,7 @@ function startMiniQuiz(){
   shuffle(pool); miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
   $('miniQuizPanel').dataset.active='1';
   $('miniQuizPanel').style.display='block';
-  $('mainPractice').style.display='none';       // hide whole main practice block
+  $('mainPractice').style.display='none';
   nextMiniQuestion();
 }
 function endMiniQuiz(){
@@ -430,7 +461,7 @@ $('openSettings').addEventListener('click', ()=>{
 });
 $('themeSelect').addEventListener('change', (e)=> applyTheme(e.target.value));
 
-/* ===== Sentence Practice page (separate overlay) ===== */
+/* ===== Sentence Practice page ===== */
 function openSentences(){
   const cont = $('sentencesBody'); cont.innerHTML='';
   const unlocked = unlockedIndices();
@@ -481,8 +512,7 @@ async function switchProfile(name){
   docIdHash = await computeDocId(ACTIVE_PROFILE);
   await loadStateFromCloud();
   ensureStartAndUnlocks();
-  if(ACTIVE_PROFILE==='Sia'){ DEVELOPER_MODE=true; showDevBanner(true); }
-  else { DEVELOPER_MODE=false; showDevBanner(false); }
+  if(ACTIVE_PROFILE==='Sia'){ DEVELOPER_MODE=true; showDevBanner(true); } else { DEVELOPER_MODE=false; showDevBanner(false); }
   await saveStateToCloud();
   ensureOrder(); showItem();
 }
@@ -529,6 +559,9 @@ document.addEventListener('click', (e)=>{
   if(e.target.id==='mapModal')   e.target.style.display='none';
   if(e.target.id==='sentencesModal') e.target.style.display='none';
 });
+
+/* === FIX #3(b): Also build the pool once the page finishes loading === */
+window.addEventListener('load', ()=>{ ensureOrder(); showItem(); });
 </script>
 </head>
 <body>
@@ -607,7 +640,7 @@ document.addEventListener('click', (e)=>{
 </footer>
 
 <div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
-<div id="sadFace" class="cele-msg" style="display:none">😢</div>
+<div id="sadFace" class="celebration" style="display:none">😢</div>
 
 <!-- Achievements Modal -->
 <div id="achModal" class="modal">
