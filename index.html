@@ -43,16 +43,16 @@
   .bar{height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#22c55e);transition:width .4s ease}
   .mode{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
   .tiny{font-size:12px;color:#94a3b8}
-  .tip{margin-top:12px;font-size:14px;color:#a5b4fc}
   .cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.92);border:1px solid #1f2937;padding:14px 18px;border-radius:14px;font-weight:800;z-index:20}
   .fade-out{animation:fadeOut .9s ease forwards}@keyframes fadeOut{to{opacity:0}}
+
   .overlay{position:fixed;inset:0;background:radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%), rgba(15,23,42,.94);display:grid;place-items:center;z-index:10}
   .overlay-card,.modal-card{background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:760px;margin:0 16px}
 
   /* Standard modal backdrop */
   .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45);z-index:12}
-  /* Add blur just for the Mini Quiz modal */
-  #miniQuizModal{backdrop-filter:blur(12px) saturate(120%);-webkit-backdrop-filter:blur(12px) saturate(120%)}
+  /* Blur for mini quiz & sentences */
+  #miniQuizModal,#sentencesModal{backdrop-filter:blur(12px) saturate(120%);-webkit-backdrop-filter:blur(12px) saturate(120%)}
 
   .grid{display:grid;gap:10px}@media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
   .stat{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px}
@@ -205,20 +205,17 @@
         <b>Mini Quiz</b><p class="tiny">Practice 5 items (image → type the transliteration).</p>
         <button id="startMiniQuiz" class="btn">⚡ Start Mini Quiz</button>
       </div>
+
       <div class="stat">
         <b>Review Mode</b><p class="tiny">Quiz only on words she has mastered (ignores SRS order).</p>
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
 
-      <div class="stat">
-        <b>Sentence Mode</b>
-        <p class="tiny">Show example sentences in a separate window.</p>
-        <button id="sentenceToggle" class="btn">Sentence Mode: ON</button>
-      </div>
+      <!-- COMBINED: Sentence Practice -->
       <div class="stat">
         <b>Sentence Practice</b>
-        <p class="tiny">Read sentences & translations for unlocked words.</p>
-        <button id="openSentences" class="btn">📖 Open Sentence Window</button>
+        <p class="tiny">Read example sentences & translations.</p>
+        <button id="openSentences" class="btn">📖 Open Sentence Practice</button>
       </div>
 
       <div class="stat">
@@ -229,9 +226,9 @@
   </div>
 </div>
 
-<!-- Sentence Practice Modal -->
+<!-- Sentence Practice Modal (blurred) -->
 <div id="sentencesModal" class="modal">
-  <div class="modal-card">
+  <div class="modal-card" style="max-width:820px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <h3 style="margin:0">📖 Sentence Practice</h3>
       <button id="closeSentences" class="btn">Close</button>
@@ -272,6 +269,16 @@ const store = {
 const DAILY_WORDS = 5;
 const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
 const MINI_QUIZ_SIZE = 5;
+
+/* Example sentences shown in Sentence Practice modal */
+const SENTENCES = [
+  { fa:"من آب می‌نوشم.", translit:"man âb minusham.", en:"I drink water." },
+  { fa:"او یک گربه دارد.", translit:"u yek gorbe dârad.", en:"He/She has a cat." },
+  { fa:"این خانه بزرگ است.", translit:"in khâne bozorg ast.", en:"This house is big." },
+  { fa:"من کتاب می‌خوانم.", translit:"man ketâb mikhânam.", en:"I am reading a book." },
+  { fa:"امروز هوا خوب است.", translit:"emruz havâ khub ast.", en:"The weather is good today." },
+  { fa:"سگ در پارک است.", translit:"sag dar pârk ast.", en:"The dog is in the park." }
+];
 
 /* ===================== WORDS ===================== */
 const words = [
@@ -408,7 +415,7 @@ const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
   mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
-  settings:{reviewAll:false, sentenceMode:true},
+  settings:{reviewAll:false},
   theme:'default'
 });
 let state = defaultState();
@@ -499,8 +506,8 @@ const audioCache=new Map();
 function getAudio(item){ const url=item.audio||`audio/${(item.translit||'').toLowerCase()}.mp3`; if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);} return audioCache.get(url);}
 async function playYourAudio(){ const gi=order[idx], item=words[gi]; try{ const a=getAudio(item); a.currentTime=0; await a.play(); }catch{} }
 
-/* ===================== SPEECH RECOGNITION (fa-IR first) ===================== */
-let SR=null, recognizing=false;
+/* ===================== SPEECH RECOG (fa-IR first) ===================== */
+let SR=null;
 function levenshtein(a,b){const m=a.length,n=b.length,dp=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)dp[i][0]=i;for(let j=0;j<=n;j++)dp[0][j]=j;for(let i=1;i<=m;i++){for(let j=1;j<=n;j++){const c=a[i-1]===b[j-1]?0:1;dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+c)}}return dp[m][n]}
 function closeEnough(a,b){if(!a||!b)return false;if(a===b)return true;return levenshtein(a,b)<=1}
 function hasPersian(s){return /[\u0600-\u06FF]/.test(s||'')}
@@ -519,12 +526,11 @@ function initSpeech(){
   btn.disabled=false;
   btn.title='Say the word in Persian (e.g., «خانه»). Speaking the transliteration also works.';
 
-  SR.onstart = ()=>{ recognizing=true; $('speechFeedback').textContent='🎙️ Listening…'; $('speechFeedback').className='feedback tiny'; };
-  SR.onerror = (e)=>{ recognizing=false; $('speechFeedback').textContent='Mic error. Try again.'; $('speechFeedback').className='feedback err'; console.warn(e.error); };
-  SR.onend = ()=>{ recognizing=false; if($('speechFeedback').textContent.includes('Listening')){ $('speechFeedback').textContent='Didn’t catch that—try again.'; $('speechFeedback').className='feedback warn'; } };
+  SR.onstart = ()=>{ $('speechFeedback').textContent='🎙️ Listening…'; $('speechFeedback').className='feedback tiny'; };
+  SR.onerror = ()=>{ $('speechFeedback').textContent='Mic error. Try again.'; $('speechFeedback').className='feedback err'; };
+  SR.onend = ()=>{ if($('speechFeedback').textContent.includes('Listening')){ $('speechFeedback').textContent='Didn’t catch that—try again.'; $('speechFeedback').className='feedback warn'; } };
 
   SR.onresult = (event)=>{
-    recognizing=false;
     const gi=order[idx], item=words[gi];
     const targetFa = normalizeFa(item.fa);
     const targetTr = normalizeTranslit(item.translit);
@@ -558,7 +564,7 @@ function initSpeech(){
 }
 
 /* ===================== ANSWERING (SRS + score + map + theme) ===================== */
-function handleAnswer(correct, gi, source='typing', transcript=''){
+function handleAnswer(correct, gi, source='typing'){
   const r=ensureSRS(gi); r.seen++;
   if(correct){
     r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1);
@@ -614,40 +620,20 @@ function reflectBadges(){
   $('achList').innerHTML = list;
 }
 
-/* ===================== SENTENCE WINDOW ===================== */
-function reflectSentenceToggle(){
-  const on = !!(state.settings && state.settings.sentenceMode);
-  $('sentenceToggle').textContent = `Sentence Mode: ${on ? 'ON' : 'OFF'}`;
-}
+/* ===================== SENTENCE PRACTICE ===================== */
 function openSentences(){
   const cont = $('sentencesBody');
   cont.innerHTML = '';
-  const show = !!(state.settings && state.settings.sentenceMode);
-  if(!show){
-    const note = document.createElement('div');
-    note.className = 'stat';
-    note.innerHTML = `<b>Sentence Mode is OFF</b><div class="tiny">Turn it ON in Settings to view example sentences.</div>`;
-    cont.appendChild(note);
-  }else{
-    unlockedIndices().forEach(i=>{
-      const w = words[i];
-      if(!w.sentence) return;
-      const row=document.createElement('div');
-      row.className='stat';
-      row.innerHTML = `
-        <div class="fa" dir="rtl" style="font-size:20px">${w.sentence.fa}</div>
-        <div class="trans" style="font-size:18px">${w.sentence.translit}</div>
-        <div class="en" style="font-size:18px">${w.sentence.en}</div>
-      `;
-      cont.appendChild(row);
-    });
-    if(!cont.children.length){
-      const empty=document.createElement('div');
-      empty.className='stat';
-      empty.innerHTML = `<b>No sentences available yet</b><div class="tiny">Unlock more words to see sentences.</div>`;
-      cont.appendChild(empty);
-    }
-  }
+  SENTENCES.forEach(s=>{
+    const row=document.createElement('div');
+    row.className='stat';
+    row.innerHTML = `
+      <div class="fa" dir="rtl" style="font-size:20px">${s.fa}</div>
+      <div class="trans" style="font-size:18px">${s.translit}</div>
+      <div class="en" style="font-size:18px">${s.en}</div>
+    `;
+    cont.appendChild(row);
+  });
   $('sentencesModal').style.display='grid';
 }
 
@@ -717,6 +703,7 @@ $('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.stre
 $('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
 $('learnBtn').addEventListener('click', ()=>{ endMiniQuiz(); mode='learn'; ensureOrder(); showItem(); });
 $('quizBtn').addEventListener('click',  ()=>{ endMiniQuiz(); mode='quiz'; ensureOrder(); showItem(); });
+
 $('hintBtn').addEventListener('click', ()=>{
   if(mode!=='learn') return;
   const gi=order[idx], item=words[gi];
@@ -737,7 +724,6 @@ $('closeMap').addEventListener('click', ()=> $('mapModal').style.display='none')
 $('openSettings').addEventListener('click', ()=>{ 
   $('settingsModal').style.display='grid'; 
   $('reviewToggle').textContent=`Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`;
-  reflectSentenceToggle();
   populateThemeDropdown();
 });
 $('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
@@ -748,17 +734,7 @@ $('reviewToggle').addEventListener('click', ()=>{
   $('reviewToggle').textContent=`Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`;
 });
 
-/* Theme selection */
-$('themeSelect').addEventListener('change', (e)=> applyTheme(e.target.value));
-
-/* Sentence controls */
-$('sentenceToggle').addEventListener('click', ()=>{
-  const v = !(state.settings?.sentenceMode);
-  state.settings.sentenceMode = v;
-  persist();
-  reflectSentenceToggle();
-  openSentences();
-});
+/* Sentence Practice button */
 $('openSentences').addEventListener('click', ()=>{
   $('settingsModal').style.display='none';
   openSentences();
@@ -828,7 +804,7 @@ document.addEventListener('click', (e)=>{
 });
 
 /* Init */
-initSpeech(); // mic
+initSpeech(); // speech mic
 </script>
 </body>
 </html>
