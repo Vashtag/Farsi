@@ -69,6 +69,17 @@
     backdrop-filter: blur(28px) saturate(120%);
     -webkit-backdrop-filter: blur(28px) saturate(120%);
   }
+
+  /* ---------- Mobile header behavior (only phones) ---------- */
+  @media (max-width: 700px){
+    header{
+      position: static;            /* no sticky on phones: avoids covering image while scrolling */
+      top: auto;
+      background: rgba(15,23,42,.9);
+      backdrop-filter: none;
+    }
+    main{ padding: 0 16px 120px; } /* keep nice bottom space under keyboard */
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
@@ -142,7 +153,8 @@
           <div class="feedback" id="speechFeedback"></div>
 
           <label class="tiny" for="typeInput">Type the pronunciation (English letters):</label>
-          <input class="input" id="typeInput" placeholder="e.g., sib"/>
+          <input class="input" id="typeInput" placeholder="e.g., sib"
+                 autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="latin"/>
           <div class="controls">
             <button id="checkBtn" class="primary">✅ Check</button>
             <button id="skipBtn" class="btn">⏭️ Skip</button>
@@ -216,12 +228,6 @@
         <b>Sentence Practice</b>
         <p class="tiny">Read example sentences & translations.</p>
         <button id="openSentences" class="btn">📖 Open Sentence Practice</button>
-      </div>
-
-      <!-- Lifetime Stats -->
-      <div class="stat">
-        <b>Lifetime Stats</b>
-        <div id="lifetimeStats" style="margin-top:8px"></div>
       </div>
 
       <div class="stat">
@@ -429,10 +435,13 @@ function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').rep
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
 
+/* -------- MOBILE FOCUS FIX helpers -------- */
+const isMobile = () => window.matchMedia('(max-width:700px)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+function maybeFocusInput(){ if(!isMobile()) $('typeInput').focus(); }
+
 /* ===================== STATE (per profile) ===================== */
 const defaultState = ()=>({
-  score:0, streak:0, bestStreak:0,        // ← added bestStreak
-  srs:{}, covered:[], start_date:null, unlocked_count:0,
+  score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
   mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
   settings:{reviewAll:false},
@@ -465,10 +474,10 @@ function quizPool(){ const due=dueIndices(); if(due.length) return due; const m=
 function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return [...due,...rest]; }
 
 /* ===================== PERSIST ===================== */
-function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); populateThemeDropdown(); renderLifetimeStats(); }
+function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); populateThemeDropdown(); }
 function loadState(){ state = store.get('state', defaultState()); initDailyUnlock(); applyTheme(state.theme||'default'); }
 
-/* ======== SHARED NICOLE SYNC (no login; safe no-op until configured) ======== */
+/* ======== SHARED NICOLE SYNC (Worker-backed) ======== */
 const SYNC_ENDPOINT = "https://ff-sync.9rmcqs6hjc.workers.dev";
 const SYNC_DOC_ID = "nicole";
 const SYNC_WRITE_TOKEN = "Gravity123!!";
@@ -477,15 +486,12 @@ function mergeStates(local, remote){
   if(!remote || !remote.updated_at) return local;
   const newer = (local.updated_at||0) >= (remote.updated_at||0) ? local : remote;
   const other = newer===local ? remote : local;
-
   const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]);
   newer.covered = [...cov];
-
   newer.score = Math.max(local.score||0, remote.score||0);
   newer.streak = (newer===local ? local.streak : remote.streak) || 0;
   return newer;
 }
-
 async function syncPullNicole(){
   if(!SYNC_ENDPOINT || ACTIVE_PROFILE!=="Nicole") return;
   try{
@@ -493,7 +499,7 @@ async function syncPullNicole(){
     const remote = await res.json().catch(()=>null);
     if(remote && Object.keys(remote).length){
       state = mergeStates(state, remote);
-      _persist(); // refresh UI without triggering sync push
+      _persist();
     }
   }catch{}
 }
@@ -508,20 +514,10 @@ async function syncPushNicole(){
     });
   }catch{}
 }
-
-let _persist = persist;            // keep original persist
+let _persist = persist;
 let _syncTimer = null;
-function syncPushDebouncedNicole(){
-  clearTimeout(_syncTimer);
-  _syncTimer = setTimeout(syncPushNicole, 600);
-}
-
-// wrap persist: only when Nicole is the active profile
-persist = function(){
-  _persist();
-  if (ACTIVE_PROFILE === "Nicole") syncPushDebouncedNicole();
-};
-
+function syncPushDebouncedNicole(){ clearTimeout(_syncTimer); _syncTimer = setTimeout(syncPushNicole, 600); }
+persist = function(){ _persist(); if (ACTIVE_PROFILE === "Nicole") syncPushDebouncedNicole(); };
 function initSharedNicoleSync(){
   if (ACTIVE_PROFILE !== "Nicole" || !SYNC_ENDPOINT) return;
   syncPullNicole().then(()=>syncPushNicole());
@@ -558,7 +554,8 @@ function showItem(){
   $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
 
-  $('typeInput').value=''; $('typeInput').focus();
+  $('typeInput').value='';
+  maybeFocusInput();          /* MOBILE FOCUS FIX: do not auto-focus on phones */
 }
 function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
@@ -652,8 +649,7 @@ function handleAnswer(correct, gi, source='typing'){
   if(correct){
     r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1);
     scheduleAfter(gi,SRS_INTERVALS_HOURS[r.stage]||24);
-    state.score+=10; state.streak+=1; if(state.streak > (state.bestStreak||0)) state.bestStreak = state.streak;  // track longest streak
-    addCovered(gi);
+    state.score+=10; state.streak+=1; addCovered(gi);
     if(source!=='speech'){ $('typeFeedback').textContent='Great! +10 points'; $('typeFeedback').className='feedback ok'; }
     celebrateSimple();
     if(state.streak===7) celebrateStreak7();
@@ -702,57 +698,6 @@ function reflectBadges(){
     <div class="chip">${a.mastered50?'🏅':'⬜'} 50 mastered</div>
   `;
   $('achList').innerHTML = list;
-}
-
-/* ===================== LIFETIME STATS ===================== */
-function computeLifetimeStats(){
-  let correct = 0, wrong = 0, mastered = 0;
-  const maxStage = SRS_INTERVALS_HOURS.length - 1;
-  for (const k in state.srs) {
-    const r = state.srs[k];
-    correct += r.correct || 0;
-    wrong   += r.wrong   || 0;
-    if ((r.stage || 0) >= maxStage) mastered++;
-  }
-  const attempts = correct + wrong;
-  const accuracy = attempts ? Math.round((correct / attempts) * 1000) / 10 : 0;
-  const learned  = (state.covered || []).length;
-  const goalDays = (state.mapDays || []).filter(d => d.goalMet).length;
-  const bestStreak = state.bestStreak || 0;
-  return { accuracy, learned, mastered, attempts, goalDays, bestStreak };
-}
-function renderLifetimeStats(){
-  const box = $('lifetimeStats');
-  if (!box) return;
-  const s = computeLifetimeStats();
-  box.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
-      <div style="background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:12px;text-align:center">
-        <div style="font-weight:800;font-size:22px">${s.accuracy}%</div>
-        <div class="tiny">Accuracy</div>
-      </div>
-      <div style="background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:12px;text-align:center">
-        <div style="font-weight:800;font-size:22px">${s.learned}</div>
-        <div class="tiny">Words learned</div>
-      </div>
-      <div style="background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:12px;text-align:center">
-        <div style="font-weight:800;font-size:22px">${s.mastered}</div>
-        <div class="tiny">Words mastered</div>
-      </div>
-      <div style="background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:12px;text-align:center">
-        <div style="font-weight:800;font-size:22px">${s.bestStreak}</div>
-        <div class="tiny">Longest streak</div>
-      </div>
-      <div style="background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:12px;text-align:center">
-        <div style="font-weight:800;font-size:22px">${s.goalDays}</div>
-        <div class="tiny">Daily goals met</div>
-      </div>
-      <div style="background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:12px;text-align:center">
-        <div style="font-weight:800;font-size:22px">${s.attempts}</div>
-        <div class="tiny">Total answers</div>
-      </div>
-    </div>
-  `;
 }
 
 /* ===================== SENTENCE PRACTICE (one at a time) ===================== */
@@ -839,7 +784,9 @@ $('checkBtn').addEventListener('click', ()=>{
   const gi=order[idx], item=words[gi];
   const guess=normalizeTranslit($('typeInput').value);
   if(!guess){ $('typeFeedback').textContent='Type your guess first!'; $('typeFeedback').className='feedback warn'; return; }
-  $('typeFeedback').textContent=''; $('typeInput').value=''; $('typeInput').focus();
+  $('typeFeedback').textContent='';
+  $('typeInput').value='';
+  maybeFocusInput();          /* MOBILE FOCUS FIX: only refocus on desktop */
   handleAnswer(guess===normalizeTranslit(item.translit), gi, 'typing');
 });
 $('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.streak=0; persist(); next(); });
@@ -868,7 +815,6 @@ $('openSettings').addEventListener('click', ()=>{
   $('settingsModal').style.display='grid'; 
   $('reviewToggle').textContent=`Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`;
   populateThemeDropdown();
-  renderLifetimeStats();     // refresh stats when opening
 });
 $('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
 $('settingsModal').addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
@@ -901,7 +847,7 @@ function useProfile(name){
   $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
   $('profileOverlay').style.display='none';
   $('startOverlay').style.display='grid';
-  if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync(); // start shared sync for Nicole
+  if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
 }
 $('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
 $('quickSia').addEventListener('click', ()=>{
