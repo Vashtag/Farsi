@@ -101,14 +101,7 @@
   <div class="mode">
     <button id="learnBtn" class="btn">Learn Mode</button>
     <button id="quizBtn" class="btn">Quiz Mode</button>
-    <label class="tiny" style="display:inline-flex;align-items:center;gap:6px;">
-      Difficulty:
-      <select id="difficulty" class="select">
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
-      </select>
-    </label>
+    <!-- Difficulty removed -->
     <span class="tiny">New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰</span>
   </div>
 
@@ -261,7 +254,6 @@ const MINI_QUIZ_SIZE = 5;
 
 /* ===================== WORDS ===================== */
 const words = [
-  // ==== Original 10 ====
   {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.png"},
   {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.png"},
   {fa:"گربه", en:"cat", translit:"gorbe", emoji:"🐱", audio:"audio/gorbe.mp3", image:"images/gorbe.png"},
@@ -291,21 +283,21 @@ const words = [
   {fa:"خواهر", en:"sister", translit:"khâhar", emoji:"👧", audio:"audio/khahar.mp3", image:"images/khahar.png"},
   {fa:"بچه", en:"child", translit:"bache", emoji:"🧒", audio:"audio/bache.mp3", image:"images/bache.png"},
   {fa:"مدرسه", en:"school", translit:"madrese", emoji:"🏫", audio:"audio/madrese.mp3", image:"images/madrese.png"},
-  {fa:"دانشگاه", en:"university", translit:"dânešgâh", emoji:"🎓", audio:"audio/dânešgâh.mp3", image:"images/dânešgâh.png"},
+  {fa:"دانشگاه", en:"university", translit:"dânešgâh", emoji:"🎓", audio:"audio/danesgah.mp3", image:"images/danesgah.png"},
   {fa:"کار", en:"work", translit:"kâr", emoji:"💼", audio:"audio/kâr.mp3", image:"images/kâr.png"},
   {fa:"دفتر", en:"office", translit:"daftar", emoji:"🏢", audio:"audio/daftar.mp3", image:"images/daftar.png"},
-  {fa:"مغازه", en:"shop", translit:"maghâze", emoji:"🏪", audio:"audio/maghâze.mp3", image:"images/maghâze.png"},
-  {fa:"بازار", en:"bazaar", translit:"bâzâr", emoji:"🛍️", audio:"audio/bâzâr.mp3", image:"images/bâzâr.png"},
+  {fa:"مغازه", en:"shop", translit:"maghâze", emoji:"🏪", audio:"audio/maghaze.mp3", image:"images/maghaze.png"},
+  {fa:"بازار", en:"bazaar", translit:"bâzâr", emoji:"🛍️", audio:"audio/bazar.mp3", image:"images/bazar.png"},
   {fa:"پول", en:"money", translit:"pul", emoji:"💵", audio:"audio/pul.mp3", image:"images/pul.png"},
   {fa:"تلفن", en:"phone", translit:"telefon", emoji:"📱", audio:"audio/telefon.mp3", image:"images/telefon.png"},
-  {fa:"کامپیوتر", en:"computer", translit:"kâmpiyuter", emoji:"💻", audio:"audio/kâmpiyuter.mp3", image:"images/kâmpiyuter.png"},
+  {fa:"کامپیوتر", en:"computer", translit:"kâmpiyuter", emoji:"💻", audio:"audio/kampiyuter.mp3", image:"images/kampiyuter.png"},
   {fa:"اینترنت", en:"internet", translit:"internet", emoji:"🌐", audio:"audio/internet.mp3", image:"images/internet.png"},
   {fa:"میز", en:"table", translit:"miz", emoji:"🛋️", audio:"audio/miz.mp3", image:"images/miz.png"},
   {fa:"صندلی", en:"chair", translit:"sandali", emoji:"🪑", audio:"audio/sandali.mp3", image:"images/sandali.png"},
   {fa:"تخت", en:"bed", translit:"takht", emoji:"🛏️", audio:"audio/takht.mp3", image:"images/takht.png"},
-  {fa:"آشپزخانه", en:"kitchen", translit:"âshpazkhâne", emoji:"🍳", audio:"audio/âshpazkhâne.mp3", image:"images/âshpazkhâne.png"},
+  {fa:"آشپزخانه", en:"kitchen", translit:"âshpazkhâne", emoji:"🍳", audio:"audio/ashpazkhane.mp3", image:"images/ashpazkhane.png"},
   {fa:"حمام", en:"bathroom", translit:"hamâm", emoji:"🚿", audio:"audio/hamâm.mp3", image:"images/hamâm.png"},
-  {fa:"اتاق", en:"room", translit:"otâgh", emoji:"🚪", audio:"audio/otâgh.mp3", image:"images/otâgh.png"},
+  {fa:"اتاق", en:"room", translit:"otâgh", emoji:"🚪", audio:"audio/otagh.mp3", image:"images/otagh.png"},
   {fa:"شهر", en:"city", translit:"shahr", emoji:"🏙️", audio:"audio/shahr.mp3", image:"images/shahr.png"},
   {fa:"روستا", en:"village", translit:"rustâ", emoji:"🏡", audio:"audio/rustâ.mp3", image:"images/rustâ.png"},
   {fa:"خیابان", en:"street", translit:"khiâbân", emoji:"🛣️", audio:"audio/khiâbân.mp3", image:"images/khiâbân.png"},
@@ -321,7 +313,7 @@ const words = [
   {fa:"دوچرخه", en:"bicycle", translit:"docharkhe", emoji:"🚲", audio:"audio/docharkhe.mp3", image:"images/docharkhe.png"},
   {fa:"هواپیما", en:"airplane", translit:"havâpeymâ", emoji:"✈️", audio:"audio/havâpeymâ.mp3", image:"images/havâpeymâ.png"},
   {fa:"کفش", en:"shoe", translit:"kafsh", emoji:"👟", audio:"audio/kafsh.mp3", image:"images/kafsh.png"},
-  {fa:"لباس", en:"clothes", translit:"lebâs", emoji:"👕", audio:"audio/lebâs.mp3", image:"images/lebâs.png"},
+  {fa:"لباس", en:"clothes", translit:"lebâs", emoji:"👕", audio:"audio/lebâس.mp3", image:"images/lebâس.png"},
   {fa:"شلوار", en:"pants", translit:"shalvâr", emoji:"👖", audio:"audio/shalvâr.mp3", image:"images/shalvâr.png"},
   {fa:"پیراهن", en:"shirt", translit:"pirâhan", emoji:"👔", audio:"audio/pirâhan.mp3", image:"images/pirâhan.png"},
   {fa:"کلاه", en:"hat", translit:"kolâh", emoji:"🎩", audio:"audio/kolâh.mp3", image:"images/kolâh.png"},
@@ -344,13 +336,10 @@ const words = [
   {fa:"هشت", en:"eight", translit:"hasht", emoji:"8️⃣", audio:"audio/hasht.mp3", image:"images/hasht.png"},
   {fa:"نه", en:"nine", translit:"noh", emoji:"9️⃣", audio:"audio/noh.mp3", image:"images/noh.png"},
   {fa:"ده", en:"ten", translit:"dah", emoji:"🔟", audio:"audio/dah.mp3", image:"images/dah.png"}
-  // … you now have 110 total entries …
 ];
-
 
 /* ===================== THEMES (rewards) ===================== */
 const THEMES = [
-  // index 0 is always unlocked
   {key:'default', name:'Ocean (default)', unlockAt:0,  vars:{'--grad1':'#0b1229','--grad2':'#121a36','--accent-2':'#38bdf8','--accent':'#22c55e','--bg':'#0f172a'}},
   {key:'sunset',  name:'Sunset',          unlockAt:50, vars:{'--grad1':'#2a0f1b','--grad2':'#3a1f2a','--accent-2':'#fb923c','--accent':'#f59e0b','--bg':'#1a0c12'}},
   {key:'mint',    name:'Mint',            unlockAt:100,vars:{'--grad1':'#0d1f1a','--grad2':'#123227','--accent-2':'#34d399','--accent':'#10b981','--bg':'#0b1814'}},
@@ -397,7 +386,6 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.rando
 const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
-  difficulty:'easy',
   mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
   settings:{reviewAll:false, sentenceMode:true},
   theme:'default'
@@ -501,7 +489,6 @@ function handleAnswer(correct, gi, source='typing', transcript=''){
     celebrateSimple();
     if(state.streak===7) celebrateStreak7();
     checkDailyGoalAndMap();
-    // theme unlock note refresh
     populateThemeDropdown();
   }else{
     r.wrong++; r.stage=Math.max(0,r.stage-1); scheduleAfter(gi,2);
