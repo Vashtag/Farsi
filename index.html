@@ -57,9 +57,17 @@
   .grid{display:grid;gap:10px}@media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
   .stat{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px}
   .chip{display:inline-flex;gap:6px;background:#0b1229;border:1px solid #1f2937;border-radius:999px;padding:6px 10px;font-size:12px;color:#94a3b8;margin:2px 4px 0 0}
-  .map{display:grid;grid-template-columns:repeat(4, minmax(60px,1fr));gap:8px;margin-top:10px}
+
+  /* Bazaar grid */
+  .map-wrap{position:relative}
+  .map{display:grid;grid-template-columns:repeat(4, minmax(60px,1fr));gap:8px;margin-top:10px;position:relative;z-index:1}
   .tile{aspect-ratio:1/1;background:#0b1229;border:1px dashed #334155;border-radius:10px;display:grid;place-items:center;font-size:28px;color:#334155}
   .tile.unlocked{border-style:solid;color:#e5e7eb}
+  /* roaming cats overlay */
+  .cat-layer{position:absolute;inset:10px 0 0 0; /* align with map's top margin */ pointer-events:none;z-index:2;overflow:hidden}
+  .cat{position:absolute;font-size:32px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));will-change:transform,left,top}
+  .cat.flip{transform:scaleX(-1)}
+  @media(min-width:760px){ .cat{font-size:40px} }
 
   /* Heavy blur for profile/start overlays */
   #profileOverlay,#startOverlay{
@@ -186,7 +194,7 @@
   </div>
 </div>
 
-<!-- Bazaar Map Modal -->
+<!-- Bazaar Map Modal (now with roaming cats) -->
 <div id="mapModal" class="modal">
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -194,7 +202,11 @@
       <button id="closeMap" class="btn">Close</button>
     </div>
     <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile. Lots of cats live here 🐈.</p>
-    <div id="mapGrid" class="map"></div>
+
+    <div class="map-wrap">
+      <div id="mapGrid" class="map"></div>
+      <div id="catLayer" class="cat-layer"></div>
+    </div>
   </div>
 </div>
 
@@ -223,7 +235,6 @@
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
 
-      <!-- Sentence Practice (opens modal) -->
       <div class="stat">
         <b>Sentence Practice</b>
         <p class="tiny">Read example sentences & translations.</p>
@@ -435,7 +446,7 @@ function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').rep
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
 
-/* -------- MOBILE FOCUS FIX helpers -------- */
+/* Mobile detection for focus behavior */
 const isMobile = () => window.matchMedia('(max-width:700px)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 function maybeFocusInput(){ if(!isMobile()) $('typeInput').focus(); }
 
@@ -700,7 +711,104 @@ function reflectBadges(){
   $('achList').innerHTML = list;
 }
 
-/* ===================== SENTENCE PRACTICE (one at a time) ===================== */
+/* ===================== ROAMING CATS ===================== */
+const CAT_EMOJIS = ['🐈','🐈‍⬛','🐱'];
+let cats = [];
+let catAnim = { running:false, lastTs:0, bounds:null };
+
+function spawnCats(count){
+  const layer = $('catLayer'); if(!layer) return;
+  layer.innerHTML = '';
+  cats = [];
+  const rect = layer.getBoundingClientRect();
+  catAnim.bounds = { w: rect.width, h: rect.height, pad: 6 };
+
+  for(let i=0;i<count;i++){
+    const el = document.createElement('div');
+    el.className = 'cat';
+    el.textContent = CAT_EMOJIS[i % CAT_EMOJIS.length];
+    layer.appendChild(el);
+
+    const speed = 30 + Math.random()*50; // px/sec
+    const angle = Math.random()*Math.PI*2;
+    const vx = Math.cos(angle)*speed;
+    const vy = Math.sin(angle)*speed;
+
+    const x = Math.random()*(catAnim.bounds.w-40);
+    const y = Math.random()*(catAnim.bounds.h-40);
+
+    cats.push({ el, x, y, vx, vy, speed, nextTurn: performance.now()+800+Math.random()*1600 });
+    el.style.left = x + 'px';
+    el.style.top  = y + 'px';
+    if(vx<0) el.classList.add('flip');
+  }
+}
+
+function stepCats(ts){
+  if(!catAnim.running) return;
+  const dt = Math.min(0.04, (ts - catAnim.lastTs)/1000); // seconds, clamp for stability
+  catAnim.lastTs = ts;
+
+  const B = catAnim.bounds;
+  for(const c of cats){
+    // Random gentle turns
+    if(ts > c.nextTurn){
+      const dTheta = (Math.random()-0.5) * (Math.PI/3); // +/- 60°
+      const angle = Math.atan2(c.vy, c.vx) + dTheta;
+      c.vx = Math.cos(angle)*c.speed;
+      c.vy = Math.sin(angle)*c.speed;
+      c.nextTurn = ts + 800 + Math.random()*1600;
+    }
+
+    // Move
+    c.x += c.vx * dt;
+    c.y += c.vy * dt;
+
+    // Bounce on edges
+    const r = 6;
+    if(c.x < r){ c.x=r; c.vx = Math.abs(c.vx); }
+    if(c.y < r){ c.y=r; c.vy = Math.abs(c.vy); }
+    if(c.x > B.w-40-r){ c.x=B.w-40-r; c.vx = -Math.abs(c.vx); }
+    if(c.y > B.h-40-r){ c.y=B.h-40-r; c.vy = -Math.abs(c.vy); }
+
+    // Face movement direction
+    if(c.vx < 0) c.el.classList.add('flip'); else c.el.classList.remove('flip');
+
+    c.el.style.left = c.x + 'px';
+    c.el.style.top  = c.y + 'px';
+  }
+
+  requestAnimationFrame(stepCats);
+}
+
+function startCats(){
+  const count = Math.max(0, state.mapUnlocked || 0);
+  spawnCats(count);
+  catAnim.running = true;
+  catAnim.lastTs = performance.now();
+  requestAnimationFrame(stepCats);
+  // keep bounds fresh on resize
+  window.addEventListener('resize', onResizeCats);
+}
+function stopCats(){
+  catAnim.running = false;
+  const layer = $('catLayer'); if(layer) layer.innerHTML='';
+  cats = [];
+  window.removeEventListener('resize', onResizeCats);
+}
+function onResizeCats(){
+  if(!catAnim.running) return;
+  // Re-measure and keep cats inside
+  const layer = $('catLayer');
+  const rect = layer.getBoundingClientRect();
+  catAnim.bounds = { w: rect.width, h: rect.height, pad: 6 };
+  for(const c of cats){
+    c.x = Math.max(6, Math.min(c.x, catAnim.bounds.w-40-6));
+    c.y = Math.max(6, Math.min(c.y, catAnim.bounds.h-40-6));
+  }
+}
+
+/* ===================== SENTENCE PRACTICE ===================== */
 let sentenceIdx = 0;
 function renderSentence(){
   if(!SENTENCES.length){
@@ -808,9 +916,19 @@ $('revealBtn').addEventListener('click', ()=>{
 $('openAchievements').addEventListener('click', ()=>{ reflectBadges(); $('achModal').style.display='grid'; });
 $('closeAch').addEventListener('click', ()=> $('achModal').style.display='none');
 
-$('openMap').addEventListener('click', ()=>{ renderMap(); $('mapModal').style.display='grid'; });
-$('closeMap').addEventListener('click', ()=> $('mapModal').style.display='none');
+/* Bazaar open/close + roaming cats */
+$('openMap').addEventListener('click', ()=>{
+  renderMap();
+  $('mapModal').style.display='grid';
+  // Wait one frame so the layer has layout, then start cats
+  requestAnimationFrame(startCats);
+});
+$('closeMap').addEventListener('click', ()=>{
+  $('mapModal').style.display='none';
+  stopCats();
+});
 
+/* Settings etc */
 $('openSettings').addEventListener('click', ()=>{ 
   $('settingsModal').style.display='grid'; 
   $('reviewToggle').textContent=`Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`;
@@ -892,7 +1010,7 @@ document.addEventListener('click', (e)=>{
   if(e.target.id==='settingsModal') e.target.style.display='none';
   if(e.target.id==='sentencesModal') e.target.style.display='none';
   if(e.target.id==='achModal') e.target.style.display='none';
-  if(e.target.id==='mapModal') e.target.style.display='none';
+  if(e.target.id==='mapModal'){ e.target.style.display='none'; stopCats(); }
   if(e.target.id==='miniQuizModal'){ endMiniQuiz(); }
 });
 
