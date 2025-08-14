@@ -48,7 +48,7 @@
   .fade-out{animation:fadeOut .9s ease forwards} @keyframes fadeOut{to{opacity:0}}
   /* Overlays / Modals */
   .overlay{position:fixed;inset:0;background:radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%), rgba(15,23,42,.94);display:grid;place-items:center;z-index:10}
-  .overlay-card,.modal-card{background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:760px;margin:0 16px}
+  .overlay-card,.modal-card{background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:860px;margin:0 16px}
   .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45);z-index:12}
   .grid{display:grid;gap:10px}@media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
   .stat{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px}
@@ -120,7 +120,7 @@ const DAILY_WORDS = 5;
 const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
 const MINI_QUIZ_SIZE = 5;
 
-/* ===== Themes (unlockable) ===== */
+/* ===== Themes (dropdown; unlockable for Nicole, all unlocked in Dev) ===== */
 const THEMES = {
   ocean:    {name:'Ocean (default)', vars:{'--grad1':'#0b1229','--grad2':'#121a36','--accent-2':'#38bdf8','--accent':'#22c55e'}},
   sunset:   {name:'Sunset',          vars:{'--grad1':'#2a0f1b','--grad2':'#3a1a2a','--accent-2':'#fb923c','--accent':'#f59e0b'}, req:'Master ≥ 5'},
@@ -139,13 +139,12 @@ function applyTheme(key){
 const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
-  difficulty:'easy',
   mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
-  settings:{reviewAll:false, sentenceMode:false},   // sentence OFF by default
+  settings:{reviewAll:false},   // sentence page lives separately now
   theme:'ocean'
 });
 let state = defaultState();
-let ACTIVE_PROFILE = 'Nicole';     // Default user (no login)
+let ACTIVE_PROFILE = 'Nicole';     // Default user (no explicit profile UI)
 let DEVELOPER_MODE = false;        // Sia only when PIN is entered
 let mode='learn', order=[], idx=0;
 let docIdHash = null;
@@ -168,17 +167,28 @@ async function saveStateToCloud(partial=null){
   reflectAll();
 }
 
-/* ===== SRS & pools ===== */
+/* ===== Mastery helpers ===== */
 function ensureSRS(i){ if(!state.srs[i]) state.srs[i]={stage:0,due:0,seen:0,correct:0,wrong:0}; return state.srs[i]; }
 function isDue(i){ return ensureSRS(i).due <= now(); }
-function scheduleAfter(i,h){ ensureSRS(i).due = now()+h*3600*1000; }
+function isMastered(i){ return ensureSRS(i).stage>=3; } // mastered threshold
 function unlockedCount(){ return state.unlocked_count||Math.min(words.length, DAILY_WORDS); }
 function unlockedIndices(){ return [...Array(unlockedCount()).keys()]; }
+function masteredIndices(){ return unlockedIndices().filter(i=>isMastered(i)); }
 function getCoveredSet(){ return new Set(state.covered||[]); }
-function masteredIndices(){ return [...getCoveredSet()].filter(i=>i<unlockedCount()); }
-function quizPool(){ const due=unlockedIndices().filter(i=>isDue(i)); if(due.length) return due; const m=masteredIndices(); return m.length?m:unlockedIndices(); }
-function learnPool(){ const u=unlockedIndices(), d=u.filter(i=>isDue(i)), r=u.filter(i=>!isDue(i)); return [...d,...r]; }
-function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=pool.slice(); shuffle(order); idx=0; }
+
+/* ===== Pools (respect Review Mode) ===== */
+function quizPool(){
+  const mastered = masteredIndices();
+  if(state.settings?.reviewAll){ return mastered.length?mastered:unlockedIndices(); }
+  const due=unlockedIndices().filter(i=>isDue(i));
+  if(due.length) return due;
+  return mastered.length?mastered:unlockedIndices();
+}
+function learnPool(){
+  const u=unlockedIndices(), d=u.filter(i=>isDue(i)), r=u.filter(i=>!isDue(i));
+  return [...d,...r];
+}
+function ensureOrder(){ const pool=(mode==='quiz')?quizPool():learnPool(); order=pool.slice(); shuffle(order); idx=0; }
 
 /* ===== Daily unlocks ===== */
 function ensureStartAndUnlocks(){
@@ -188,69 +198,50 @@ function ensureStartAndUnlocks(){
   const diffDays = Math.floor((dNow - startDate)/86400000);
   const shouldUnlock = Math.min(words.length, (diffDays+1)*DAILY_WORDS);
   state.unlocked_count = Math.max(state.unlocked_count||0, shouldUnlock);
-  // Sia (dev) = full unlock
-  if(ACTIVE_PROFILE==='Sia'){ state.unlocked_count = words.length; }
+  // Sia (dev) = full unlocks
+  if(ACTIVE_PROFILE==='Sia'){
+    state.unlocked_count = words.length;
+    state.mapUnlocked = 12;
+    state.achievements.streak7 = true;
+    state.achievements.first10 = true;
+  }
 }
 
 /* ===== UI ===== */
 function reflectAll(){
-  // header badges (no profile badge shown)
+  ensureStartAndUnlocks();
   $('scoreBadge').textContent   = `Score: ${state.score}`;
   $('streakBadge').textContent  = `Streak: ${state.streak} 🔥`;
   $('unlockedBadge').textContent = `${unlockedCount()}/${words.length} unlocked`;
-  // Theme + map + badges
   applyTheme(state.theme||'ocean');
-  renderThemeList();
+  populateThemeDropdown();  // dropdown
   renderMap();
   reflectBadges();
   if(order.length===0) ensureOrder();
   showItem();
-  // Dev banner
   $('devBanner').style.display = (DEVELOPER_MODE && ACTIVE_PROFILE==='Sia') ? 'block' : 'none';
 }
+
 function showImageOrEmoji(item){
   const pic=$('pic'), emo=$('emoji');
   if(item.image){ pic.style.display='block'; emo.style.display='none'; pic.src=item.image; pic.alt=item.en; }
   else { pic.style.display='none'; emo.style.display='block'; emo.textContent=item.emoji||'❓'; }
 }
+
 function showItem(){
+  if($('miniQuizPanel').dataset.active) return; // mini-quiz owns the view
   const pool = (mode==='quiz')? quizPool(): learnPool();
   if(order.length===0 || order.some(i=>!pool.includes(i))) ensureOrder();
-  const gi = order[idx % order.length]; const item = words[gi];
+  const gi = order[idx % Math.max(1,order.length)]; const item = words[gi];
 
-  // Only show main media when mini-quiz is not active
-  if(!$('miniQuizPanel').dataset.active){
-    showImageOrEmoji(item);
-  }
+  showImageOrEmoji(item);
   if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
   else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
-
-  // Sentence display (no button here; toggle lives in Settings)
-  const hasSent = state.settings?.sentenceMode && item.sentence && mode==='learn';
-  // We’ll render sentence lines right below progress when ON:
-  const sfa = byIdOrMake('sentFA','div','fa'); sfa.dir='rtl'; sfa.style.display = hasSent?'block':'none';
-  const str = byIdOrMake('sentTR','div','trans'); str.style.display = hasSent?'block':'none';
-  const sen = byIdOrMake('sentEN','div','en'); sen.style.display = hasSent?'block':'none';
-  if(hasSent){
-    sfa.textContent = item.sentence.fa;
-    str.textContent = item.sentence.translit;
-    sen.textContent = item.sentence.en;
-    // Insert after progress bar if not already there
-    const prog = $('progressBar').parentElement;
-    if(!prog.nextSibling || prog.nextSibling.id!=='sentFA'){
-      prog.after(sfa); sfa.after(str); str.after(sen);
-    }
-  }
 
   const pct = Math.round((getCoveredSet().size/Math.max(1,unlockedCount()))*100);
   $('progressBar').style.width = pct + '%';
 
   $('typeInput').value=''; $('typeInput').focus();
-}
-function byIdOrMake(id, tag, className){
-  let el=document.getElementById(id);
-  if(!el){ el=document.createElement(tag); el.id=id; el.className=className; }
-  return el;
 }
 function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
@@ -270,8 +261,7 @@ function fireworks(){ if(!window.confetti) return;
 function celebrateSimple(){ happyDing(); confettiPop(); const c=$('celebration'); c.textContent="let's goooooo 🎉"; c.style.display='block'; setTimeout(()=>c.classList.add('fade-out'),800); setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},1600); }
 function celebrateStreak7(){
   fireworks();
-  state.achievements.streak7 = true;
-  saveStateToCloud();
+  state.achievements.streak7 = true; saveStateToCloud();
   const c=$('celebration'); c.textContent="7‑day streak! 🏅"; c.style.display='block';
   setTimeout(()=>c.classList.add('fade-out'),1200);
   setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},2200);
@@ -280,7 +270,7 @@ function celebrateStreak7(){
 /* ===== Audio (your recordings) ===== */
 const audioCache=new Map();
 function getAudio(item){ const url=item.audio||`audio/${(item.translit||'').toLowerCase()}.mp3`; if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);} return audioCache.get(url);}
-async function playYourAudio(){ const gi=order[idx], item=words[gi]; try{ const a=getAudio(item); a.currentTime=0; await a.play(); }catch{} }
+async function playYourAudio(){ const gi=order[idx%Math.max(1,order.length)], item=words[gi]; try{ const a=getAudio(item); a.currentTime=0; await a.play(); }catch{} }
 
 /* ===== Answering + SRS + Map + Stats ===== */
 function checkDailyGoalAndMap(){
@@ -306,7 +296,7 @@ function handleAnswer(correct, gi){
     $('typeFeedback').textContent='Great! +10 points'; $('typeFeedback').className='feedback ok';
     celebrateSimple();
     if(state.streak===7) celebrateStreak7();
-    ensureStartAndUnlocks(); checkDailyGoalAndMap();
+    checkDailyGoalAndMap();
   }else{
     r.wrong++; r.stage=Math.max(0,r.stage-1); r.due = now()+2*3600*1000;
     state.streak=0; $('typeFeedback').textContent='Not quite.'; $('typeFeedback').className='feedback warn';
@@ -329,6 +319,9 @@ function renderMap(){
 }
 function reflectBadges(){
   const a=state.achievements||{};
+  const mastered10 = masteredIndices().length>=10;
+  if(mastered10 && !a.first10) a.first10=true;
+  if(masteredIndices().length>=50 && !a.mastered50) a.mastered50=true;
   $('achList').innerHTML = `
     <div class="chip">${a.first10?'🏅':'⬜'} First 10 mastered</div>
     <div class="chip">${a.perfectMini?'🏅':'⬜'} Perfect Mini Quiz</div>
@@ -337,40 +330,39 @@ function reflectBadges(){
   `;
 }
 
-/* ===== THEME UNLOCK LOGIC & UI ===== */
+/* ===== Theme unlock logic + dropdown ===== */
 function hasStreak7(){return !!state.achievements?.streak7;}
-function masteredCount(){ return [...getCoveredSet()].length; }
-function updateThemeUnlocks(){ renderThemeList(); }
+function updateThemeUnlocks(){ populateThemeDropdown(); }
 function isThemeUnlocked(key){
+  if(ACTIVE_PROFILE==='Sia') return true; // dev: all unlocked
   switch(key){
     case 'ocean': return true;
-    case 'sunset': return masteredCount()>=5;
-    case 'mint': return masteredCount()>=10;
-    case 'amethyst': return masteredCount()>=20;
+    case 'sunset': return masteredIndices().length>=5;
+    case 'mint': return masteredIndices().length>=10;
+    case 'amethyst': return masteredIndices().length>=20;
     case 'night': return hasStreak7();
     case 'cats': return (state.mapUnlocked||0)>=6;
     default: return true;
   }
 }
-function renderThemeList(){
-  const box=$('themesBox'); if(!box) return;
-  box.innerHTML='';
+function populateThemeDropdown(){
+  const sel = $('themeSelect'); if(!sel) return;
+  const current = state.theme||'ocean';
+  sel.innerHTML='';
   Object.entries(THEMES).forEach(([key, t])=>{
-    const unlocked = isThemeUnlocked(key);
-    const btn=document.createElement('button');
-    btn.className='btn'; btn.style.margin='4px';
-    btn.disabled = !unlocked;
-    btn.textContent = unlocked ? `🎨 ${t.name}` : `🔒 ${t.name} — ${t.req}`;
-    btn.addEventListener('click', ()=> applyTheme(key));
-    if(state.theme===key) btn.classList.add('primary');
-    box.appendChild(btn);
+    const opt=document.createElement('option');
+    opt.value=key; opt.textContent=t.name + (isThemeUnlocked(key)?'':` (locked — ${t.req})`);
+    opt.disabled = !isThemeUnlocked(key);
+    if(key===current) opt.selected=true;
+    sel.appendChild(opt);
   });
 }
 
 /* ===== Events (main) ===== */
 $('listenBtn').addEventListener('click', playYourAudio);
 $('checkBtn').addEventListener('click', ()=>{
-  const gi=order[idx], item=words[gi];
+  if(order.length===0){ $('typeFeedback').textContent='No items yet.'; return; }
+  const gi=order[idx%order.length], item=words[gi];
   const v=$('typeInput').value.trim(); if(!v){ $('typeFeedback').textContent='Type your guess first!'; $('typeFeedback').className='feedback warn'; return; }
   $('typeFeedback').textContent=''; $('typeInput').value=''; $('typeInput').focus();
   handleAnswer(normalizeTranslit(v)===normalizeTranslit(item.translit), gi);
@@ -380,18 +372,8 @@ $('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.stre
 $('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
 $('learnBtn').addEventListener('click', ()=>{ mode='learn'; ensureOrder(); showItem(); });
 $('quizBtn').addEventListener('click',  ()=>{ mode='quiz'; ensureOrder(); showItem(); });
-$('hintBtn').addEventListener('click', ()=>{
-  if(mode!=='learn') return;
-  const gi=order[idx], item=words[gi];
-  $('trans').textContent=item.translit; $('en').textContent=item.en;
-});
-$('revealBtn').addEventListener('click', ()=>{
-  const gi=order[idx], item=words[gi];
-  $('fa').textContent=item.fa; $('trans').textContent=item.translit;
-  const s=$('sadFace'); s.style.display='block'; setTimeout(()=>s.classList.add('fade-out'),700); setTimeout(()=>{s.classList.remove('fade-out'); s.style.display='none';},1500);
-});
 
-/* ===== Mini Quiz (fixed) ===== */
+/* ===== Mini Quiz (clean, no conflicts) ===== */
 let miniQ={queue:[],current:null,correct:0,total:0};
 $('startMiniQuiz').addEventListener('click', ()=>{
   $('settingsModal').style.display='none';
@@ -402,23 +384,20 @@ function startMiniQuiz(){
   shuffle(pool); miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
   $('miniQuizPanel').dataset.active='1';
   $('miniQuizPanel').style.display='block';
-  // Hide main media/controls to avoid duplicate visuals
-  document.querySelector('.media-wrap').style.display='none';
-  document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress').forEach(el=> el.style && (el.style.display='none'));
+  $('mainPractice').style.display='none';       // hide whole main practice block
   nextMiniQuestion();
 }
 function endMiniQuiz(){
   delete $('miniQuizPanel').dataset.active;
   $('miniQuizPanel').style.display='none';
-  // Restore UI
-  document.querySelector('.media-wrap').style.display='';
-  document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress').forEach(el=> el.style && (el.style.display=''));
+  $('mainPractice').style.display='';
   showItem();
 }
 function nextMiniQuestion(){
   if(!miniQ.queue.length){
     $('mqFeedback').innerHTML=`Mini Quiz complete! Score: <b>${miniQ.correct}</b> / ${miniQ.total}`;
     $('mqBar').style.width='100%';
+    if(miniQ.correct===miniQ.total && miniQ.total>0){ state.achievements.perfectMini=true; saveStateToCloud(); }
     setTimeout(endMiniQuiz, 1200);
     return;
   }
@@ -438,13 +417,45 @@ $('mqCheck').addEventListener('click', ()=>{
 });
 $('mqInput').addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('mqCheck').click(); }});
 
-/* ===== Settings: sentence toggle & stats ===== */
+/* ===== Settings actions ===== */
+$('reviewToggle').addEventListener('click', ()=>{
+  state.settings.reviewAll = !state.settings.reviewAll; saveStateToCloud();
+  $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`;
+  ensureOrder(); showItem();
+});
+$('openSettings').addEventListener('click', ()=>{ 
+  $('settingsModal').style.display='grid'; 
+  $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`;
+  populateThemeDropdown();
+});
+$('themeSelect').addEventListener('change', (e)=> applyTheme(e.target.value));
+
+/* ===== Sentence Practice page (separate overlay) ===== */
+function openSentences(){
+  const cont = $('sentencesBody'); cont.innerHTML='';
+  const unlocked = unlockedIndices();
+  unlocked.forEach(i=>{
+    const w=words[i]; if(!w.sentence) return;
+    const row=document.createElement('div'); row.className='stat';
+    row.innerHTML = `
+      <div class="fa" dir="rtl" style="font-size:20px">${w.sentence.fa}</div>
+      <div class="trans" style="font-size:18px">${w.sentence.translit}</div>
+      <div class="en" style="font-size:18px">${w.sentence.en}</div>
+    `;
+    cont.appendChild(row);
+  });
+  $('sentencesModal').style.display='grid';
+}
+$('openSentences').addEventListener('click', ()=>{ $('settingsModal').style.display='none'; openSentences(); });
+$('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.display='none');
+
+/* ===== Stats modal ===== */
 function openStats(){
   const totalSeen = Object.values(state.srs||{}).reduce((a,r)=>a+(r.seen||0),0);
   const totalCorrect = Object.values(state.srs||{}).reduce((a,r)=>a+(r.correct||0),0);
   const totalWrong = Object.values(state.srs||{}).reduce((a,r)=>a+(r.wrong||0),0);
   const acc = totalSeen ? Math.round((totalCorrect/totalSeen)*100) : 0;
-  const mastered = masteredCount();
+  const mastered = masteredIndices().length;
   $('statsName').textContent = ACTIVE_PROFILE;
   $('statsBody').innerHTML = `
     <div class="grid">
@@ -459,6 +470,7 @@ function openStats(){
     </div>`;
   $('statsModal').style.display='grid';
 }
+$('openStats').addEventListener('click', openStats);
 $('closeStats').addEventListener('click', ()=> $('statsModal').style.display='none');
 
 /* ===== Developer access (PIN = 3232) ===== */
@@ -469,8 +481,7 @@ async function switchProfile(name){
   docIdHash = await computeDocId(ACTIVE_PROFILE);
   await loadStateFromCloud();
   ensureStartAndUnlocks();
-  // Sia = full unlock & banner
-  if(ACTIVE_PROFILE==='Sia'){ state.unlocked_count = words.length; DEVELOPER_MODE=true; showDevBanner(true); }
+  if(ACTIVE_PROFILE==='Sia'){ DEVELOPER_MODE=true; showDevBanner(true); }
   else { DEVELOPER_MODE=false; showDevBanner(false); }
   await saveStateToCloud();
   ensureOrder(); showItem();
@@ -516,17 +527,14 @@ document.addEventListener('click', (e)=>{
   if(e.target.id==='statsModal') e.target.style.display='none';
   if(e.target.id==='achModal')   e.target.style.display='none';
   if(e.target.id==='mapModal')   e.target.style.display='none';
+  if(e.target.id==='sentencesModal') e.target.style.display='none';
 });
-
-/* Small query helper */
-function bySel(s){return document.querySelector(s);}
 </script>
 </head>
 <body>
 <header>
   <h1>✨ Farsi Fun — Learn Persian Basics</h1>
   <div class="stats">
-    <!-- Removed Profile badge -->
     <div class="badge" id="scoreBadge">Score: 0</div>
     <div class="badge" id="streakBadge">Streak: 0 🔥</div>
     <div class="badge" id="unlockedBadge">0/0 unlocked</div>
@@ -548,47 +556,48 @@ function bySel(s){return document.querySelector(s);}
 
   <div class="card">
     <div class="row">
-      <div class="media-wrap">
-        <img id="pic" class="pic" alt="" />
-        <div class="emoji" id="emoji">🍎</div>
-      </div>
-      <div class="word" id="wordWrap">
-        <div class="en" id="en">apple</div>
-        <div class="fa" id="fa" dir="rtl">سیب</div>
-        <div class="trans" id="trans">sib</div>
 
-        <div class="controls">
-          <button id="listenBtn" class="accent">🔊 Listen</button>
-          <button id="hintBtn" class="btn">💡 Hint</button>
-          <button id="revealBtn" class="btn">👀 Reveal</button>
-          <button id="nextBtn" class="primary">➡️ Next</button>
+      <!-- Main practice panel -->
+      <div id="mainPractice">
+        <div class="media-wrap">
+          <img id="pic" class="pic" alt="" />
+          <div class="emoji" id="emoji">🍎</div>
         </div>
+        <div class="word">
+          <div class="en" id="en">apple</div>
+          <div class="fa" id="fa" dir="rtl">سیب</div>
+          <div class="trans" id="trans">sib</div>
 
-        <div class="feedback" id="speechFeedback"></div>
-
-        <label class="tiny" for="typeInput">Type the pronunciation (English letters):</label>
-        <input class="input" id="typeInput" placeholder="e.g., sib"/>
-        <div class="controls">
-          <button id="checkBtn" class="primary">✅ Check</button>
-          <button id="skipBtn" class="btn">⏭️ Skip</button>
-        </div>
-        <div class="feedback" id="typeFeedback"></div>
-
-        <div class="progress"><div class="bar" id="progressBar"></div></div>
-
-        <!-- (Sentences render here automatically when enabled in Settings; no button in main UI) -->
-
-        <!-- Mini Quiz -->
-        <div id="miniQuizPanel" class="card" style="display:none; margin-top:14px">
-          <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:8px">
-            <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
+          <div class="controls">
+            <button id="listenBtn" class="accent">🔊 Listen</button>
+            <button id="hintBtn" class="btn">💡 Hint</button>
+            <button id="revealBtn" class="btn">👀 Reveal</button>
+            <button id="nextBtn" class="primary">➡️ Next</button>
           </div>
-          <img id="mqPic" class="mq-pic" alt="" />
-          <input id="mqInput" class="input" placeholder="Type the transliteration…"/>
-          <div class="controls"><button id="mqCheck" class="primary">Check</button></div>
-          <div id="mqFeedback" class="feedback"></div>
+
+          <label class="tiny" for="typeInput">Type the pronunciation (English letters):</label>
+          <input class="input" id="typeInput" placeholder="e.g., sib"/>
+          <div class="controls">
+            <button id="checkBtn" class="primary">✅ Check</button>
+            <button id="skipBtn" class="btn">⏭️ Skip</button>
+          </div>
+          <div class="feedback" id="typeFeedback"></div>
+
+          <div class="progress"><div class="bar" id="progressBar"></div></div>
         </div>
       </div>
+
+      <!-- Mini Quiz (own panel; hides mainPractice) -->
+      <div class="word" id="miniQuizPanel" style="display:none">
+        <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:8px">
+          <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
+        </div>
+        <img id="mqPic" class="mq-pic" alt="" />
+        <input id="mqInput" class="input" placeholder="Type the transliteration…"/>
+        <div class="controls"><button id="mqCheck" class="primary">Check</button></div>
+        <div id="mqFeedback" class="feedback"></div>
+      </div>
+
     </div>
   </div>
 </main>
@@ -605,7 +614,7 @@ function bySel(s){return document.querySelector(s);}
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <h3 style="margin:0">🏆 Badges</h3>
-      <button id="closeAch" class="btn" onclick="document.getElementById('achModal').style.display='none'">Close</button>
+      <button class="btn" onclick="document.getElementById('achModal').style.display='none'">Close</button>
     </div>
     <div id="achList" class="grid"></div>
   </div>
@@ -616,7 +625,7 @@ function bySel(s){return document.querySelector(s);}
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <h3 style="margin:0">🗺️ Persian Bazaar Progress</h3>
-      <button id="closeMap" class="btn" onclick="document.getElementById('mapModal').style.display='none'">Close</button>
+      <button class="btn" onclick="document.getElementById('mapModal').style.display='none'">Close</button>
     </div>
     <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile. Lots of cats live here 🐈.</p>
     <div id="mapGrid" class="map"></div>
@@ -634,26 +643,26 @@ function bySel(s){return document.querySelector(s);}
       <div class="stat">
         <b>Themes</b>
         <p class="tiny">Unlock more themes as you learn.</p>
-        <div id="themesBox" style="display:flex;flex-wrap:wrap"></div>
+        <select id="themeSelect" style="width:100%"></select>
       </div>
       <div class="stat">
         <b>Mini Quiz</b><p class="tiny">Practice 5 items (image → type the transliteration).</p>
         <button id="startMiniQuiz" class="btn">⚡ Start Mini Quiz</button>
       </div>
       <div class="stat">
-        <b>Review Mode</b><p class="tiny">Quiz only on words she has mastered.</p>
+        <b>Review Mode</b><p class="tiny">Quiz only on mastered words.</p>
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
       <div class="stat">
-        <b>Sentence Context</b><p class="tiny">Show simple example sentences under a word.</p>
-        <button id="sentenceToggle" class="btn">Sentence Mode: OFF</button>
+        <b>Sentence Practice</b><p class="tiny">Read sentences & translations.</p>
+        <button id="openSentences" class="btn">📖 Open Sentence Practice</button>
       </div>
       <div class="stat">
         <b>Lifetime Stats</b><p class="tiny">See totals and accuracy.</p>
-        <button id="openStats" class="btn" onclick="openStats()">📈 View Stats</button>
+        <button id="openStats" class="btn">📈 View Stats</button>
       </div>
       <div class="stat">
-        <b>Developer</b><p class="tiny">Access Sia (developer) profile with PIN.</p>
+        <b>Developer</b><p class="tiny">Enable Sia (developer) with PIN.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button id="devLoginBtn" class="btn">🔓 Developer login</button>
           <button id="devLogoutBtn" class="btn">🔒 Exit developer</button>
@@ -671,6 +680,17 @@ function bySel(s){return document.querySelector(s);}
       <button id="closeStats" class="btn">Close</button>
     </div>
     <div id="statsBody"></div>
+  </div>
+</div>
+
+<!-- Sentence Practice Modal -->
+<div id="sentencesModal" class="modal">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h3 style="margin:0">📖 Sentence Practice</h3>
+      <button id="closeSentences" class="btn">Close</button>
+    </div>
+    <div id="sentencesBody" class="grid"></div>
   </div>
 </div>
 </body>
