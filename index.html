@@ -56,13 +56,13 @@
   .tile{aspect-ratio:1/1;background:#0b1229;border:1px dashed #334155;border-radius:10px;display:grid;place-items:center;font-size:28px;color:#334155}
   .tile.unlocked{border-style:solid;color:#e5e7eb}
 
-  /* >>> ADDED: heavy blur behind the profile chooser only <<< */
+  /* Super‑blur behind the profile chooser only */
   #profileOverlay{
     background:
       radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%),
-      rgba(15,23,42,.60);         /* lighter so the blur shows through */
+      rgba(15,23,42,.60);
     backdrop-filter: blur(28px) saturate(120%);
-    -webkit-backdrop-filter: blur(28px) saturate(120%); /* Safari */
+    -webkit-backdrop-filter: blur(25px) saturate(120%);
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
@@ -110,7 +110,6 @@
   <div class="mode">
     <button id="learnBtn" class="btn">Learn Mode</button>
     <button id="quizBtn" class="btn">Quiz Mode</button>
-    <!-- Difficulty removed -->
     <span class="tiny">New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰</span>
   </div>
 
@@ -145,7 +144,7 @@
 
         <div class="progress"><div class="bar" id="progressBar"></div></div>
 
-        <!-- Mini Quiz (image + translit only), launched from Settings -->
+        <!-- Mini Quiz -->
         <div id="miniQuizPanel" class="card" style="display:none; margin-top:14px">
           <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:8px">
             <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
@@ -185,7 +184,7 @@
       <h3 style="margin:0">🗺️ Persian Bazaar Progress</h3>
       <button id="closeMap" class="btn">Close</button>
     </div>
-    <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile. Lots of cats live here 🐈.</p>
+    <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile.</p>
     <div id="mapGrid" class="map"></div>
   </div>
 </div>
@@ -198,7 +197,6 @@
       <button id="closeSettings" class="btn">Close</button>
     </div>
     <div class="grid">
-      <!-- Theme Rewards -->
       <div class="stat">
         <b>Themes (rewards)</b>
         <p class="tiny">Unlock a new theme for every <b>50</b> words learned.</p>
@@ -211,7 +209,7 @@
         <button id="startMiniQuiz" class="btn">⚡ Start Mini Quiz</button>
       </div>
       <div class="stat">
-        <b>Review Mode</b><p class="tiny">Quiz only on words she has mastered (ignores SRS order).</p>
+        <b>Review Mode</b><p class="tiny">Quiz only on words she has mastered.</p>
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
 
@@ -227,7 +225,7 @@
       </div>
 
       <div class="stat">
-        <b>Danger zone</b><p class="tiny">Clear this profile’s score, streak, SRS, unlocks, and achievements.</p>
+        <b>Danger zone</b><p class="tiny">Clear this profile’s data.</p>
         <button id="resetBtn" class="btn" style="background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d">♻️ Reset Progress</button>
       </div>
     </div>
@@ -387,7 +385,7 @@ const $=id=>document.getElementById(id);
 const bySel=s=>document.querySelector(s);
 function now(){return Date.now()}
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
-function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/\s+/g,'')}
+function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'').trim()}
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
 
@@ -482,26 +480,89 @@ function celebrateStreak7(){
   setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},2200);
 }
 
-/* ===================== AUDIO (your recordings) ===================== */
+/* ===================== AUDIO ===================== */
 const audioCache=new Map();
 function getAudio(item){ const url=item.audio||`audio/${(item.translit||'').toLowerCase()}.mp3`; if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);} return audioCache.get(url);}
 async function playYourAudio(){ const gi=order[idx], item=words[gi]; try{ const a=getAudio(item); a.currentTime=0; await a.play(); }catch{} }
 
-/* ===================== ANSWERING (SRS + score + map + theme unlock check) ===================== */
+/* ===================== SPEECH RECOGNITION ===================== */
+let SR=null, recognizing=false;
+function levenshtein(a,b){
+  const m=a.length, n=b.length;
+  const dp=Array.from({length:m+1},()=>Array(n+1).fill(0));
+  for(let i=0;i<=m;i++) dp[i][0]=i;
+  for(let j=0;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      const cost = a[i-1]===b[j-1]?0:1;
+      dp[i][j]=Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
+    }
+  }
+  return dp[m][n];
+}
+function closeEnough(a,b){
+  if(!a||!b) return false;
+  if(a===b) return true;
+  const d=levenshtein(a,b);
+  return d<=1; // forgiving by one edit
+}
+function initSpeech(){
+  const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const btn = $('sayBtn');
+  if(!SRClass){ btn.disabled=true; btn.title='Speech not supported (try Chrome).'; return; }
+  SR = new SRClass();
+  SR.lang = 'en-US';              // user speaks transliteration (English letters)
+  SR.interimResults = false;
+  SR.maxAlternatives = 3;
+
+  btn.disabled=false;
+  btn.title='Say the transliteration (e.g., "sib")';
+
+  SR.onstart = ()=>{ recognizing=true; $('speechFeedback').textContent='Listening…'; $('speechFeedback').className='feedback tiny'; };
+  SR.onerror = (e)=>{ recognizing=false; $('speechFeedback').textContent='Mic error. Try again.'; $('speechFeedback').className='feedback err'; console.warn(e.error); };
+  SR.onend = ()=>{ recognizing=false; if($('speechFeedback').textContent==='Listening…'){ $('speechFeedback').textContent='Didn’t catch that—try again.'; $('speechFeedback').className='feedback warn'; } };
+
+  SR.onresult = (event)=>{
+    recognizing=false;
+    const gi=order[idx], item=words[gi];
+    const heard = [];
+    for(let i=0;i<event.results[0].length;i++){
+      heard.push(event.results[0][i].transcript);
+    }
+    // pick best alt that matches (or first if none)
+    const target = normalizeTranslit(item.translit);
+    let ok=false, picked='';
+    for(const h of heard){
+      const n=normalizeTranslit(h);
+      picked = picked || n;
+      if(closeEnough(n,target)){ ok=true; picked=n; break; }
+    }
+    $('speechFeedback').innerHTML = ok ? `Heard: "<b>${picked}</b>" ✓` : `Heard: "<b>${picked||'(nothing)'}"</b> ✗ — target is "<b>${item.translit}</b>"`;
+    $('speechFeedback').className = 'feedback ' + (ok?'ok':'warn');
+    handleAnswer(ok, gi, 'speech', picked);
+  };
+
+  $('sayBtn').addEventListener('click', ()=>{
+    if(!SR) return;
+    try{ SR.stop(); SR.start(); }catch(_){}
+  });
+}
+
+/* ===================== ANSWERING (SRS + score + map + theme) ===================== */
 function handleAnswer(correct, gi, source='typing', transcript=''){
   const r=ensureSRS(gi); r.seen++;
   if(correct){
     r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1);
     scheduleAfter(gi,SRS_INTERVALS_HOURS[r.stage]||24);
     state.score+=10; state.streak+=1; addCovered(gi);
-    $('typeFeedback').textContent='Great! +10 points'; $('typeFeedback').className='feedback ok';
+    if(source!=='speech'){ $('typeFeedback').textContent='Great! +10 points'; $('typeFeedback').className='feedback ok'; }
     celebrateSimple();
     if(state.streak===7) celebrateStreak7();
     checkDailyGoalAndMap();
     populateThemeDropdown();
   }else{
     r.wrong++; r.stage=Math.max(0,r.stage-1); scheduleAfter(gi,2);
-    state.streak=0; $('typeFeedback').textContent = source==='speech' ? 'Try again!' : 'Not quite.'; $('typeFeedback').className='feedback warn';
+    state.streak=0; if(source!=='speech'){ $('typeFeedback').textContent='Not quite.'; $('typeFeedback').className='feedback warn'; }
   }
   persist();
   setTimeout(next, 450);
@@ -544,7 +605,7 @@ function reflectBadges(){
   $('achList').innerHTML = list;
 }
 
-/* ===================== SENTENCE WINDOW (modal) ===================== */
+/* ===================== SENTENCE WINDOW ===================== */
 function reflectSentenceToggle(){
   const on = !!(state.settings && state.settings.sentenceMode);
   $('sentenceToggle').textContent = `Sentence Mode: ${on ? 'ON' : 'OFF'}`;
@@ -583,6 +644,12 @@ function openSentences(){
 
 /* ===================== EVENTS ===================== */
 $('listenBtn').addEventListener('click', playYourAudio);
+
+/* Enter-to-submit for main input */
+$('typeInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){ e.preventDefault(); $('checkBtn').click(); }
+});
+
 $('checkBtn').addEventListener('click', ()=>{
   const gi=order[idx], item=words[gi];
   const guess=normalizeTranslit($('typeInput').value);
@@ -692,7 +759,7 @@ function useProfile(name){
   ACTIVE_PROFILE = String(name||'').trim() || 'Guest';
   loadState();
   $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
-  $('profileOverlay').style.display='none';    // blur disappears here
+  $('profileOverlay').style.display='none';
   $('startOverlay').style.display='grid';
 }
 $('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
@@ -728,7 +795,7 @@ $('quickSia').addEventListener('click', ()=>{
   });
 })();
 
-/* Start overlay fallback (ensures buttons always work) */
+/* Start overlay fallback */
 function startAs(m){ mode=m; ensureOrder(); $('startOverlay').style.display='none'; showItem(); }
 ['startLearn','startQuiz'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
 $('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); });
@@ -741,7 +808,8 @@ document.addEventListener('click', (e)=>{
   if(e.target.id==='mapModal') e.target.style.display='none';
 });
 
-/* Init (shows profile overlay by default) */
+/* Init */
+initSpeech(); // enable mic if supported
 </script>
 </body>
 </html>
