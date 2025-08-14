@@ -58,16 +58,20 @@
   .stat{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px}
   .chip{display:inline-flex;gap:6px;background:#0b1229;border:1px solid #1f2937;border-radius:999px;padding:6px 10px;font-size:12px;color:#94a3b8;margin:2px 4px 0 0}
 
-  /* Bazaar grid */
-  .map-wrap{position:relative}
-  .map{display:grid;grid-template-columns:repeat(4, minmax(60px,1fr));gap:8px;margin-top:10px;position:relative;z-index:1}
+  /* Bazaar */
+  .map-wrap{position:relative;margin-top:10px}
+  .map{display:grid;grid-template-columns:repeat(4, minmax(60px,1fr));gap:8px;position:relative;z-index:1}
   .tile{aspect-ratio:1/1;background:#0b1229;border:1px dashed #334155;border-radius:10px;display:grid;place-items:center;font-size:28px;color:#334155}
-  .tile.unlocked{border-style:solid;color:#e5e7eb}
   /* roaming cats overlay */
-  .cat-layer{position:absolute;inset:10px 0 0 0; /* align with map's top margin */ pointer-events:none;z-index:2;overflow:hidden}
+  .cat-layer{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
   .cat{position:absolute;font-size:32px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));will-change:transform,left,top}
   .cat.flip{transform:scaleX(-1)}
   @media(min-width:760px){ .cat{font-size:40px} }
+  /* Arena when cats are unlocked (grid hidden) */
+  .map-wrap.arena{
+    background:#0b1229;border:1px solid #1f2937;border-radius:12px;
+    height:clamp(260px, 45vh, 380px);
+  }
 
   /* Heavy blur for profile/start overlays */
   #profileOverlay,#startOverlay{
@@ -78,15 +82,10 @@
     -webkit-backdrop-filter: blur(28px) saturate(120%);
   }
 
-  /* ---------- Mobile header behavior (only phones) ---------- */
+  /* ----- Mobile-only header/input behavior ----- */
   @media (max-width: 700px){
-    header{
-      position: static;            /* no sticky on phones: avoids covering image while scrolling */
-      top: auto;
-      background: rgba(15,23,42,.9);
-      backdrop-filter: none;
-    }
-    main{ padding: 0 16px 120px; } /* keep nice bottom space under keyboard */
+    header{ position: static; top:auto; background:rgba(15,23,42,.9); backdrop-filter:none; }
+    main{ padding:0 16px 120px; }
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
@@ -194,7 +193,7 @@
   </div>
 </div>
 
-<!-- Bazaar Map Modal (now with roaming cats) -->
+<!-- Bazaar Map Modal -->
 <div id="mapModal" class="modal">
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -203,7 +202,7 @@
     </div>
     <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile. Lots of cats live here 🐈.</p>
 
-    <div class="map-wrap">
+    <div class="map-wrap" id="mapWrap">
       <div id="mapGrid" class="map"></div>
       <div id="catLayer" class="cat-layer"></div>
     </div>
@@ -249,7 +248,7 @@
   </div>
 </div>
 
-<!-- Sentence Practice Modal (one-at-a-time) -->
+<!-- Sentence Practice Modal -->
 <div id="sentencesModal" class="modal">
   <div class="modal-card" style="max-width:820px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -377,7 +376,7 @@ const words = [
   {fa:"دوچرخه", en:"bicycle", translit:"docharkhe", emoji:"🚲", audio:"audio/docharkhe.mp3", image:"images/docharkhe.png"},
   {fa:"هواپیما", en:"airplane", translit:"havâpeymâ", emoji:"✈️", audio:"audio/havâpeymâ.mp3", image:"images/havâpeymâ.png"},
   {fa:"کفش", en:"shoe", translit:"kafsh", emoji:"👟", audio:"audio/kafsh.mp3", image:"images/kafsh.png"},
-  {fa:"لباس", en:"clothes", translit:"lebâs", emoji:"👕", audio:"audio/lebâس.mp3", image:"images/lebâس.png"},
+  {fa:"لباس", en:"clothes", translit:"lebâس", emoji:"👕", audio:"audio/lebâس.mp3", image:"images/lebâس.png"},
   {fa:"شلوار", en:"pants", translit:"shalvâr", emoji:"👖", audio:"audio/shalvâr.mp3", image:"images/shalvâr.png"},
   {fa:"پیراهن", en:"shirt", translit:"pirâhan", emoji:"👔", audio:"audio/pirâhan.mp3", image:"images/pirâhan.png"},
   {fa:"کلاه", en:"hat", translit:"kolâh", emoji:"🎩", audio:"audio/kolâh.mp3", image:"images/kolâh.png"},
@@ -402,7 +401,7 @@ const words = [
   {fa:"ده", en:"ten", translit:"dah", emoji:"🔟", audio:"audio/dah.mp3", image:"images/dah.png"}
 ];
 
-/* ===================== THEMES (rewards) ===================== */
+/* ===================== THEMES ===================== */
 const THEMES = [
   {key:'default', name:'Ocean (default)', unlockAt:0,  vars:{'--grad1':'#0b1229','--grad2':'#121a36','--accent-2':'#38bdf8','--accent':'#22c55e','--bg':'#0f172a'}},
   {key:'sunset',  name:'Sunset',          unlockAt:50, vars:{'--grad1':'#2a0f1b','--grad2':'#3a1f2a','--accent-2':'#fb923c','--accent':'#f59e0b','--bg':'#1a0c12'}},
@@ -446,7 +445,7 @@ function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').rep
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
 
-/* Mobile detection for focus behavior */
+/* Mobile detection for input focus */
 const isMobile = () => window.matchMedia('(max-width:700px)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 function maybeFocusInput(){ if(!isMobile()) $('typeInput').focus(); }
 
@@ -488,7 +487,7 @@ function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest
 function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); populateThemeDropdown(); }
 function loadState(){ state = store.get('state', defaultState()); initDailyUnlock(); applyTheme(state.theme||'default'); }
 
-/* ======== SHARED NICOLE SYNC (Worker-backed) ======== */
+/* ======== SHARED NICOLE SYNC ======== */
 const SYNC_ENDPOINT = "https://ff-sync.9rmcqs6hjc.workers.dev";
 const SYNC_DOC_ID = "nicole";
 const SYNC_WRITE_TOKEN = "Gravity123!!";
@@ -496,7 +495,6 @@ const SYNC_WRITE_TOKEN = "Gravity123!!";
 function mergeStates(local, remote){
   if(!remote || !remote.updated_at) return local;
   const newer = (local.updated_at||0) >= (remote.updated_at||0) ? local : remote;
-  const other = newer===local ? remote : local;
   const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]);
   newer.covered = [...cov];
   newer.score = Math.max(local.score||0, remote.score||0);
@@ -506,36 +504,26 @@ function mergeStates(local, remote){
 async function syncPullNicole(){
   if(!SYNC_ENDPOINT || ACTIVE_PROFILE!=="Nicole") return;
   try{
-    const res = await fetch(`${SYNC_ENDPOINT}/p/${SYNC_DOC_ID}`, { method:"GET" });
-    const remote = await res.json().catch(()=>null);
-    if(remote && Object.keys(remote).length){
-      state = mergeStates(state, remote);
-      _persist();
-    }
+    const res = await fetch(`${SYNC_ENDPOINT}/p/${SYNC_DOC_ID}`); const remote = await res.json().catch(()=>null);
+    if(remote && Object.keys(remote).length){ state = mergeStates(state, remote); _persist(); }
   }catch{}
 }
 async function syncPushNicole(){
   if(!SYNC_ENDPOINT || ACTIVE_PROFILE!=="Nicole") return;
   try{
     const payload = JSON.stringify({...state, updated_at: Date.now(), profile: ACTIVE_PROFILE});
-    await fetch(`${SYNC_ENDPOINT}/p/${SYNC_DOC_ID}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", ...(SYNC_WRITE_TOKEN?{"X-Token": SYNC_WRITE_TOKEN}:{}) },
-      body: payload
-    });
+    await fetch(`${SYNC_ENDPOINT}/p/${SYNC_DOC_ID}`, { method:"PUT",
+      headers:{ "Content-Type":"application/json", ...(SYNC_WRITE_TOKEN?{"X-Token":SYNC_WRITE_TOKEN}:{}) }, body:payload });
   }catch{}
 }
-let _persist = persist;
-let _syncTimer = null;
-function syncPushDebouncedNicole(){ clearTimeout(_syncTimer); _syncTimer = setTimeout(syncPushNicole, 600); }
-persist = function(){ _persist(); if (ACTIVE_PROFILE === "Nicole") syncPushDebouncedNicole(); };
+let _persist = persist, _syncTimer=null;
+function syncPushDebouncedNicole(){ clearTimeout(_syncTimer); _syncTimer=setTimeout(syncPushNicole,600); }
+persist = function(){ _persist(); if(ACTIVE_PROFILE==="Nicole") syncPushDebouncedNicole(); };
 function initSharedNicoleSync(){
   if (ACTIVE_PROFILE !== "Nicole" || !SYNC_ENDPOINT) return;
   syncPullNicole().then(()=>syncPushNicole());
-  document.addEventListener("visibilitychange", ()=> {
-    if (document.visibilityState === "visible" && ACTIVE_PROFILE === "Nicole") syncPullNicole();
-  });
-  window.addEventListener("online", ()=> { if (ACTIVE_PROFILE === "Nicole") syncPushNicole(); });
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && ACTIVE_PROFILE==="Nicole") syncPullNicole(); });
+  window.addEventListener("online", ()=>{ if(ACTIVE_PROFILE==="Nicole") syncPushNicole(); });
 }
 
 /* ===================== UI UPDATE ===================== */
@@ -566,7 +554,7 @@ function showItem(){
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
 
   $('typeInput').value='';
-  maybeFocusInput();          /* MOBILE FOCUS FIX: do not auto-focus on phones */
+  maybeFocusInput();
 }
 function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
@@ -597,7 +585,7 @@ const audioCache=new Map();
 function getAudio(item){ const url=item.audio||`audio/${(item.translit||'').toLowerCase()}.mp3`; if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);} return audioCache.get(url);}
 async function playYourAudio(){ const gi=order[idx], item=words[gi]; try{ const a=getAudio(item); a.currentTime=0; await a.play(); }catch{} }
 
-/* ===================== SPEECH RECOG (fa-IR first) ===================== */
+/* ===================== SPEECH RECOG ===================== */
 let SR=null;
 function levenshtein(a,b){const m=a.length,n=b.length,dp=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)dp[i][0]=i;for(let j=0;j<=n;j++)dp[0][j]=j;for(let i=1;i<=m;i++){for(let j=1;j<=n;j++){const c=a[i-1]===b[j-1]?0:1;dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+c)}}return dp[m][n]}
 function closeEnough(a,b){if(!a||!b)return false;if(a===b)return true;return levenshtein(a,b)<=1}
@@ -627,19 +615,11 @@ function initSpeech(){
     const targetTr = normalizeTranslit(item.translit);
 
     const heard = [];
-    for(let i=0;i<event.results[0].length;i++){
-      heard.push(event.results[0][i].transcript);
-    }
+    for(let i=0;i<event.results[0].length;i++){ heard.push(event.results[0][i].transcript); }
 
     let ok=false, picked='';
-    for(const h of heard){
-      if(hasPersian(h) && closeEnough(normalizeFa(h), targetFa)){ ok=true; picked=h.trim(); break; }
-    }
-    if(!ok){
-      for(const h of heard){
-        if(closeEnough(normalizeSRTranslit(h), targetTr)){ ok=true; picked=h.trim(); break; }
-      }
-    }
+    for(const h of heard){ if(hasPersian(h) && closeEnough(normalizeFa(h), targetFa)){ ok=true; picked=h.trim(); break; } }
+    if(!ok){ for(const h of heard){ if(closeEnough(normalizeSRTranslit(h), targetTr)){ ok=true; picked=h.trim(); break; } } }
 
     $('speechFeedback').innerHTML = ok
       ? `Heard: "<b>${picked}</b>" ✓`
@@ -654,7 +634,7 @@ function initSpeech(){
   });
 }
 
-/* ===================== ANSWERING (SRS + score + map + theme) ===================== */
+/* ===================== ANSWERING / MAP ===================== */
 function handleAnswer(correct, gi, source='typing'){
   const r=ensureSRS(gi); r.seen++;
   if(correct){
@@ -688,27 +668,41 @@ function checkDailyGoalAndMap(){
   persist();
 }
 
-/* ===================== MAP / BADGES RENDER ===================== */
+/* ===================== MAP RENDER (grid only before first cat) ===================== */
 function renderMap(){
-  const wrap = $('mapGrid'); if(!wrap) return;
-  wrap.innerHTML='';
-  const tiles = 12;
-  for(let i=0;i<tiles;i++){
-    const t=document.createElement('div');
-    t.className='tile'+(i<(state.mapUnlocked||0)?' unlocked':'');
-    t.textContent = i<(state.mapUnlocked||0)?'🐈':'?';
-    wrap.appendChild(t);
+  const wrap = $('mapGrid'), layer=$('catLayer'), container=$('mapWrap');
+  if(!wrap || !layer || !container) return;
+
+  const catsUnlocked = state.mapUnlocked||0;
+
+  if(catsUnlocked<=0){
+    container.classList.remove('arena');
+    wrap.style.display='grid';
+    layer.style.display='none';
+    wrap.innerHTML='';
+    const tiles=12;
+    for(let i=0;i<tiles;i++){
+      const t=document.createElement('div');
+      t.className='tile';
+      t.textContent='?';
+      wrap.appendChild(t);
+    }
+  }else{
+    // Once at least one cat is unlocked, hide the grid and show only the roaming cats arena
+    wrap.style.display='none';
+    wrap.innerHTML='';
+    container.classList.add('arena');
+    layer.style.display='block';
   }
 }
 function reflectBadges(){
   const a=state.achievements;
-  const list = `
+  $('achList').innerHTML = `
     <div class="chip">${a.first10?'🏅':'⬜'} First 10 mastered</div>
     <div class="chip">${a.perfectMini?'🏅':'⬜'} Perfect Mini Quiz</div>
     <div class="chip">${a.streak7?'🏅':'⬜'} 7-day streak</div>
     <div class="chip">${a.mastered50?'🏅':'⬜'} 50 mastered</div>
   `;
-  $('achList').innerHTML = list;
 }
 
 /* ===================== ROAMING CATS ===================== */
@@ -746,48 +740,42 @@ function spawnCats(count){
 
 function stepCats(ts){
   if(!catAnim.running) return;
-  const dt = Math.min(0.04, (ts - catAnim.lastTs)/1000); // seconds, clamp for stability
+  const dt = Math.min(0.04, (ts - catAnim.lastTs)/1000); // seconds
   catAnim.lastTs = ts;
 
   const B = catAnim.bounds;
   for(const c of cats){
-    // Random gentle turns
     if(ts > c.nextTurn){
-      const dTheta = (Math.random()-0.5) * (Math.PI/3); // +/- 60°
+      const dTheta = (Math.random()-0.5) * (Math.PI/3);
       const angle = Math.atan2(c.vy, c.vx) + dTheta;
       c.vx = Math.cos(angle)*c.speed;
       c.vy = Math.sin(angle)*c.speed;
       c.nextTurn = ts + 800 + Math.random()*1600;
     }
-
-    // Move
     c.x += c.vx * dt;
     c.y += c.vy * dt;
 
-    // Bounce on edges
     const r = 6;
     if(c.x < r){ c.x=r; c.vx = Math.abs(c.vx); }
     if(c.y < r){ c.y=r; c.vy = Math.abs(c.vy); }
     if(c.x > B.w-40-r){ c.x=B.w-40-r; c.vx = -Math.abs(c.vx); }
     if(c.y > B.h-40-r){ c.y=B.h-40-r; c.vy = -Math.abs(c.vy); }
 
-    // Face movement direction
     if(c.vx < 0) c.el.classList.add('flip'); else c.el.classList.remove('flip');
 
     c.el.style.left = c.x + 'px';
     c.el.style.top  = c.y + 'px';
   }
-
   requestAnimationFrame(stepCats);
 }
 
 function startCats(){
   const count = Math.max(0, state.mapUnlocked || 0);
+  if(count<=0){ stopCats(); return; }
   spawnCats(count);
   catAnim.running = true;
   catAnim.lastTs = performance.now();
   requestAnimationFrame(stepCats);
-  // keep bounds fresh on resize
   window.addEventListener('resize', onResizeCats);
 }
 function stopCats(){
@@ -798,7 +786,6 @@ function stopCats(){
 }
 function onResizeCats(){
   if(!catAnim.running) return;
-  // Re-measure and keep cats inside
   const layer = $('catLayer');
   const rect = layer.getBoundingClientRect();
   catAnim.bounds = { w: rect.width, h: rect.height, pad: 6 };
@@ -812,48 +799,27 @@ function onResizeCats(){
 let sentenceIdx = 0;
 function renderSentence(){
   if(!SENTENCES.length){
-    $('sentFa').textContent = '—';
-    $('sentTrans').textContent = '';
-    $('sentEn').textContent = 'No sentences available yet.';
-    $('sentProgress').textContent = '';
+    $('sentFa').textContent='—'; $('sentTrans').textContent=''; $('sentEn').textContent='No sentences available yet.'; $('sentProgress').textContent='';
     return;
   }
   if(sentenceIdx < 0) sentenceIdx = SENTENCES.length - 1;
   if(sentenceIdx >= SENTENCES.length) sentenceIdx = 0;
-
   const s = SENTENCES[sentenceIdx];
-  $('sentFa').textContent = s.fa;
-  $('sentTrans').textContent = s.translit;
-  $('sentEn').textContent = s.en;
+  $('sentFa').textContent = s.fa; $('sentTrans').textContent = s.translit; $('sentEn').textContent = s.en;
   $('sentProgress').textContent = `${sentenceIdx+1} / ${SENTENCES.length}`;
 }
-function openSentences(){
-  sentenceIdx = 0;
-  renderSentence();
-  $('sentencesModal').style.display='grid';
-}
+function openSentences(){ sentenceIdx=0; renderSentence(); $('sentencesModal').style.display='grid'; }
 
-/* ===================== MINI QUIZ (Modal) ===================== */
+/* ===================== MINI QUIZ ===================== */
 let miniQ={queue:[],current:null,correct:0,total:0}, MINI_ACTIVE=false;
-
-function endMiniQuiz(){
-  MINI_ACTIVE=false;
-  $('miniQuizModal').style.display='none';
-  $('mqInput').value='';
-  $('mqFeedback').textContent='';
-  $('mqBar').style.width='0%';
-}
-
+function endMiniQuiz(){ MINI_ACTIVE=false; $('miniQuizModal').style.display='none'; $('mqInput').value=''; $('mqFeedback').textContent=''; $('mqBar').style.width='0%'; }
 $('startMiniQuiz').addEventListener('click', ()=>{
   $('settingsModal').style.display='none';
   const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
   shuffle(pool);
   miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
-  MINI_ACTIVE=true;
-  $('miniQuizModal').style.display='grid';
-  nextMiniQuestion();
+  MINI_ACTIVE=true; $('miniQuizModal').style.display='grid'; nextMiniQuestion();
 });
-
 function nextMiniQuestion(){
   if(!MINI_ACTIVE) return;
   if(!miniQ.queue.length){
@@ -882,19 +848,13 @@ $('mqQuit').addEventListener('click', ()=> endMiniQuiz());
 
 /* ===================== EVENTS ===================== */
 $('listenBtn').addEventListener('click', playYourAudio);
-
-/* Enter-to-submit for main input */
-$('typeInput').addEventListener('keydown', (e)=>{
-  if(e.key==='Enter'){ e.preventDefault(); $('checkBtn').click(); }
-});
-
+$('typeInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('checkBtn').click(); } });
 $('checkBtn').addEventListener('click', ()=>{
   const gi=order[idx], item=words[gi];
   const guess=normalizeTranslit($('typeInput').value);
   if(!guess){ $('typeFeedback').textContent='Type your guess first!'; $('typeFeedback').className='feedback warn'; return; }
-  $('typeFeedback').textContent='';
-  $('typeInput').value='';
-  maybeFocusInput();          /* MOBILE FOCUS FIX: only refocus on desktop */
+  $('typeFeedback').textContent=''; $('typeInput').value='';
+  maybeFocusInput();
   handleAnswer(guess===normalizeTranslit(item.translit), gi, 'typing');
 });
 $('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.streak=0; persist(); next(); });
@@ -902,16 +862,9 @@ $('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); })
 $('learnBtn').addEventListener('click', ()=>{ endMiniQuiz(); mode='learn'; ensureOrder(); showItem(); });
 $('quizBtn').addEventListener('click',  ()=>{ endMiniQuiz(); mode='quiz'; ensureOrder(); showItem(); });
 
-$('hintBtn').addEventListener('click', ()=>{
-  if(mode!=='learn') return;
-  const gi=order[idx], item=words[gi];
-  $('trans').textContent=item.translit; $('en').textContent=item.en;
-});
-$('revealBtn').addEventListener('click', ()=>{
-  const gi=order[idx], item=words[gi];
-  $('fa').textContent=item.fa; $('trans').textContent=item.translit;
-  const s=$('sadFace'); s.style.display='block'; setTimeout(()=>s.classList.add('fade-out'),700); setTimeout(()=>{s.classList.remove('fade-out'); s.style.display='none';},1500);
-});
+$('hintBtn').addEventListener('click', ()=>{ if(mode!=='learn') return; const gi=order[idx], item=words[gi]; $('trans').textContent=item.translit; $('en').textContent=item.en; });
+$('revealBtn').addEventListener('click', ()=>{ const gi=order[idx], item=words[gi]; $('fa').textContent=item.fa; $('trans').textContent=item.translit;
+  const s=$('sadFace'); s.style.display='block'; setTimeout(()=>s.classList.add('fade-out'),700); setTimeout(()=>{s.classList.remove('fade-out'); s.style.display='none';},1500); });
 
 $('openAchievements').addEventListener('click', ()=>{ reflectBadges(); $('achModal').style.display='grid'; });
 $('closeAch').addEventListener('click', ()=> $('achModal').style.display='none');
@@ -920,13 +873,9 @@ $('closeAch').addEventListener('click', ()=> $('achModal').style.display='none')
 $('openMap').addEventListener('click', ()=>{
   renderMap();
   $('mapModal').style.display='grid';
-  // Wait one frame so the layer has layout, then start cats
-  requestAnimationFrame(startCats);
+  requestAnimationFrame(startCats); // will no-op if 0 cats
 });
-$('closeMap').addEventListener('click', ()=>{
-  $('mapModal').style.display='none';
-  stopCats();
-});
+$('closeMap').addEventListener('click', ()=>{ $('mapModal').style.display='none'; stopCats(); });
 
 /* Settings etc */
 $('openSettings').addEventListener('click', ()=>{ 
@@ -942,11 +891,8 @@ $('reviewToggle').addEventListener('click', ()=>{
   $('reviewToggle').textContent=`Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`;
 });
 
-/* Sentence Practice open/close + nav */
-$('openSentences').addEventListener('click', ()=>{
-  $('settingsModal').style.display='none';
-  openSentences();
-});
+/* Sentence Practice */
+$('openSentences').addEventListener('click', ()=>{ $('settingsModal').style.display='none'; openSentences(); });
 $('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.display='none');
 $('sentPrev').addEventListener('click', ()=>{ sentenceIdx--; renderSentence(); });
 $('sentNext').addEventListener('click', ()=>{ sentenceIdx++; renderSentence(); });
@@ -974,27 +920,16 @@ $('quickSia').addEventListener('click', ()=>{
   else{ alert('Incorrect PIN.'); }
 });
 
-/* Hidden dev reveal: type 3232 while profile overlay is visible */
+/* Dev PIN reveal on profile overlay */
 (function(){
-  const overlay = $('profileOverlay');
-  const devBtn = $('quickSia');
-  let seq = '';
-  let timer = null;
-  let revealed = false;
-
+  const overlay = $('profileOverlay'); const devBtn = $('quickSia');
+  let seq = '', timer=null, revealed=false;
   window.addEventListener('keydown', (e)=>{
-    if(!overlay || overlay.style.display !== 'grid' || revealed) return;
+    if(!overlay || overlay.style.display!=='grid' || revealed) return;
     if(!/^[0-9]$/.test(e.key)) return;
-    seq += e.key;
-    clearTimeout(timer);
-    timer = setTimeout(()=>{ seq = ''; }, 1500);
-    if(seq.endsWith('3232')){
-      revealed = true;
-      devBtn.style.display = 'inline-block';
-      const note = document.createElement('div');
-      note.className = 'tiny';
-      note.textContent = 'Developer button unlocked';
-      note.style.marginTop = '10px';
+    seq+=e.key; clearTimeout(timer); timer=setTimeout(()=>{seq='';},1500);
+    if(seq.endsWith('3232')){ revealed=true; devBtn.style.display='inline-block';
+      const note=document.createElement('div'); note.className='tiny'; note.textContent='Developer button unlocked'; note.style.marginTop='10px';
       overlay.querySelector('.overlay-card').appendChild(note);
     }
   });
@@ -1015,7 +950,7 @@ document.addEventListener('click', (e)=>{
 });
 
 /* Init */
-initSpeech(); // speech mic
+initSpeech();
 </script>
 </body>
 </html>
