@@ -36,7 +36,7 @@
   .fa{font-size:clamp(18px,2.6vw,22px);color:#cbd5e1;direction:rtl;text-align:right}
   .trans{font-size:clamp(26px,3.4vw,34px);font-weight:600;color:#e2e8f0}
   .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
-  .input{background:#0b1229;border:1px solid #1f2937;padding:12px 14px;border-radius:12px;color:var(--text);width:100%;font-size:16px}
+  .input{background:#0b1229;border:1px solid #1f2937;padding:12px 14px;border-radius:12px;color:#e5e7eb;width:100%;font-size:16px}
   .feedback{margin-top:8px;min-height:24px;font-size:15px}
   .ok{color:var(--accent)} .warn{color:var(--warn)} .err{color:var(--err)}
   .progress{margin-top:12px;height:10px;background:#0b1229;border-radius:999px;border:1px solid #1f2937;overflow:hidden}
@@ -461,6 +461,70 @@ function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest
 function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); populateThemeDropdown(); }
 function loadState(){ state = store.get('state', defaultState()); initDailyUnlock(); applyTheme(state.theme||'default'); }
 
+/* ======== SHARED NICOLE SYNC (no login; safe no-op until configured) ======== */
+const SYNC_ENDPOINT = ""; // e.g., "https://ff-sync.yourname.workers.dev" — leave empty to disable
+const SYNC_DOC_ID = "nicole"; // everyone pressing Nicole shares this doc
+const SYNC_WRITE_TOKEN = "";  // set to your Worker WRITE_TOKEN (optional guard)
+
+function mergeStates(local, remote){
+  if(!remote || !remote.updated_at) return local;
+  const newer = (local.updated_at||0) >= (remote.updated_at||0) ? local : remote;
+  const other = newer===local ? remote : local;
+
+  const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]);
+  newer.covered = [...cov];
+
+  newer.score = Math.max(local.score||0, remote.score||0);
+  newer.streak = (newer===local ? local.streak : remote.streak) || 0;
+  // Keep SRS from newer for simplicity
+  return newer;
+}
+
+async function syncPullNicole(){
+  if(!SYNC_ENDPOINT || ACTIVE_PROFILE!=="Nicole") return;
+  try{
+    const res = await fetch(`${SYNC_ENDPOINT}/p/${SYNC_DOC_ID}`, { method:"GET" });
+    const remote = await res.json().catch(()=>null);
+    if(remote && Object.keys(remote).length){
+      state = mergeStates(state, remote);
+      _persist(); // refresh UI without triggering sync push
+    }
+  }catch{}
+}
+async function syncPushNicole(){
+  if(!SYNC_ENDPOINT || ACTIVE_PROFILE!=="Nicole") return;
+  try{
+    const payload = JSON.stringify({...state, updated_at: Date.now(), profile: ACTIVE_PROFILE});
+    await fetch(`${SYNC_ENDPOINT}/p/${SYNC_DOC_ID}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...(SYNC_WRITE_TOKEN?{"X-Token": SYNC_WRITE_TOKEN}:{}) },
+      body: payload
+    });
+  }catch{}
+}
+
+let _persist = persist;            // keep original persist
+let _syncTimer = null;
+function syncPushDebouncedNicole(){
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(syncPushNicole, 600);
+}
+
+// wrap persist: only when Nicole is the active profile
+persist = function(){
+  _persist();
+  if (ACTIVE_PROFILE === "Nicole") syncPushDebouncedNicole();
+};
+
+function initSharedNicoleSync(){
+  if (ACTIVE_PROFILE !== "Nicole" || !SYNC_ENDPOINT) return;
+  syncPullNicole().then(()=>syncPushNicole());
+  document.addEventListener("visibilitychange", ()=> {
+    if (document.visibilityState === "visible" && ACTIVE_PROFILE === "Nicole") syncPullNicole();
+  });
+  window.addEventListener("online", ()=> { if (ACTIVE_PROFILE === "Nicole") syncPushNicole(); });
+}
+
 /* ===================== UI UPDATE ===================== */
 function updateBadges(){
   $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE||'—'}`;
@@ -643,7 +707,6 @@ function renderSentence(){
     $('sentProgress').textContent = '';
     return;
   }
-  // keep index in range
   if(sentenceIdx < 0) sentenceIdx = SENTENCES.length - 1;
   if(sentenceIdx >= SENTENCES.length) sentenceIdx = 0;
 
@@ -779,6 +842,7 @@ function useProfile(name){
   $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
   $('profileOverlay').style.display='none';
   $('startOverlay').style.display='grid';
+  if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync(); // start shared sync for Nicole
 }
 $('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
 $('quickSia').addEventListener('click', ()=>{
