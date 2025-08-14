@@ -211,7 +211,7 @@
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
 
-      <!-- COMBINED: Sentence Practice -->
+      <!-- Sentence Practice (opens modal) -->
       <div class="stat">
         <b>Sentence Practice</b>
         <p class="tiny">Read example sentences & translations.</p>
@@ -226,14 +226,27 @@
   </div>
 </div>
 
-<!-- Sentence Practice Modal (blurred) -->
+<!-- Sentence Practice Modal (one-at-a-time) -->
 <div id="sentencesModal" class="modal">
   <div class="modal-card" style="max-width:820px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <h3 style="margin:0">📖 Sentence Practice</h3>
       <button id="closeSentences" class="btn">Close</button>
     </div>
-    <div id="sentencesBody" class="grid"></div>
+
+    <div id="sentencePanel" class="stat">
+      <div class="fa" id="sentFa" dir="rtl" style="font-size:22px"></div>
+      <div class="trans" id="sentTrans" style="font-size:18px; margin-top:8px"></div>
+      <div class="en" id="sentEn" style="font-size:18px; margin-top:4px"></div>
+    </div>
+
+    <div class="controls" style="justify-content:space-between">
+      <div class="tiny" id="sentProgress"></div>
+      <div>
+        <button id="sentPrev" class="btn">⬅️ Prev</button>
+        <button id="sentNext" class="primary">Next ➡️</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -620,20 +633,29 @@ function reflectBadges(){
   $('achList').innerHTML = list;
 }
 
-/* ===================== SENTENCE PRACTICE ===================== */
+/* ===================== SENTENCE PRACTICE (one at a time) ===================== */
+let sentenceIdx = 0;
+function renderSentence(){
+  if(!SENTENCES.length){
+    $('sentFa').textContent = '—';
+    $('sentTrans').textContent = '';
+    $('sentEn').textContent = 'No sentences available yet.';
+    $('sentProgress').textContent = '';
+    return;
+  }
+  // keep index in range
+  if(sentenceIdx < 0) sentenceIdx = SENTENCES.length - 1;
+  if(sentenceIdx >= SENTENCES.length) sentenceIdx = 0;
+
+  const s = SENTENCES[sentenceIdx];
+  $('sentFa').textContent = s.fa;
+  $('sentTrans').textContent = s.translit;
+  $('sentEn').textContent = s.en;
+  $('sentProgress').textContent = `${sentenceIdx+1} / ${SENTENCES.length}`;
+}
 function openSentences(){
-  const cont = $('sentencesBody');
-  cont.innerHTML = '';
-  SENTENCES.forEach(s=>{
-    const row=document.createElement('div');
-    row.className='stat';
-    row.innerHTML = `
-      <div class="fa" dir="rtl" style="font-size:20px">${s.fa}</div>
-      <div class="trans" style="font-size:18px">${s.translit}</div>
-      <div class="en" style="font-size:18px">${s.en}</div>
-    `;
-    cont.appendChild(row);
-  });
+  sentenceIdx = 0;
+  renderSentence();
   $('sentencesModal').style.display='grid';
 }
 
@@ -734,12 +756,14 @@ $('reviewToggle').addEventListener('click', ()=>{
   $('reviewToggle').textContent=`Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`;
 });
 
-/* Sentence Practice button */
+/* Sentence Practice open/close + nav */
 $('openSentences').addEventListener('click', ()=>{
   $('settingsModal').style.display='none';
   openSentences();
 });
 $('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.display='none');
+$('sentPrev').addEventListener('click', ()=>{ sentenceIdx--; renderSentence(); });
+$('sentNext').addEventListener('click', ()=>{ sentenceIdx++; renderSentence(); });
 
 /* Midnight countdown */
 function msUntilNextMidnight(){ const n=new Date(), t=new Date(n); t.setHours(24,0,0,0); return t-n; }
