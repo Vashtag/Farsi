@@ -6,687 +6,670 @@
 <title>Farsi Fun — Learn Persian Basics</title>
 <style>
   :root{
-    --bg:#0f172a;--card:#111827;--muted:#94a3b8;--text:#e5e7eb;
-    --accent:#22c55e;--accent-2:#38bdf8;--warn:#f59e0b;--err:#ef4444;
+    --bg:#0f172a;--card:#111827;--muted:#94a3b8;--text:#e5e7eb;--accent:#22c55e;--accent-2:#38bdf8;--warn:#f59e0b;--err:#ef4444;
     --grad1:#0b1229; --grad2:#121a36;
   }
+  [data-theme="sunset"]{ --bg:#1a1020; --card:#201225; --grad1:#24102a; --grad2:#3a1436; --accent:#f97316; --accent-2:#fb7185;}
+  [data-theme="forest"]{ --bg:#0e1a14; --card:#0f2418; --grad1:#0c1e16; --grad2:#153022; --accent:#22c55e; --accent-2:#86efac;}
+
   *{box-sizing:border-box}
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans,Ubuntu,Cantarell,Helvetica Neue,Arial,"Apple Color Emoji","Segoe UI Emoji";
        margin:0;background:linear-gradient(135deg,var(--bg),#0b1028);color:var(--text)}
   header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:16px clamp(16px,4vw,32px);
-         position:sticky;top:0;background:rgba(15,23,42,.75);backdrop-filter:blur(10px);border-bottom:1px solid #1f2937;z-index:6}
-  header h1{font-size:clamp(18px,2.5vw,28px);margin:0;letter-spacing:.5px}
+         position:sticky;top:0;background:rgba(15,23,42,.75);backdrop-filter:blur(10px);border-bottom:1px solid #1f2937;z-index:5}
+  header h1{font-size:clamp(18px,2.5vw,28px);margin:0;letter-spacing:.5px;cursor:pointer}
   .stats{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .badge{background:#111827;border:1px solid #1f2937;padding:6px 10px;border-radius:999px;font-size:14px;color:var(--muted)}
   .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;
             background:#111827;border:1px solid #1f2937;cursor:pointer}
   .icon-btn:hover{background:#0b1229;border-color:#263042}
-  .btn,button,select{appearance:none;border:none;background:#111827;color:var(--text);border:1px solid #1f2937;padding:10px 14px;border-radius:12px;cursor:pointer}
-  .btn:hover,button:hover,select:hover{background:#0b1229;border-color:#263042}
-  .primary{background:linear-gradient(180deg,var(--accent),#16a34a);border-color:#14532d}
-  .accent{background:linear-gradient(180deg,var(--accent-2),#0ea5e9);border-color:#075985}
-  main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
-  .card{background:linear-gradient(180deg,var(--grad1),var(--grad2));border:1px solid #1f2937;border-radius:16px;padding:clamp(16px,3vw,28px);
-        max-width:980px;margin-left:auto;margin-right:auto;}
-  .row{display:grid;grid-template-columns:1fr;gap:24px;align-items:start}
-  @media(min-width:860px){.row{grid-template-columns:1fr 1.1fr}}
+
+  main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 110px}
+  .card{background:linear-gradient(180deg,var(--grad1),var(--grad2));border:1px solid #1f2937;border-radius:16px;padding:clamp(16px,3vw,28px);box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .row{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:860px){.row{grid-template-columns:1fr 1fr}}
   .media-wrap{display:grid;place-items:center}
-  .pic,.mq-pic{width:min(420px,92%);height:min(280px,45vw);object-fit:contain;background:#0b1229;border:1px solid #1f2937;border-radius:16px;display:none}
+  .pic{width:min(420px,92%);height:min(280px,45vw);object-fit:contain;background:#0b1229;border:1px solid #1f2937;border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.25);display:none}
   .emoji{font-size:clamp(64px,12vw,120px);text-align:center;line-height:1;filter:drop-shadow(0 10px 20px rgba(0,0,0,.35))}
-  .word{display:flex;flex-direction:column;gap:8px;align-items:flex-start;justify-content:center}
-  .en{font-size:clamp(26px,3.4vw,34px);font-weight:700;color:#e2e8f0}
-  .fa{font-size:clamp(18px,2.6vw,22px);color:#cbd5e1;direction:rtl;text-align:right}
-  .trans{font-size:clamp(26px,3.4vw,34px);font-weight:600;color:#e2e8f0}
+  .word{display:flex;flex-direction:column;gap:6px;align-items:flex-start;justify-content:center}
+  /* Base sizes */
+  .en{font-size:clamp(18px,2.2vw,22px);color:var(--muted)}
+  .fa{font-size:clamp(28px,5vw,40px);font-weight:700;direction:rtl;text-align:right}
+  .trans{font-size:clamp(18px,2.2vw,22px);color:#cbd5e1}
+  /* Learn-mode sizing overrides */
+  .learn .en{font-size:clamp(26px,3.4vw,34px);font-weight:700;color:#e2e8f0}
+  .learn .fa{font-size:clamp(18px,2.6vw,22px);color:#cbd5e1}
+  .learn .trans{font-size:clamp(26px,3.4vw,34px);font-weight:600;color:#e2e8f0}
+
   .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+  button,.btn,select{appearance:none;border:none;background:#111827;color:var(--text);border:1px solid #1f2937;padding:10px 14px;border-radius:12px;cursor:pointer;transition:transform .03s ease,background .2s ease,border-color .2s ease}
+  button:hover,.btn:hover,select:hover{background:#0b1229;border-color:#263042}
+  button:active,.btn:active{transform:translateY(1px)}
+  .primary{background:linear-gradient(180deg,var(--accent),#16a34a);border-color:#14532d}
+  .primary:hover{background:linear-gradient(180deg,#2fe272,#1fb157)}
+  .accent{background:linear-gradient(180deg,var(--accent-2),#0ea5e9);border-color:#075985}
+  .danger{background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d}
+  .danger:hover{background:linear-gradient(180deg,#f35e5e,#e03a3a)}
+  .select{padding:10px 12px}
+  .linkbtn{background:none;border:none;color:#93c5fd;padding:0 3px;border-radius:6px;cursor:pointer}
+  .linkbtn:hover{background:#0b1229}
+
   .input{background:#0b1229;border:1px solid #1f2937;padding:12px 14px;border-radius:12px;color:var(--text);width:100%;font-size:16px}
   .feedback{margin-top:8px;min-height:24px;font-size:15px}
   .ok{color:var(--accent)} .warn{color:var(--warn)} .err{color:var(--err)}
-  .progress{margin-top:12px;height:10px;background:#0b1229;border-radius:999px;border:1px solid #1f2937;overflow:hidden;width:100%}
-  .bar{height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#22c55e);transition:width .4s ease}
-  .mode{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
-  .tiny{font-size:12px;color:#94a3b8}
-  .cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.92);border:1px solid #1f2937;padding:14px 18px;border-radius:14px;font-weight:800;z-index:20}
-  .fade-out{animation:fadeOut .9s ease forwards} @keyframes fadeOut{to{opacity:0}}
-  /* Overlays / Modals */
-  .overlay{position:fixed;inset:0;background:radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%), rgba(15,23,42,.94);display:grid;place-items:center;z-index:12}
-  .overlay-card,.modal-card{background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:860px;margin:0 16px}
-  .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45);z-index:11}
-  .grid{display:grid;gap:10px}@media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
+  .progress{margin-top:12px;height:10px;background:#0b1229;border-radius:999px;border:1px solid #1f2937;overflow:hidden}
+  .bar{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .4s ease}
+  .mode{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;align-items:center}
+  .tiny{font-size:12px;color:var(--muted)}
+  .tip{margin-top:12px;font-size:14px;color:#a5b4fc}
+
+  .cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.92);border:1px solid #1f2937;padding:14px 18px;border-radius:14px;font-weight:800;letter-spacing:.3px;z-index:20}
+  .fade-out{animation:fadeOut .9s ease forwards}
+  @keyframes fadeOut{0%{opacity:1}100%{opacity:0}}
+
+  .overlay{position:fixed;inset:0;background:radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%), rgba(15,23,42,.94);display:grid;place-items:center;z-index:10}
+  .overlay-card{background:linear-gradient(180deg,var(--grad1),var(--grad2));border:1px solid #1f2937;border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:620px;margin:0 16px}
+  .overlay .btns{display:flex;gap:12px;flex-wrap:wrap}
+
+  .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45);z-index:12}
+  .modal-card{background:linear-gradient(180deg,var(--grad1),var(--grad2));border:1px solid #1f2937;border-radius:16px;max-width:760px;width:92%;padding:18px 18px 24px}
+  .grid{display:grid;gap:10px}
+  @media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
   .stat{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px}
-  .chip{display:inline-flex;gap:6px;background:#0b1229;border:1px solid #1f2937;border-radius:999px;padding:6px 10px;font-size:12px;color:#94a3b8;margin:2px 4px 0 0}
-  /* Bazaar map */
-  .map{display:grid;grid-template-columns:repeat(4, minmax(60px,1fr));gap:8px;margin-top:10px}
-  .tile{aspect-ratio:1/1;background:#0b1229;border:1px dashed #334155;border-radius:10px;display:grid;place-items:center;font-size:28px;color:#334155}
-  .tile.unlocked{border-style:solid;color:#e5e7eb}
-  /* Dev banner */
-  #devBanner{position:fixed;top:56px;right:12px;background:#312e81;border:1px solid #4338ca;color:#c7d2fe;padding:6px 10px;border-radius:10px;font-size:12px;z-index:7;display:none}
-  #devBanner b{color:#fff}
+  .ach{display:flex;gap:8px;align-items:center}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#0b1229;border:1px solid #1f2937;border-radius:999px;padding:6px 10px;font-size:12px;color:var(--muted);margin:2px 4px 0 0}
+  .facts{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px;margin-top:6px}
+  details summary{cursor:pointer}
+
+  .quizpanel{margin-top:16px;padding:12px;border:1px dashed #334155;border-radius:12px;background:#0b1229}
+  .qprogress{height:8px;background:#0a142e;border-radius:999px;overflow:hidden;border:1px solid #1f2937;margin-bottom:10px}
+  .qbar{height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#22c55e)}
+  .mq-pic{width:min(420px,92%);height:min(280px,45vw);object-fit:contain;background:#0b1229;border:1px solid #1f2937;border-radius:12px;display:block;margin:0 auto 10px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
-
-<!-- Firebase (modular) -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-
-/* ===== REPLACE with YOUR Firebase config ===== */
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  appId: "YOUR_APP_ID"
-};
-/* ============================================= */
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db   = getFirestore(app);
-enableIndexedDbPersistence(db).catch(()=>{});
-
-/* ===== Helpers ===== */
-const $=id=>document.getElementById(id);
-function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
-function now(){return Date.now()}
-function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
-function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/\s+/g,'')}
-async function sha256Hex(input){ const data=new TextEncoder().encode(input); const hash=await crypto.subtle.digest('SHA-256', data); return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
-
-/* ===== Words ===== */
-const words = [
-  {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.png",
-   sentence:{fa:"من سیب می‌خورم.", translit:"man sib mikhoram.", en:"I eat an apple."}},
-  {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.png",
-   sentence:{fa:"این کتاب خوب است.", translit:"in ketâb khub ast.", en:"This book is good."}},
-  {fa:"گربه", en:"cat", translit:"gorbe", emoji:"🐱", image:"images/gorbe.png",
-   sentence:{fa:"آن گربه خواب است.", translit:"ân gorbe khâb ast.", en:"That cat is sleeping."}},
-  {fa:"سگ", en:"dog", translit:"sag", emoji:"🐶", image:"images/sag.png",
-   sentence:{fa:"سگ من بازی می‌کند.", translit:"sag‑e man bâzi mikonad.", en:"My dog is playing."}},
-  {fa:"آب", en:"water", translit:"âb", emoji:"💧", audio:"audio/ab.mp3", image:"images/ab.png",
-   sentence:{fa:"آب سرد است.", translit:"âb sard ast.", en:"The water is cold."}},
-  {fa:"نان", en:"bread", translit:"nân", emoji:"🍞", audio:"audio/nan.mp3", image:"images/nan.png",
-   sentence:{fa:"من نان دوست دارم.", translit:"man nân dust dâram.", en:"I like bread."}},
-  {fa:"چای", en:"tea", translit:"chây", emoji:"🍵", audio:"audio/chay.mp3", image:"images/chay.png",
-   sentence:{fa:"چای می‌نوشم.", translit:"chây minusham.", en:"I drink tea."}},
-  {fa:"ماشین", en:"car", translit:"مâshin".replace('م','m'), emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.png",
-   sentence:{fa:"ماشین قرمز است.", translit:"mâshin ghermez ast.", en:"The car is red."}},
-  {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠", audio:"audio/khane.mp3", image:"images/khane.png",
-   sentence:{fa:"خانه بزرگ است.", translit:"khâne bozorg ast.", en:"The house is big."}},
-  {fa:"در", en:"door", translit:"dar", emoji:"🚪", image:"images/dar.png",
-   sentence:{fa:"در را ببند.", translit:"dar râ bebande.", en:"Close the door."}},
-];
-
-/* ===== App constants ===== */
-const DAILY_WORDS = 5;
-const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
-const MINI_QUIZ_SIZE = 5;
-
-/* ===== Themes (dropdown) ===== */
-const THEMES = {
-  ocean:    {name:'Ocean (default)', vars:{'--grad1':'#0b1229','--grad2':'#121a36','--accent-2':'#38bdf8','--accent':'#22c55e'}},
-  sunset:   {name:'Sunset',          vars:{'--grad1':'#2a0f1b','--grad2':'#3a1a2a','--accent-2':'#fb923c','--accent':'#f59e0b'}, req:'Master ≥ 5'},
-  mint:     {name:'Mint',            vars:{'--grad1':'#0d1f1a','--grad2':'#123227','--accent-2':'#34d399','--accent':'#10b981'}, req:'Master ≥ 10'},
-  amethyst: {name:'Amethyst',        vars:{'--grad1':'#1b1330','--grad2':'#2a1f4d','--accent-2':'#a78bfa','--accent':'#8b5cf6'}, req:'Master ≥ 20'},
-  night:    {name:'Night Bazaar',    vars:{'--grad1':'#0a0a0f','--grad2':'#15151f','--accent-2':'#60a5fa','--accent':'#22d3ee'}, req:'7‑day streak badge'},
-  cats:     {name:'Cat Party',       vars:{'--grad1':'#12121a','--grad2':'#1a1a22','--accent-2':'#f472b6','--accent':'#22c55e'}, req:'Unlock ≥ 6 map tiles'}
-};
-function applyTheme(key){
-  const t = THEMES[key] || THEMES.ocean;
-  for(const [k,v] of Object.entries(t.vars)) document.documentElement.style.setProperty(k, v);
-  state.theme = key; saveStateToCloud();
-}
-
-/* ===== State ===== */
-const defaultState = ()=>({
-  score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
-  achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
-  mapUnlocked:0, mapDays:[], settings:{reviewAll:false}, theme:'ocean'
-});
-let state = defaultState();
-let ACTIVE_PROFILE = 'Nicole';
-let DEVELOPER_MODE = false;
-let mode='learn', order=[], idx=0;
-let docIdHash = null;
-
-/* ===== Firestore ===== */
-function docRef(){ return doc(db, 'profiles', docIdHash); }
-async function computeDocId(profile){
-  const origin = location.origin.replace(/^https?:\/\//,'');
-  return await sha256Hex(`${origin}|FarsiFun|${profile.toLowerCase()}`);
-}
-async function loadStateFromCloud(){
-  const snap = await getDoc(docRef());
-  if(snap.exists()){ state = {...defaultState(), ...snap.data()}; }
-  else { state = defaultState(); await setDoc(docRef(), state); }
-  reflectAll();
-}
-async function saveStateToCloud(partial=null){
-  if(partial){ state = {...state, ...partial}; }
-  try{ await updateDoc(docRef(), state); }catch{ await setDoc(docRef(), state, {merge:true}); }
-  reflectAll();
-}
-
-/* ===== Mastery/pools ===== */
-function ensureSRS(i){ if(!state.srs[i]) state.srs[i]={stage:0,due:0,seen:0,correct:0,wrong:0}; return state.srs[i]; }
-function isDue(i){ return ensureSRS(i).due <= now(); }
-function isMastered(i){ return ensureSRS(i).stage>=3; }
-function unlockedCount(){ return state.unlocked_count||Math.min(words.length, DAILY_WORDS); }
-function unlockedIndices(){ return [...Array(unlockedCount()).keys()]; }
-function masteredIndices(){ return unlockedIndices().filter(i=>isMastered(i)); }
-function getCoveredSet(){ return new Set(state.covered||[]); }
-
-function quizPool(){
-  const mastered = masteredIndices();
-  if(state.settings?.reviewAll){ return mastered.length?mastered:unlockedIndices(); }
-  const due=unlockedIndices().filter(i=>isDue(i));
-  if(due.length) return due;
-  return mastered.length?mastered:unlockedIndices();
-}
-function learnPool(){
-  const u=unlockedIndices(), d=u.filter(i=>isDue(i)), r=u.filter(i=>!isDue(i));
-  return [...d,...r];
-}
-function ensureOrder(){ const pool=(mode==='quiz')?quizPool():learnPool(); order=pool.slice(); shuffle(order); idx=0; }
-
-/* ===== Daily unlocks ===== */
-function ensureStartAndUnlocks(){
-  if(!state.start_date){ state.start_date=todayISO(); }
-  const startDate = new Date(state.start_date+'T00:00:00');
-  const dNow = new Date(); dNow.setHours(0,0,0,0);
-  const diffDays = Math.floor((dNow - startDate)/86400000);
-  const shouldUnlock = Math.min(words.length, (diffDays+1)*DAILY_WORDS);
-  state.unlocked_count = Math.max(state.unlocked_count||0, shouldUnlock);
-  if(ACTIVE_PROFILE==='Sia'){
-    state.unlocked_count = words.length; state.mapUnlocked = 12; state.achievements.streak7 = true; state.achievements.first10 = true;
-  }
-}
-
-/* ===== UI ===== */
-function reflectAll(){
-  ensureStartAndUnlocks();
-  $('scoreBadge').textContent   = `Score: ${state.score}`;
-  $('streakBadge').textContent  = `Streak: ${state.streak} 🔥`;
-  $('unlockedBadge').textContent = `${unlockedCount()}/${words.length} unlocked`;
-  applyTheme(state.theme||'ocean');
-  populateThemeDropdown();
-  renderMap();
-  reflectBadges();
-  if(order.length===0) ensureOrder();
-  showItem();
-  $('devBanner').style.display = (DEVELOPER_MODE && ACTIVE_PROFILE==='Sia') ? 'block' : 'none';
-}
-
-/* Robust image/emoji loader */
-function showImageOrEmoji(item){
-  const pic = $('pic'), emo = $('emoji');
-  emo.style.display='none'; pic.style.display='none';
-  pic.removeAttribute('src'); pic.onload=null; pic.onerror=null;
-  if(item.image){
-    pic.onload = ()=>{ pic.style.display='block'; emo.style.display='none'; };
-    pic.onerror = ()=>{ pic.removeAttribute('src'); emo.textContent=item.emoji||'❓'; emo.style.display='block'; };
-    pic.src = item.image + '?v=' + Date.now();
-  }else{
-    emo.textContent=item.emoji||'❓'; emo.style.display='block';
-  }
-}
-
-function showItem(){
-  if($('miniQuizPanel').dataset.active) return;
-  const pool = (mode==='quiz')? quizPool(): learnPool();
-  if(order.length===0 || order.some(i=>!pool.includes(i))) ensureOrder();
-  const gi = order[idx % Math.max(1,order.length)];
-  const item = words[gi];
-  showImageOrEmoji(item);
-  if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
-  else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
-  const pct = Math.round((getCoveredSet().size/Math.max(1,unlockedCount()))*100);
-  $('progressBar').style.width = pct + '%';
-  $('typeInput').value=''; $('typeInput').focus();
-}
-function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
-
-/* Celebrations */
-function happyDing(){ try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC) return;const ctx=new AC();const tones=[659,784,988];const t0=ctx.currentTime;
-  tones.forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f;o.connect(g);g.connect(ctx.destination);
-    const st=t0+i*0.05;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(0.35,st+0.03);g.gain.exponentialRampToValueAtTime(0.0001,st+0.22);
-    o.start(st);o.stop(st+0.25);});}catch{}}
-function confettiPop(){ if(window.confetti) confetti({origin:{y:1,x:0.5},gravity:1.2,ticks:180,scalar:0.9,particleCount:70,spread:75,startVelocity:55}); }
-function fireworks(){ if(!window.confetti) return;
-  const base={origin:{y:1,x:0.5},gravity:1.0,ticks:260,scalar:1.0};
-  confetti({...base,particleCount:180,spread:120,startVelocity:65});
-  confetti({...base,particleCount:140,spread:140,startVelocity:60,origin:{y:1,x:0.2}});
-  confetti({...base,particleCount:140,spread:140,startVelocity:60,origin:{y:1,x:0.8}});
-}
-function celebrateSimple(){ happyDing(); confettiPop(); const c=$('celebration'); c.textContent="let's goooooo 🎉"; c.style.display='block'; setTimeout(()=>c.classList.add('fade-out'),800); setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},1600); }
-function celebrateStreak7(){ fireworks(); state.achievements.streak7 = true; saveStateToCloud();
-  const c=$('celebration'); c.textContent="7‑day streak! 🏅"; c.style.display='block';
-  setTimeout(()=>c.classList.add('fade-out'),1200); setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},2200); }
-
-/* Audio (your recordings) */
-const audioCache=new Map();
-function getAudio(item){ const url=item.audio||`audio/${(item.translit||'').toLowerCase()}.mp3`; if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);} return audioCache.get(url);}
-async function playYourAudio(){ const gi=order[idx%Math.max(1,order.length)], item=words[gi]; try{ const a=getAudio(item); a.currentTime=0; await a.play(); }catch{} }
-
-/* Answering + SRS + Map + Stats */
-function checkDailyGoalAndMap(){
-  const today=todayISO();
-  let days = state.mapDays||[];
-  let todayRec = days.find(d=>d.date===today);
-  if(!todayRec){ todayRec={date:today, correct:0, goalMet:false}; days=[...days,todayRec]; }
-  todayRec.correct++;
-  if(!todayRec.goalMet && todayRec.correct>=DAILY_WORDS){
-    todayRec.goalMet=true;
-    state.mapUnlocked = Math.min((state.mapUnlocked||0)+1, 12);
-    if(window.confetti) confetti({origin:{y:1,x:Math.random()},particleCount:60,spread:70,startVelocity:45,scalar:1.1});
-  }
-  state.mapDays = days;
-}
-function handleAnswer(correct, gi){
-  const r=ensureSRS(gi); r.seen++;
-  if(correct){
-    r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1);
-    r.due = now()+ (SRS_INTERVALS_HOURS[r.stage]||24)*3600*1000;
-    state.score+=10; state.streak+=1;
-    const s=new Set(state.covered||[]); s.add(gi); state.covered=[...s];
-    $('typeFeedback').textContent='Great! +10 points'; $('typeFeedback').className='feedback ok';
-    celebrateSimple();
-    if(state.streak===7) celebrateStreak7();
-    checkDailyGoalAndMap();
-  }else{
-    r.wrong++; r.stage=Math.max(0,r.stage-1); r.due = now()+2*3600*1000;
-    state.streak=0; $('typeFeedback').textContent='Not quite.'; $('typeFeedback').className='feedback warn';
-  }
-  updateThemeUnlocks();
-  saveStateToCloud(); setTimeout(next, 450);
-}
-
-/* Map & Badges */
-function renderMap(){
-  const wrap = $('mapGrid'); if(!wrap) return;
-  wrap.innerHTML='';
-  const tiles = 12;
-  for(let i=0;i<tiles;i++){
-    const t=document.createElement('div');
-    t.className='tile'+(i<(state.mapUnlocked||0)?' unlocked':'');
-    t.textContent = i<(state.mapUnlocked||0)?'🐈':'?';
-    wrap.appendChild(t);
-  }
-}
-function reflectBadges(){
-  const a=state.achievements||{};
-  const mastered10 = masteredIndices().length>=10;
-  if(mastered10 && !a.first10) a.first10=true;
-  if(masteredIndices().length>=50 && !a.mastered50) a.mastered50=true;
-  $('achList').innerHTML = `
-    <div class="chip">${a.first10?'🏅':'⬜'} First 10 mastered</div>
-    <div class="chip">${a.perfectMini?'🏅':'⬜'} Perfect Mini Quiz</div>
-    <div class="chip">${a.streak7?'🏅':'⬜'} 7‑day streak</div>
-    <div class="chip">${a.mastered50?'🏅':'⬜'} 50 mastered</div>
-  `;
-}
-
-/* Theme unlock + dropdown */
-function hasStreak7(){return !!state.achievements?.streak7;}
-function updateThemeUnlocks(){ populateThemeDropdown(); }
-function isThemeUnlocked(key){
-  if(ACTIVE_PROFILE==='Sia') return true;
-  switch(key){
-    case 'ocean': return true;
-    case 'sunset': return masteredIndices().length>=5;
-    case 'mint': return masteredIndices().length>=10;
-    case 'amethyst': return masteredIndices().length>=20;
-    case 'night': return hasStreak7();
-    case 'cats': return (state.mapUnlocked||0)>=6;
-    default: return true;
-  }
-}
-function populateThemeDropdown(){
-  const sel = $('themeSelect'); if(!sel) return;
-  const current = state.theme||'ocean';
-  sel.innerHTML='';
-  Object.entries(THEMES).forEach(([key, t])=>{
-    const opt=document.createElement('option');
-    opt.value=key; opt.textContent=t.name + (isThemeUnlocked(key)?'':` (locked — ${t.req})`);
-    opt.disabled = !isThemeUnlocked(key);
-    if(key===current) opt.selected=true;
-    sel.appendChild(opt);
-  });
-}
-
-/* Events: main */
-$('listenBtn').addEventListener('click', playYourAudio);
-$('checkBtn').addEventListener('click', ()=>{
-  if (order.length === 0) { ensureOrder(); }
-  if (order.length === 0) {
-    $('typeFeedback').textContent='No items yet.'; $('typeFeedback').className='feedback warn'; return;
-  }
-  const gi = order[idx % order.length];
-  const item = words[gi];
-  const v = $('typeInput').value.trim();
-  if(!v){ $('typeFeedback').textContent='Type your guess first!'; $('typeFeedback').className='feedback warn'; return; }
-  $('typeFeedback').textContent=''; $('typeInput').value=''; $('typeInput').focus();
-  handleAnswer(normalizeTranslit(v)===normalizeTranslit(item.translit), gi);
-});
-$('typeInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('checkBtn').click(); }});
-$('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.streak=0; saveStateToCloud(); next(); });
-$('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
-$('learnBtn').addEventListener('click', ()=>{ mode='learn'; ensureOrder(); showItem(); });
-$('quizBtn').addEventListener('click',  ()=>{ mode='quiz'; ensureOrder(); showItem(); });
-
-/* Mini Quiz */
-let miniQ={queue:[],current:null,correct:0,total:0};
-$('startMiniQuiz').addEventListener('click', ()=>{ $('settingsModal').style.display='none'; startMiniQuiz(); });
-function startMiniQuiz(){
-  const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
-  shuffle(pool); miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
-  $('miniQuizPanel').dataset.active='1';
-  $('miniQuizPanel').style.display='block';
-  $('mainPractice').style.display='none';
-  nextMiniQuestion();
-}
-function endMiniQuiz(){ delete $('miniQuizPanel').dataset.active; $('miniQuizPanel').style.display='none'; $('mainPractice').style.display=''; showItem(); }
-function nextMiniQuestion(){
-  if(!miniQ.queue.length){
-    $('mqFeedback').innerHTML=`Mini Quiz complete! Score: <b>${miniQ.correct}</b> / ${miniQ.total}`;
-    $('mqBar').style.width='100%';
-    if(miniQ.correct===miniQ.total && miniQ.total>0){ state.achievements.perfectMini=true; saveStateToCloud(); }
-    setTimeout(endMiniQuiz, 1200); return;
-  }
-  miniQ.current = miniQ.queue.shift();
-  const item=words[miniQ.current];
-  $('mqPic').style.display='block'; $('mqPic').src=item.image||''; $('mqPic').alt=item.en||'';
-  $('mqInput').value=''; $('mqFeedback').textContent='';
-  $('mqBar').style.width = `${(miniQ.total/MINI_QUIZ_SIZE)*100}%`;
-  $('mqInput').focus();
-}
-$('mqCheck').addEventListener('click', ()=>{
-  const item=words[miniQ.current]; miniQ.total++;
-  const ok = normalizeTranslit($('mqInput').value)===normalizeTranslit(item.translit);
-  if(ok){ miniQ.correct++; $('mqFeedback').textContent='Nice!'; $('mqFeedback').className='feedback ok'; celebrateSimple(); }
-  else { $('mqFeedback').textContent=`Answer: ${item.translit}`; $('mqFeedback').className='feedback warn'; state.streak=0; saveStateToCloud(); }
-  setTimeout(nextMiniQuestion, 350);
-});
-$('mqInput').addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('mqCheck').click(); }});
-
-/* Settings */
-$('reviewToggle').addEventListener('click', ()=>{
-  state.settings.reviewAll = !state.settings.reviewAll; saveStateToCloud();
-  $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`;
-  ensureOrder(); showItem();
-});
-$('openSettings').addEventListener('click', ()=>{ 
-  $('settingsModal').style.display='grid'; 
-  $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`;
-  populateThemeDropdown();
-});
-$('themeSelect').addEventListener('change', (e)=> applyTheme(e.target.value));
-
-/* Sentence Practice page */
-function openSentences(){
-  const cont = $('sentencesBody'); cont.innerHTML='';
-  unlockedIndices().forEach(i=>{
-    const w=words[i]; if(!w.sentence) return;
-    const row=document.createElement('div'); row.className='stat';
-    row.innerHTML = `
-      <div class="fa" dir="rtl" style="font-size:20px">${w.sentence.fa}</div>
-      <div class="trans" style="font-size:18px">${w.sentence.translit}</div>
-      <div class="en" style="font-size:18px">${w.sentence.en}</div>
-    `; cont.appendChild(row);
-  });
-  $('sentencesModal').style.display='grid';
-}
-$('openSentences').addEventListener('click', ()=>{ $('settingsModal').style.display='none'; openSentences(); });
-$('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.display='none');
-
-/* Stats modal */
-function openStats(){
-  const totalSeen = Object.values(state.srs||{}).reduce((a,r)=>a+(r.seen||0),0);
-  const totalCorrect = Object.values(state.srs||{}).reduce((a,r)=>a+(r.correct||0),0);
-  const totalWrong = Object.values(state.srs||{}).reduce((a,r)=>a+(r.wrong||0),0);
-  const acc = totalSeen ? Math.round((totalCorrect/totalSeen)*100) : 0;
-  const mastered = masteredIndices().length;
-  $('statsName').textContent = ACTIVE_PROFILE;
-  $('statsBody').innerHTML = `
-    <div class="grid">
-      <div class="stat"><b>Total attempts</b><div>${totalSeen}</div></div>
-      <div class="stat"><b>Correct</b><div>${totalCorrect}</div></div>
-      <div class="stat"><b>Wrong</b><div>${totalWrong}</div></div>
-      <div class="stat"><b>Accuracy</b><div>${acc}%</div></div>
-      <div class="stat"><b>Words mastered</b><div>${mastered}</div></div>
-      <div class="stat"><b>Unlocked words</b><div>${unlockedCount()}</div></div>
-      <div class="stat"><b>Current streak</b><div>${state.streak}</div></div>
-      <div class="stat"><b>Map tiles</b><div>${state.mapUnlocked||0}</div></div>
-    </div>`;
-  $('statsModal').style.display='grid';
-}
-$('openStats').addEventListener('click', openStats);
-$('closeStats').addEventListener('click', ()=> $('statsModal').style.display='none');
-
-/* Developer access (PIN = 3232) */
-function showDevBanner(on){ $('devBanner').style.display = on ? 'block' : 'none'; }
-async function switchProfile(name){
-  ACTIVE_PROFILE = name;
-  localStorage.setItem('ff_last_profile', ACTIVE_PROFILE);
-  docIdHash = await computeDocId(ACTIVE_PROFILE);
-  await loadStateFromCloud();
-  ensureStartAndUnlocks();
-  if(ACTIVE_PROFILE==='Sia'){ DEVELOPER_MODE=true; showDevBanner(true); } else { DEVELOPER_MODE=false; showDevBanner(false); }
-  await saveStateToCloud(); ensureOrder(); showItem();
-}
-$('devLoginBtn').addEventListener('click', async ()=>{
-  const pin = prompt('Enter developer PIN:');
-  if(pin==='3232'){ await switchProfile('Sia'); alert('Developer mode enabled (Sia).'); $('settingsModal').style.display='none'; }
-  else{ alert('Incorrect PIN.'); }
-});
-$('devLogoutBtn').addEventListener('click', async ()=>{
-  await switchProfile('Nicole'); alert('Exited developer mode. Back to Nicole.'); $('settingsModal').style.display='none';
-});
-
-/* Midnight countdown */
-function msUntilNextMidnight(){ const n=new Date(), t=new Date(n); t.setHours(24,0,0,0); return t-n; }
-function fmt(ms){ const s=Math.floor(ms/1000); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; }
-function showMidnight(){ alert(`New words unlock at local midnight.\nTime remaining: ${fmt(msUntilNextMidnight())}`); }
-$('midnightBtn').addEventListener('click', showMidnight);
-
-/* Auth & bootstrap */
-onAuthStateChanged(auth, async (u)=>{
-  if(!u){ await signInAnonymously(auth); return; }
-  const last = localStorage.getItem('ff_last_profile'); if(last){ ACTIVE_PROFILE = last; }
-  docIdHash = await computeDocId(ACTIVE_PROFILE);
-  await loadStateFromCloud(); ensureStartAndUnlocks(); await saveStateToCloud();
-  ensureOrder(); showItem(); showDevBanner(DEVELOPER_MODE && ACTIVE_PROFILE==='Sia');
-  // Show start screen
-  $('startOverlay').style.display='grid';
-});
-
-/* Close modals on backdrop click */
-document.addEventListener('click', (e)=>{
-  if(e.target.id==='settingsModal') e.target.style.display='none';
-  if(e.target.id==='statsModal') e.target.style.display='none';
-  if(e.target.id==='achModal')   e.target.style.display='none';
-  if(e.target.id==='mapModal')   e.target.style.display='none';
-  if(e.target.id==='sentencesModal') e.target.style.display='none';
-});
-
-/* Start overlay actions */
-$('startLearn').addEventListener('click', ()=>{ mode='learn'; ensureOrder(); showItem(); $('startOverlay').style.display='none'; });
-$('startQuiz').addEventListener('click',  ()=>{ mode='quiz';  ensureOrder(); showItem(); $('startOverlay').style.display='none'; });
-
-/* Build pool again after full load (first‑click safety) */
-window.addEventListener('load', ()=>{ ensureOrder(); showItem(); });
-</script>
 </head>
 <body>
 <header>
-  <h1>✨ Farsi Fun — Learn Persian Basics</h1>
+  <h1 id="openDash">✨ Farsi Fun — Learn Persian Basics</h1>
   <div class="stats">
     <div class="badge" id="scoreBadge">Score: 0</div>
     <div class="badge" id="streakBadge">Streak: 0 🔥</div>
     <div class="badge" id="unlockedBadge">0/0 unlocked</div>
-    <button id="openMap" class="icon-btn" title="Bazaar Map" onclick="document.getElementById('mapModal').style.display='grid'">🗺️</button>
-    <button id="openAchievements" class="icon-btn" title="Badges" onclick="document.getElementById('achModal').style.display='grid'">🏆</button>
-    <button id="openSettings" class="icon-btn" title="Settings" onclick="document.getElementById('settingsModal').style.display='grid'">⚙️</button>
+    <select id="themeSelect" class="select" title="Theme">
+      <option value="default">Theme: Ocean</option>
+      <option value="sunset" disabled>Theme: Sunset (unlock 10)</option>
+      <option value="forest" disabled>Theme: Forest (unlock 25)</option>
+    </select>
+    <button id="openSettings" class="icon-btn" title="Settings">⚙️</button>
   </div>
 </header>
 
-<!-- Dev banner -->
-<div id="devBanner">🐱‍👤 <b>Developer mode</b> is ON (Sia)</div>
+<!-- Start screen -->
+<div id="startOverlay" class="overlay">
+  <div class="overlay-card">
+    <h2>How do you want to learn today?</h2>
+    <p>Pick a mode to get started. You can switch later.</p>
+    <div class="btns">
+      <button id="startLearn" class="primary">📚 Learn Mode</button>
+      <button id="startQuiz" class="accent">🎯 Quiz Mode</button>
+    </div>
+    <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s; if missing, it reads the phonetic line. <b>Say it</b> uses the mic. Daily unlocks apply.</p>
+  </div>
+</div>
 
 <main>
   <div class="mode">
-    <button id="learnBtn" class="btn" onclick="window.mode='learn'; this.blur();">Learn Mode</button>
-    <button id="quizBtn"  class="btn" onclick="window.mode='quiz'; this.blur();">Quiz Mode</button>
-    <span class="tiny">New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰</span>
+    <button id="learnBtn" class="btn">Learn Mode</button>
+    <button id="quizBtn" class="btn">Quiz Mode</button>
+    <label class="tiny" style="display:inline-flex;align-items:center;gap:6px;">
+      Difficulty:
+      <select id="difficulty" class="select">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+      <span id="diffLabel" class="badge">Level: Easy</span>
+    </label>
+  </div>
+  <div class="tiny" style="margin:2px 0 12px 2px">
+    New words unlock at <button id="midnightBtn" class="linkbtn" title="Show countdown to midnight">midnight</button> ⏰
   </div>
 
   <div class="card">
     <div class="row">
-      <!-- LEFT: Picture -->
       <div class="media-wrap">
         <img id="pic" class="pic" alt="" />
         <div class="emoji" id="emoji">🍎</div>
       </div>
-
-      <!-- RIGHT: Words + input -->
-      <div class="word" id="mainPractice">
+      <div class="word" id="wordWrap">
         <div class="en" id="en">apple</div>
         <div class="fa" id="fa" dir="rtl">سیب</div>
         <div class="trans" id="trans">sib</div>
 
         <div class="controls">
           <button id="listenBtn" class="accent">🔊 Listen</button>
-          <button id="hintBtn" class="btn">💡 Hint</button>
-          <button id="revealBtn" class="btn">👀 Reveal</button>
+          <button id="sayBtn">🎙️ Say it</button>
+          <button id="hintBtn">💡 Hint</button>
+          <button id="revealBtn">👀 Reveal</button>
           <button id="nextBtn" class="primary">➡️ Next</button>
         </div>
+
+        <div class="feedback" id="speechFeedback"></div>
 
         <label class="tiny" for="typeInput">Type the pronunciation (English letters):</label>
         <input class="input" id="typeInput" placeholder="e.g., sib"/>
         <div class="controls">
-          <button id="checkBtn" class="primary">✅ Check</button>
-          <button id="skipBtn" class="btn">⏭️ Skip</button>
+          <button id="checkBtn">✅ Check</button>
+          <button id="skipBtn">⏭️ Skip</button>
         </div>
         <div class="feedback" id="typeFeedback"></div>
 
         <div class="progress"><div class="bar" id="progressBar"></div></div>
-      </div>
 
-      <!-- Mini Quiz panel (replaces right side when active) -->
-      <div class="word" id="miniQuizPanel" style="display:none">
-        <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:8px">
-          <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
+        <details id="factBox" class="facts" style="display:none">
+          <summary>Fun fact</summary>
+          <div id="factText"></div>
+        </details>
+
+        <div class="tip" id="tip">Pronunciation tip: “kh” ~ German “Bach”; “â” ~ a in “father”.</div>
+
+        <!-- Embedded Mini Quiz Panel (only image + input + Check) -->
+        <div id="miniQuizPanel" class="quizpanel" style="display:none">
+          <div class="qprogress"><div id="mqBar" class="qbar"></div></div>
+          <img id="mqPic" class="mq-pic" alt=""/>
+          <input id="mqInput" class="input" placeholder="Type the transliteration…"/>
+          <div class="controls" style="justify-content:flex-start">
+            <button id="mqCheck" class="primary">Check</button>
+          </div>
+          <div id="mqFeedback" class="feedback"></div>
         </div>
-        <img id="mqPic" class="mq-pic" alt="" />
-        <input id="mqInput" class="input" placeholder="Type the transliteration…"/>
-        <div class="controls"><button id="mqCheck" class="primary">Check</button></div>
-        <div id="mqFeedback" class="feedback"></div>
       </div>
     </div>
   </div>
 </main>
 
-<footer style="padding:16px;text-align:center;color:#94a3b8">
-  Put images in <b>/images</b> (e.g., <code>images/sib.png</code>). Put audio in <b>/audio</b> (e.g., <code>audio/sib.mp3</code>).
+<footer>
+  <div class="footer-inner">Put images in <b>/images</b> (e.g., <code>images/sib.png</code>). Put audio in <b>/audio</b> (e.g., <code>audio/sib.mp3</code>). Optional encouragement in <b>/audio/encouragement/</b>.</div>
 </footer>
 
 <div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
+<div id="sadFace" class="cele-msg" style="display:none">😢</div>
 
-<!-- Achievements Modal -->
-<div id="achModal" class="modal">
+<!-- Dashboard Modal -->
+<div id="dashModal" class="modal">
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <h3 style="margin:0">🏆 Badges</h3>
-      <button class="btn" onclick="document.getElementById('achModal').style.display='none'">Close</button>
+      <h3 style="margin:0">📈 Progress Dashboard</h3>
+      <button id="closeDash" class="btn">Close</button>
     </div>
-    <div id="achList" class="grid"></div>
+    <div class="grid">
+      <div class="stat"><b>Totals</b><div id="totals"></div></div>
+      <div class="stat"><b>Due & SRS</b><div id="dueStats"></div></div>
+      <div class="stat"><b>Achievements</b><div id="achievements"></div></div>
+      <div class="stat"><b>Themes</b><div id="themesInfo"></div></div>
+    </div>
   </div>
 </div>
 
-<!-- Bazaar Map Modal -->
-<div id="mapModal" class="modal">
-  <div class="modal-card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <h3 style="margin:0">🗺️ Persian Bazaar Progress</h3>
-      <button class="btn" onclick="document.getElementById('mapModal').style.display='none'">Close</button>
-    </div>
-    <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile. Lots of cats live here 🐈.</p>
-    <div id="mapGrid" class="map"></div>
-  </div>
-</div>
-
-<!-- Settings Modal -->
+<!-- Settings Modal (contains Mini Quiz) -->
 <div id="settingsModal" class="modal">
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <h3 style="margin:0">⚙️ Settings</h3>
-      <button id="closeSettings" class="btn" onclick="document.getElementById('settingsModal').style.display='none'">Close</button>
+      <button id="closeSettings" class="btn">Close</button>
     </div>
     <div class="grid">
       <div class="stat">
-        <b>Themes</b>
-        <p class="tiny">Unlock more themes as you learn.</p>
-        <select id="themeSelect" style="width:100%"></select>
-      </div>
-      <div class="stat">
-        <b>Mini Quiz</b><p class="tiny">Practice 5 items (image → type the transliteration).</p>
+        <b>Mini Quiz</b>
+        <p class="tiny">Practice 5 items. You’ll see <b>only an image</b>; type the transliteration.</p>
         <button id="startMiniQuiz" class="btn">⚡ Start Mini Quiz</button>
       </div>
       <div class="stat">
-        <b>Review Mode</b><p class="tiny">Quiz only on mastered words.</p>
+        <b>Review Mode</b>
+        <p class="tiny">Quiz only on words she has mastered (ignores SRS order).</p>
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
       <div class="stat">
-        <b>Sentence Practice</b><p class="tiny">Read sentences & translations.</p>
-        <button id="openSentences" class="btn">📖 Open Sentence Practice</button>
-      </div>
-      <div class="stat">
-        <b>Lifetime Stats</b><p class="tiny">See totals and accuracy.</p>
-        <button id="openStats" class="btn">📈 View Stats</button>
-      </div>
-      <div class="stat">
-        <b>Developer</b><p class="tiny">Enable Sia (developer) with PIN.</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button id="devLoginBtn" class="btn">🔓 Developer login</button>
-          <button id="devLogoutBtn" class="btn">🔒 Exit developer</button>
-        </div>
+        <b>Danger zone</b>
+        <p class="tiny">This clears score, streak, SRS, unlocks, and achievements.</p>
+        <button id="resetBtn" class="btn danger">♻️ Reset Progress</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Stats Modal -->
-<div id="statsModal" class="modal">
-  <div class="modal-card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <h3 style="margin:0">📈 Lifetime Stats — <span id="statsName"></span></h3>
-      <button id="closeStats" class="btn">Close</button>
-    </div>
-    <div id="statsBody"></div>
-  </div>
-</div>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script>
+/** ============ SETTINGS & CONSTANTS ============ */
+const DAILY_WORDS = 5;
+const STORAGE_PREFIX = 'ff_';
+const SRS_INTERVALS_HOURS = [0, 8, 24, 72, 168, 336];
+const MINI_QUIZ_SIZE = 5;
 
-<!-- Sentence Practice Modal -->
-<div id="sentencesModal" class="modal">
-  <div class="modal-card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <h3 style="margin:0">📖 Sentence Practice</h3>
-      <button id="closeSentences" class="btn">Close</button>
-    </div>
-    <div id="sentencesBody" class="grid"></div>
-  </div>
-</div>
+/** ============ WORDS (sample, .png images) ============ */
+const words = [
+  {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.png", fact:"In Persian cuisine, apple slices often pair with walnuts as a snack."},
+  {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.png", fact:"کتاب is from Arabic root k‑t‑b related to writing."},
+  {fa:"گربه", en:"cat", translit:"gorbe", emoji:"🐱", image:"images/gorbe.png"},
+  {fa:"سگ", en:"dog", translit:"sag", emoji:"🐶", image:"images/sag.png"},
+  {fa:"آب", en:"water", translit:"âb", emoji:"💧", audio:"audio/ab.mp3", image:"images/ab.png"},
+  {fa:"نان", en:"bread", translit:"nân", emoji:"🍞", audio:"audio/nan.mp3", image:"images/nan.png"},
+  {fa:"چای", en:"tea", translit:"chây", emoji:"🍵", audio:"audio/chay.mp3", image:"images/chay.png", fact:"Traditional Persian tea is strong and served with sugar cubes."},
+  {fa:"ماشین", en:"car", translit:"مâshin".replace('م','m') /* protect diacritic */, emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.png"},
+  {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠", audio:"audio/khane.mp3", image:"images/khane.png"},
+  {fa:"در", en:"door", translit:"dar", emoji:"🚪", image:"images/dar.png"},
+  {fa:"خورشید", en:"sun", translit:"khorshid", emoji:"☀️", image:"images/khorshid.png"},
+  {fa:"گل", en:"flower", translit:"gol", emoji:"🌸", image:"images/gol.png"},
+];
 
-<!-- Start Screen -->
-<div id="startOverlay" class="overlay" style="display:none">
-  <div class="overlay-card" style="text-align:center">
-    <h2 style="margin-top:0">Welcome! 💚</h2>
-    <p class="tiny" style="margin-top:-6px">Choose a mode to begin</p>
-    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:10px">
-      <button id="startLearn" class="primary">📗 Learn Mode</button>
-      <button id="startQuiz"  class="accent">🧠 Quiz Mode</button>
-    </div>
-    <p class="tiny" style="margin-top:12px;color:#9ca3af">You can switch modes any time from the top bar.</p>
-  </div>
-</div>
+/** ============ STORAGE HELPERS ============ */
+const ls={get:(k,f=null)=>{try{const v=localStorage.getItem(STORAGE_PREFIX+k);return v===null?f:JSON.parse(v);}catch{return f}},set:(k,v)=>{try{localStorage.setItem(STORAGE_PREFIX+k,JSON.stringify(v))}catch{}}};
+
+/** ============ UTILITIES ============ */
+const $=id=>document.getElementById(id);
+function now(){return Date.now()}
+function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
+function slugifyTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-')}
+function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/\s+/g,'')}
+function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
+function randPick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+
+/** ============ STATE ============ */
+let mode='learn';
+let difficulty=ls.get('difficulty','easy');
+let reviewAll=false;
+let score=Number(ls.get('score',0));
+let streak=Number(ls.get('streak',0));
+let unlockedCount=initDailyUnlock();
+let idx=0;
+let order=[];
+let miniQuizActive=false;
+let miniQ = {queue:[], current:null, correct:0, total:0};
+
+let srs=ls.get('srs', {});
+function ensureSRS(i){ if(!srs[i]) srs[i]={stage:0,due:0,seen:0,correct:0,wrong:0}; return srs[i]; }
+function isDue(i){ return ensureSRS(i).due <= now(); }
+function scheduleAfter(i,h){ ensureSRS(i).due = now()+h*3600*1000; }
+
+function getCoveredSet(){ return new Set(ls.get('covered', [])); }
+function addCovered(i){ const s=getCoveredSet(); s.add(i); ls.set('covered',[...s]); }
+
+let achievements=ls.get('ach', {first10:false, perfectMini:false, streak7:false, mastered50:false});
+function updateAchievements(){
+  const mastered = getCoveredSet().size;
+  if(!achievements.first10 && mastered>=10) achievements.first10=true;
+  if(!achievements.streak7 && streak>=7) achievements.streak7=true;
+  if(!achievements.mastered50 && mastered>=50) achievements.mastered50=true;
+  ls.set('ach', achievements);
+}
+
+/** ============ DAILY UNLOCKS ============ */
+function initDailyUnlock(){
+  let start = ls.get('start_date');
+  if(!start){ start = todayISO(); ls.set('start_date', start); }
+  const unlockedStored = ls.get('unlocked_count', 0);
+  const startDate = new Date(start+'T00:00:00');
+  const dNow = new Date(); dNow.setHours(0,0,0,0);
+  const diffDays = Math.floor((dNow - startDate)/86400000);
+  const shouldUnlock = Math.min(words.length, (diffDays+1)*DAILY_WORDS);
+  let unlocked = Math.max(unlockedStored||0, shouldUnlock);
+  if(unlocked!==unlockedStored) ls.set('unlocked_count', unlocked);
+  ls.set('last_date', todayISO());
+  return unlocked;
+}
+
+/** ============ POOLS ============ */
+function unlockedIndices(){ return [...Array(unlockedCount).keys()]; }
+function masteredIndices(){ return [...getCoveredSet()].filter(i=>i<unlockedCount); }
+function dueIndices(){ return unlockedIndices().filter(i=>isDue(i)); }
+function quizPool(){
+  if(reviewAll){
+    const m = masteredIndices();
+    return m.length? m : unlockedIndices();
+  }
+  const due = dueIndices();
+  if(due.length) return due;
+  const m = masteredIndices();
+  return m.length? m : unlockedIndices();
+}
+function learnPool(){
+  const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i));
+  return [...due, ...rest];
+}
+
+/** ============ DOM ============ */
+const bodyEl=document.body;
+const wordWrap=$('wordWrap');
+const picEl=$('pic'), emojiEl=$('emoji'), enEl=$('en'), faEl=$('fa'), transEl=$('trans');
+const listenBtn=$('listenBtn'), sayBtn=$('sayBtn'), hintBtn=$('hintBtn'), revealBtn=$('revealBtn'), nextBtn=$('nextBtn');
+const typeInput=$('typeInput'), checkBtn=$('checkBtn'), skipBtn=$('skipBtn');
+const speechFeedback=$('speechFeedback'), typeFeedback=$('typeFeedback');
+const scoreBadge=$('scoreBadge'), streakBadge=$('streakBadge'), progressBar=$('progressBar'), unlockedBadge=$('unlockedBadge');
+const startOverlay=$('startOverlay'), startLearn=$('startLearn'), startQuiz=$('startQuiz');
+const celebration=$('celebration'), sadFace=$('sadFace'), factBox=$('factBox'), factText=$('factText'), tip=$('tip');
+const openDash=$('openDash'), dashModal=$('dashModal'), closeDash=$('closeDash'), totals=$('totals'), dueStats=$('dueStats'), achievementsBox=$('achievements'), themesInfo=$('themesInfo');
+const themeSelect=$('themeSelect'), openSettings=$('openSettings'), settingsModal=$('settingsModal'), closeSettings=$('closeSettings');
+const reviewToggle=$('reviewToggle'), resetBtn=$('resetBtn'), startMiniQuizBtn=$('startMiniQuiz'), midnightBtn=$('midnightBtn');
+const learnBtn=$('learnBtn'), quizBtn=$('quizBtn');
+const difficultySel=$('difficulty'), diffLabel=$('diffLabel');
+const miniPanel=$('miniQuizPanel'), mqBar=$('mqBar'), mqPic=$('mqPic'), mqInput=$('mqInput'), mqCheck=$('mqCheck'), mqFeedback=$('mqFeedback');
+
+/** ============ THEMES ============ */
+function applyThemeControls(){
+  const mastered = getCoveredSet().size;
+  themeSelect.options[1].disabled = mastered < 10;
+  themeSelect.options[2].disabled = mastered < 25;
+}
+function loadTheme(){
+  const t = ls.get('theme','default');
+  document.documentElement.setAttribute('data-theme', t==='default'?'':t);
+  themeSelect.value = t;
+}
+themeSelect.addEventListener('change', ()=>{ ls.set('theme', themeSelect.value); loadTheme(); });
+
+/** ============ UI HELPERS & LOAD ============ */
+function updateBadges(){
+  scoreBadge.textContent=`Score: ${score}`;
+  streakBadge.textContent=`Streak: ${streak} 🔥`;
+  unlockedBadge.textContent=`${Math.min(unlockedCount, words.length)}/${words.length} unlocked`;
+  const donePct = Math.round((getCoveredSet().size / Math.max(1, unlockedCount))*100);
+  progressBar.style.width = donePct + '%';
+  diffLabel.textContent = `Level: ${difficulty[0].toUpperCase()+difficulty.slice(1)}`;
+  applyThemeControls();
+}
+function showImageOrEmoji(item){
+  if(item.image){
+    picEl.style.display='none'; emojiEl.style.display='block';
+    picEl.onload=()=>{ picEl.style.display='block'; emojiEl.style.display='none'; };
+    picEl.onerror=()=>{ picEl.style.display='none'; emojiEl.style.display='block'; };
+    picEl.src=item.image; picEl.alt=item.en;
+  } else { picEl.style.display='none'; emojiEl.style.display='block'; }
+}
+function updateControlVisibility(){
+  // Listen hidden in Quiz; Reveal visible only in Quiz; Hint in Learn (non-easy)
+  listenBtn.style.display = (mode==='quiz') ? 'none' : 'inline-flex';
+  revealBtn.style.display  = (mode==='quiz') ? 'inline-flex' : 'none';
+  hintBtn.style.display    = (mode==='learn' && (difficulty!=='easy')) ? 'inline-flex' : 'none';
+}
+function setDifficulty(d){ difficulty=d; ls.set('difficulty', d); load(); }
+function currentPool(){ return (mode==='quiz') ? quizPool() : learnPool(); }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+function ensureOrder(){ const pool=currentPool(); order=pool.slice(); if(mode==='quiz' || (mode==='learn' && !dueIndices().length)) shuffle(order); idx=0; }
+function load(){
+  // Toggle Learn-mode typography class on <body>
+  bodyEl.classList.toggle('learn', mode==='learn');
+
+  unlockedCount = initDailyUnlock();
+  const pool = currentPool();
+  if(!order.length) ensureOrder();
+  order = order.filter(i=>pool.includes(i)); if(!order.length) ensureOrder();
+  const gi = order[idx % order.length]; const item = words[gi];
+
+  showImageOrEmoji(item);
+  emojiEl.textContent=item.emoji||'❓';
+
+  if(mode==='quiz'){
+    enEl.textContent=item.en; faEl.textContent='•••'; transEl.textContent='—';
+  } else {
+    if(difficulty==='easy'){ enEl.textContent=item.en; faEl.textContent=item.fa; transEl.textContent=item.translit; }
+    else if(difficulty==='medium'){ enEl.textContent=item.en; faEl.textContent=item.fa; transEl.textContent='(hidden)'; }
+    else { enEl.textContent='(hidden)'; faEl.textContent=item.fa; transEl.textContent='(hidden)'; }
+  }
+
+  factBox.style.display = item.fact && mode==='learn' && !miniQuizActive ? 'block' : 'none';
+  factText.textContent = item.fact || '';
+
+  // Hide main training controls when mini quiz is active
+  const mainRows = wordWrap.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, #speechFeedback, .progress, #factBox, #tip');
+  mainRows.forEach(el=>{ el.style.display = miniQuizActive ? 'none' : ''; });
+
+  updateBadges(); updateControlVisibility();
+}
+
+/** ============ NAV ============ */
+function next(){ const pool=currentPool(); if(pool.length===0){ typeFeedback.textContent='Learn some words first!'; typeFeedback.className='feedback warn'; return; }
+  if(order.some(i=>!pool.includes(i)) || pool.some(i=>!order.includes(i))){ ensureOrder(); } else { idx=(idx+1)%order.length; }
+  load();
+}
+function setMode(m){ mode=m; ensureOrder(); load(); }
+
+/** ============ CELEBRATIONS ============ */
+function happyDing(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    const ctx=new AC();
+    const tones=[659,784,988]; // E5, G5, B5
+    const t0=ctx.currentTime;
+    tones.forEach((f,i)=>{
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='sine'; o.frequency.value=f;
+      o.connect(g); g.connect(ctx.destination);
+      const start=t0 + i*0.05;
+      g.gain.setValueAtTime(0,start);
+      g.gain.linearRampToValueAtTime(0.35,start+0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001,start+0.22);
+      o.start(start); o.stop(start+0.25);
+    });
+  }catch{}
+}
+function fireworksBurst(){
+  if(typeof confetti!=='function') return;
+  const base={origin:{y:1,x:0.5},gravity:1.1,ticks:220,scalar:1.0};
+  confetti({...base, particleCount:140, spread:90, startVelocity:60});
+  confetti({...base, particleCount:100, spread:120, startVelocity:55, origin:{y:1,x:0.2}});
+  confetti({...base, particleCount:100, spread:120, startVelocity:55, origin:{y:1,x:0.8}});
+}
+function confettiPop(){
+  if(typeof confetti!=='function') return;
+  confetti({origin:{y:1,x:0.5},gravity:1.2,ticks:180,scalar:0.9,particleCount:70,spread:75,startVelocity:55});
+}
+function celebrate(){
+  happyDing();
+  if(streak>0 && streak%5===0) fireworksBurst(); else confettiPop();
+  const msg=$('celebration');
+  msg.style.display='block';
+  setTimeout(()=>msg.classList.add('fade-out'), 700);
+  setTimeout(()=>{msg.classList.remove('fade-out'); msg.style.display='none';}, 1600);
+}
+
+/** ============ AUDIO (YOUR VOICE + TTS) ============ */
+let enVoice=null, voicesReady=false;
+function pickEnglishVoice(){const v=speechSynthesis.getVoices()||[];return (v.find(x=>/^en(-|$)/i.test(x.lang)&&/natural|neural|premium/i.test(x.name))||v.find(x=>/^en(-|$)/i.test(x.lang))||v[0]||null)}
+function ensureEnglishVoice(cb){ if(voicesReady&&enVoice){cb();return;} const f=()=>{enVoice=pickEnglishVoice();voicesReady=true;cb();}; const ex=speechSynthesis.getVoices(); if(ex&&ex.length){f()}else{speechSynthesis.onvoiceschanged=f;} }
+function translitToSpeak(s){return (s||'').replace(/â|ā/g,"aa").replace(/kh/g,"kha").replace(/gh/g,"gha").replace(/sh/g,"sha").replace(/ch/g,"cha").replace(/j/g,"zhe")}
+function speakTransliteration(text){ try{ const phrase=translitToSpeak(text); ensureEnglishVoice(()=>{ const u=new SpeechSynthesisUtterance(phrase); if(enVoice){u.voice=enVoice;u.lang=enVoice.lang||"en-US";} else {u.lang="en-US";} u.rate=0.95; try{speechSynthesis.cancel();}catch{} speechSynthesis.speak(u); }); }catch(e){} }
+const audioCache=new Map();
+function getAudioForWord(item){ const url=item.audio||`audio/${slugifyTranslit(item.translit)}.mp3`; if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);} return audioCache.get(url);}
+async function playYourAudio(){ const gi=order[idx]; const item=words[gi]; const a=getAudioForWord(item); try{ a.currentTime=0; await a.play(); } catch(e){ speakTransliteration(item.translit); } }
+$('listenBtn').addEventListener('click', playYourAudio);
+
+/** ============ SPEECH RECOGNITION ============ */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition; let rec=null; let micPrimed=false;
+async function primeMic(){ if(micPrimed||!navigator.mediaDevices?.getUserMedia) return; try{ await navigator.mediaDevices.getUserMedia({audio:true}); micPrimed=true; }catch(e){ speechFeedback.textContent='Microphone permission is blocked. Click the lock icon to allow.'; speechFeedback.className='feedback err'; } }
+if(SR){
+  rec=new SR(); rec.lang='fa-IR'; rec.interimResults=false; rec.maxAlternatives=3;
+  rec.onresult=(ev)=>{
+    const gi=order[idx], item=words[gi];
+    const heard=normalizeFa(ev.results[0][0].transcript), target=normalizeFa(item.fa);
+    handleAnswer(heard.includes(target)||target.includes(heard), gi, 'speech', ev.results[0][0].transcript);
+  };
+  rec.onerror=(e)=>{ const kind=e?.error||'unknown'; const map={'no-speech':'No speech detected. Try closer to the mic.','audio-capture':'No microphone found.','not-allowed':'Mic blocked. Allow in the address bar.','aborted':'Recognition aborted. Tap again.'}; speechFeedback.textContent=map[kind]||('Mic error: '+kind); speechFeedback.className='feedback err'; };
+}else{ $('sayBtn').disabled=true; $('sayBtn').title='Speech recognition not supported. Use Chrome.'; }
+$('sayBtn').addEventListener('click', async ()=>{
+  if(!rec){ speechFeedback.textContent='Speech recognition not supported.'; speechFeedback.className='feedback err'; return; }
+  if(!window.isSecureContext){ speechFeedback.textContent='Mic works only over HTTPS (use your Pages link).'; speechFeedback.className='feedback err'; return; }
+  await primeMic(); speechFeedback.textContent='Listening…'; speechFeedback.className='feedback';
+  try{ rec.start(); }catch{}
+});
+
+/** ============ ANSWERING (SRS + scoring) ============ */
+function handleAnswer(correct, gi, source='typing', transcript=''){
+  const item=words[gi]; const r=ensureSRS(gi); r.seen++;
+  if(correct){
+    r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1);
+    scheduleAfter(gi, SRS_INTERVALS_HOURS[r.stage]||24);
+    score+=10; streak+=1; addCovered(gi);
+    typeFeedback.textContent='Great! +10 points'; typeFeedback.className='feedback ok';
+    celebrate();
+  }else{
+    r.wrong++; r.stage=Math.max(0,r.stage-1); scheduleAfter(gi,2); streak=0;
+    typeFeedback.textContent = source==='speech' ? `Heard “${transcript}”. Try again!` : `Not quite. Hint: ${item.translit}`;
+    typeFeedback.className='feedback warn';
+  }
+  ls.set('score',score); ls.set('streak',streak); ls.set('srs',srs);
+  updateAchievements(); updateBadges();
+  if(!miniQuizActive) setTimeout(next, 500);
+}
+
+/** ============ CONTROLS ============ */
+$('checkBtn').addEventListener('click', ()=>{
+  const gi=order[idx], item=words[gi];
+  const val=$('typeInput').value;
+  const guess=normalizeTranslit(val);
+  if(!guess){ typeFeedback.textContent='Type your guess first!'; typeFeedback.className='feedback warn'; return; }
+  handleAnswer(guess===normalizeTranslit(item.translit), gi, 'typing');
+  // Clear and focus for next attempt/request
+  $('typeInput').value='';
+  $('typeInput').focus();
+});
+$('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; streak=0; ls.set('streak',streak); next(); });
+$('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
+$('learnBtn').addEventListener('click', ()=> setMode('learn'));
+$('quizBtn').addEventListener('click',  ()=> setMode('quiz'));
+$('difficulty').value = difficulty;
+$('difficulty').addEventListener('change', e=> setDifficulty(e.target.value));
+$('hintBtn').addEventListener('click', ()=>{
+  if(mode!=='learn') return;
+  const gi=order[idx], item=words[gi];
+  if(difficulty==='medium'){ $('trans').textContent=item.translit; }
+  if(difficulty==='hard'){ $('en').textContent=item.en; $('trans').textContent=item.translit; }
+});
+function reveal(){
+  const gi=order[idx], item=words[gi];
+  $('fa').textContent=item.fa; $('trans').textContent=item.translit;
+  if(mode==='quiz'){
+    $('sadFace').style.display='block';
+    setTimeout(()=>$('sadFace').classList.add('fade-out'), 700);
+    setTimeout(()=>{$('sadFace').classList.remove('fade-out'); $('sadFace').style.display='none';}, 1500);
+  }
+}
+$('revealBtn').addEventListener('click', reveal);
+
+/** ============ MINI QUIZ (Settings-triggered) ============ */
+startMiniQuizBtn.addEventListener('click', ()=>{
+  settingsModal.style.display='none';
+  startMiniQuiz();
+});
+function startMiniQuiz(){
+  miniQuizActive=true; miniQ.correct=0; miniQ.total=0;
+  const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
+  shuffle(pool); miniQ.queue=pool.slice(0,MINI_QUIZ_SIZE);
+  if(!miniQ.queue.length){ miniQuizActive=false; alert('Nothing to quiz yet!'); return; }
+  showMiniPanel(true); nextMiniQuestion();
+}
+function showMiniPanel(show){
+  miniPanel.style.display = show ? 'block' : 'none';
+  const mainRows = wordWrap.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, #speechFeedback, .progress, #factBox, #tip');
+  mainRows.forEach(el=>{ el.style.display = show ? 'none' : ''; });
+}
+function nextMiniQuestion(){
+  if(!miniQ.queue.length){
+    mqFeedback.innerHTML = `Mini Quiz complete! Score: <b>${miniQ.correct}</b> / ${miniQ.total}`;
+    mqFeedback.className='feedback ok';
+    mqBar.style.width='100%';
+    setTimeout(()=>{ showMiniPanel(false); miniQuizActive=false; load(); }, 1500);
+    return;
+  }
+  miniQ.current = miniQ.queue.shift();
+  const item=words[miniQ.current];
+  mqBar.style.width = `${(miniQ.total/MINI_QUIZ_SIZE)*100}%`;
+  mqPic.src = item.image || '';
+  mqPic.alt = item.en || '';
+  mqInput.value = '';
+  mqFeedback.textContent='';
+  mqInput.focus();
+}
+function submitMini(){
+  const item=words[miniQ.current];
+  miniQ.total++;
+  const ans = normalizeTranslit(mqInput.value);
+  const ok = ans && ans===normalizeTranslit(item.translit);
+  if(ok){ miniQ.correct++; mqFeedback.textContent='Nice!'; mqFeedback.className='feedback ok'; celebrate(); }
+  else { mqFeedback.textContent=`Answer: ${item.translit}`; mqFeedback.className='feedback warn'; streak=0; ls.set('streak',streak); }
+  setTimeout(nextMiniQuestion, 350);
+}
+mqCheck.addEventListener('click', submitMini);
+mqInput.addEventListener('keydown', e=>{ if(e.key==='Enter') submitMini(); });
+
+/** ============ DASHBOARD ============ */
+openDash.addEventListener('click', ()=>{ renderDashboard(); dashModal.style.display='grid'; });
+closeDash.addEventListener('click', ()=> dashModal.style.display='none');
+dashModal.addEventListener('click', e=>{ if(e.target===dashModal) dashModal.style.display='none'; });
+function renderDashboard(){
+  const mastered = getCoveredSet().size, total=words.length;
+  const acc = calcAccuracy();
+  totals.innerHTML = `
+    <div class="chip">Words unlocked: ${unlockedCount}/${total}</div>
+    <div class="chip">Words mastered: ${mastered}</div>
+    <div class="chip">Score: ${score}</div>
+    <div class="chip">Streak: ${streak}</div>
+    <div class="chip">Accuracy: ${acc.toFixed(1)}%</div>`;
+  const dueCount = dueIndices().length, srsBreakdown = breakdownStages();
+  dueStats.innerHTML = `<div class="chip">Due now: ${dueCount}</div>` + srsBreakdown.map((n,i)=>`<div class="chip">Stage ${i}: ${n}</div>`).join('');
+  const a=ls.get('ach', achievements);
+  achievementsBox.innerHTML = `
+    <div class="ach">${a.first10?'🏅':'⬜'} First 10 mastered</div>
+    <div class="ach">${a.perfectMini?'🏅':'⬜'} Perfect Mini Quiz</div>
+    <div class="ach">${a.streak7?'🏅':'⬜'} 7‑day streak</div>
+    <div class="ach">${a.mastered50?'🏅':'⬜'} 50 mastered</div>`;
+  themesInfo.innerHTML = `
+    <div class="chip">Ocean (Default)</div>
+    <div class="chip ${themeSelect.options[1].disabled?'':'ok'}">Sunset ${themeSelect.options[1].disabled?'(unlock 10)':'✓ unlocked'}</div>
+    <div class="chip ${themeSelect.options[2].disabled?'':'ok'}">Forest ${themeSelect.options[2].disabled?'(unlock 25)':'✓ unlocked'}</div>`;
+}
+function calcAccuracy(){ let c=0,t=0; for(const k in srs){ c+=srs[k].correct||0; t+=(srs[k].correct||0)+(srs[k].wrong||0); } return t? (100*c/t):0; }
+function breakdownStages(){ const arr=Array(SRS_INTERVALS_HOURS.length).fill(0); for(const k in srs){ arr[srs[k].stage||0]++; } return arr; }
+
+/** ============ SETTINGS ============ */
+openSettings.addEventListener('click', ()=>{ settingsModal.style.display='grid'; updateReviewButton(); });
+closeSettings.addEventListener('click', ()=> settingsModal.style.display='none');
+settingsModal.addEventListener('click', e=>{ if(e.target===settingsModal) settingsModal.style.display='none'; });
+
+function updateReviewButton(){ reviewToggle.textContent = `🔁 Review All Mastered: ${reviewAll?'ON':'OFF'}`; }
+reviewToggle.addEventListener('click', ()=>{ reviewAll=!reviewAll; updateReviewButton(); ensureOrder(); load(); });
+resetBtn.addEventListener('click',()=>{
+  if(!confirm('Reset ALL progress? (score, streak, SRS, unlocks, achievements)')) return;
+  for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(k&&k.startsWith(STORAGE_PREFIX)) localStorage.removeItem(k); }
+  score=0; streak=0; srs={}; achievements={first10:false,perfectMini:false,streak7:false,mastered50:false};
+  unlockedCount=initDailyUnlock(); ensureOrder(); load(); alert('Progress reset!');
+});
+
+/** ============ START SCREEN ============ */
+startLearn.addEventListener('click',()=>{ setMode('learn'); startOverlay.style.display='none'; });
+startQuiz.addEventListener('click',()=>{ setMode('quiz');  startOverlay.style.display='none'; });
+
+/** ============ MIDNIGHT COUNTDOWN ============ */
+function msUntilNextMidnight(){
+  const n=new Date();
+  const t=new Date(n);
+  t.setHours(24,0,0,0); // next local midnight
+  return t - n;
+}
+function fmt(ms){
+  const s=Math.floor(ms/1000);
+  const h=Math.floor(s/3600);
+  const m=Math.floor((s%3600)/60);
+  const sec=s%60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+midnightBtn.addEventListener('click', ()=>{
+  const ms=msUntilNextMidnight();
+  alert(`New words unlock at local midnight.\nTime remaining: ${fmt(ms)}`);
+});
+
+/** ============ INIT ============ */
+function firstLoad(){ loadTheme(); ensureOrder(); setDifficulty(difficulty); updateAchievements(); updateBadges(); load(); }
+firstLoad();
+</script>
 </body>
 </html>
