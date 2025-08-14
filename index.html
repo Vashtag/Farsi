@@ -635,6 +635,26 @@ document.addEventListener('click', (e)=>{
   if(e.target.id==='mapModal') e.target.style.display='none';
 });
 
+// --- Failsafe: make the Start overlay buttons always work ---
+function startAs(m){
+  mode = m;
+  ensureOrder();
+  $('startOverlay').style.display = 'none';
+  showItem();
+}
+
+// Ensure buttons don't behave like submit buttons
+['startLearn','startQuiz'].forEach(id => {
+  const el = $(id);
+  if (el) el.setAttribute('type','button');
+});
+
+// Event delegation on the overlay (works even if direct listeners failed)
+$('startOverlay').addEventListener('click', (e)=>{
+  if (e.target && e.target.id === 'startLearn') startAs('learn');
+  if (e.target && e.target.id === 'startQuiz')  startAs('quiz');
+});
+  
 /* Init (shows profile overlay by default) */
 </script>
 </body>
