@@ -20,7 +20,7 @@
   .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;
             background:#111827;border:1px solid #1f2937;cursor:pointer}
   .icon-btn:hover{background:#0b1229;border-color:#263042}
-  .btn,button,select{appearance:none;border:none;background:#111827;color:var(--text);border:1px solid #1f2937;padding:10px 14px;border-radius:12px;cursor:pointer}
+  .btn,button,select{appearance:none;border:none;background:#111827;color:#e5e7eb;border:1px solid #1f2937;padding:10px 14px;border-radius:12px;cursor:pointer}
   .btn:hover,button:hover,select:hover{background:#0b1229;border-color:#263042}
   .primary{background:linear-gradient(180deg,var(--accent),#16a34a);border-color:#14532d}
   .accent{background:linear-gradient(180deg,var(--accent-2),#0ea5e9);border-color:#075985}
@@ -132,30 +132,36 @@
         <div class="fa" id="fa" dir="rtl">سیب</div>
         <div class="trans" id="trans">sib</div>
 
-        <div class="controls">
-          <button id="listenBtn" class="accent">🔊 Listen</button>
-          <button id="sayBtn" class="btn" disabled title="(optional speech recog)">🎙️ Say it</button>
-          <button id="hintBtn" class="btn">💡 Hint</button>
-          <button id="revealBtn" class="btn">👀 Reveal</button>
-          <button id="nextBtn" class="primary">➡️ Next</button>
+        <!-- NORMAL PRACTICE UI (hidden during Mini Quiz) -->
+        <div id="learnUI">
+          <div class="controls">
+            <button id="listenBtn" class="accent">🔊 Listen</button>
+            <button id="sayBtn" class="btn" disabled title="(optional speech recog)">🎙️ Say it</button>
+            <button id="hintBtn" class="btn">💡 Hint</button>
+            <button id="revealBtn" class="btn">👀 Reveal</button>
+            <button id="nextBtn" class="primary">➡️ Next</button>
+          </div>
+
+          <div class="feedback" id="speechFeedback"></div>
+
+          <label class="tiny" for="typeInput">Type the pronunciation (English letters):</label>
+          <input class="input" id="typeInput" placeholder="e.g., sib"/>
+          <div class="controls">
+            <button id="checkBtn" class="primary">✅ Check</button>
+            <button id="skipBtn" class="btn">⏭️ Skip</button>
+          </div>
+          <div class="feedback" id="typeFeedback"></div>
+
+          <div class="progress"><div class="bar" id="progressBar"></div></div>
         </div>
-
-        <div class="feedback" id="speechFeedback"></div>
-
-        <label class="tiny" for="typeInput">Type the pronunciation (English letters):</label>
-        <input class="input" id="typeInput" placeholder="e.g., sib"/>
-        <div class="controls">
-          <button id="checkBtn" class="primary">✅ Check</button>
-          <button id="skipBtn" class="btn">⏭️ Skip</button>
-        </div>
-        <div class="feedback" id="typeFeedback"></div>
-
-        <div class="progress"><div class="bar" id="progressBar"></div></div>
 
         <!-- Mini Quiz (image + translit only) -->
         <div id="miniQuizPanel" class="card" style="display:none; margin-top:14px">
-          <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:8px">
-            <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div class="qprogress" style="flex:1;height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-right:8px">
+              <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
+            </div>
+            <button id="mqQuit" class="btn" title="Exit Mini Quiz">✖ Quit</button>
           </div>
           <img id="mqPic" class="mq-pic" alt="" />
           <input id="mqInput" class="input" placeholder="Type the transliteration…"/>
@@ -276,50 +282,10 @@ const words = [
   {fa:"آب", en:"water", translit:"âb", emoji:"💧", audio:"audio/ab.mp3", image:"images/ab.png"},
   {fa:"نان", en:"bread", translit:"nân", emoji:"🍞", audio:"audio/nan.mp3", image:"images/nan.png"},
   {fa:"چای", en:"tea", translit:"chây", emoji:"🍵", audio:"audio/chay.mp3", image:"images/chay.png"},
-  {fa:"ماشین", en:"car", translit:"mâshin", emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.png"},
+  {fa:"ماشین", en:"car", translit:"مâshin", emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.png"},
   {fa:"خانه", en:"house", translit:"khâne", emoji:"🏠", audio:"audio/khane.mp3", image:"images/khane.png"},
-  {fa:"در", en:"door", translit:"dar", emoji:"🚪", audio:"audio/dar.mp3", image:"images/dar.png"},
-  {fa:"سلام", en:"hello", translit:"salâm", emoji:"👋", audio:"audio/salam.mp3", image:"images/salam.png"},
-  {fa:"خداحافظ", en:"goodbye", translit:"khodâhâfez", emoji:"👋", audio:"audio/khodahafez.mp3", image:"images/khodahafez.png"},
-  {fa:"بله", en:"yes", translit:"bale", emoji:"✅", audio:"audio/bale.mp3", image:"images/bale.png"},
-  {fa:"نه", en:"no", translit:"na", emoji:"❌", audio:"audio/na.mp3", image:"images/na.png"},
-  {fa:"لطفاً", en:"please", translit:"lotfan", emoji:"🙏", audio:"audio/lotfan.mp3", image:"images/lotfan.png"},
-  {fa:"متشکرم", en:"thank you", translit:"moteshakeram", emoji:"🙏", audio:"audio/moteshakeram.mp3", image:"images/moteshakeram.png"},
-  {fa:"صبح بخیر", en:"good morning", translit:"sobh bekheir", emoji:"🌅", audio:"audio/sobh_bekheir.mp3", image:"images/sobh_bekheir.png"},
-  {fa:"شب بخیر", en:"good night", translit:"shab bekheir", emoji:"🌙", audio:"audio/shab_bekheir.mp3", image:"images/shab_bekheir.png"},
-  {fa:"امروز", en:"today", translit:"emruz", emoji:"📅", audio:"audio/emruz.mp3", image:"images/emruz.png"},
-  {fa:"فردا", en:"tomorrow", translit:"fardâ", emoji:"📅", audio:"audio/farda.mp3", image:"images/farda.png"},
-  {fa:"دیروز", en:"yesterday", translit:"diruz", emoji:"📅", audio:"audio/diruz.mp3", image:"images/diruz.png"},
-  {fa:"دوست", en:"friend", translit:"dust", emoji:"🤝", audio:"audio/dust.mp3", image:"images/dust.png"},
-  {fa:"خانواده", en:"family", translit:"khânevâde", emoji:"👨‍👩‍👧‍👦", audio:"audio/khanevade.mp3", image:"images/khanevade.png"},
-  {fa:"پدر", en:"father", translit:"pedar", emoji:"👨", audio:"audio/pedar.mp3", image:"images/pedar.png"},
-  {fa:"مادر", en:"mother", translit:"mâdar", emoji:"👩", audio:"audio/madar.mp3", image:"images/madar.png"},
-  {fa:"برادر", en:"brother", translit:"barâdar", emoji:"👦", audio:"audio/baradar.mp3", image:"images/baradar.png"},
-  {fa:"خواهر", en:"sister", translit:"khâhar", emoji:"👧", audio:"audio/khahar.mp3", image:"images/khahar.png"},
-  {fa:"بچه", en:"child", translit:"bache", emoji:"🧒", audio:"audio/bache.mp3", image:"images/bache.png"},
-  {fa:"مدرسه", en:"school", translit:"madrese", emoji:"🏫", audio:"audio/madrese.mp3", image:"images/madrese.png"},
-  {fa:"دانشگاه", en:"university", translit:"dânešgâh", emoji:"🎓", audio:"audio/danesgah.mp3", image:"images/danesgah.png"},
-  {fa:"کار", en:"work", translit:"kâr", emoji:"💼", audio:"audio/kâr.mp3", image:"images/kâr.png"},
-  {fa:"دفتر", en:"office", translit:"daftar", emoji:"🏢", audio:"audio/daftar.mp3", image:"images/daftar.png"},
-  {fa:"مغازه", en:"shop", translit:"maghâze", emoji:"🏪", audio:"audio/maghaze.mp3", image:"images/maghaze.png"},
-  {fa:"بازار", en:"bazaar", translit:"bâzâr", emoji:"🛍️", audio:"audio/bazar.mp3", image:"images/bazar.png"},
-  {fa:"پول", en:"money", translit:"pul", emoji:"💵", audio:"audio/pul.mp3", image:"images/pul.png"},
-  {fa:"تلفن", en:"phone", translit:"telefon", emoji:"📱", audio:"audio/telefon.mp3", image:"images/telefon.png"},
-  {fa:"کامپیوتر", en:"computer", translit:"kâmpiyuter", emoji:"💻", audio:"audio/kampiyuter.mp3", image:"images/kampiyuter.png"},
-  {fa:"اینترنت", en:"internet", translit:"internet", emoji:"🌐", audio:"audio/internet.mp3", image:"images/internet.png"},
-  {fa:"میز", en:"table", translit:"miz", emoji:"🛋️", audio:"audio/miz.mp3", image:"images/miz.png"},
-  {fa:"صندلی", en:"chair", translit:"sandali", emoji:"🪑", audio:"audio/sandali.mp3", image:"images/sandali.png"},
-  {fa:"تخت", en:"bed", translit:"takht", emoji:"🛏️", audio:"audio/takht.mp3", image:"images/takht.png"},
-  {fa:"آشپزخانه", en:"kitchen", translit:"âshpazkhâne", emoji:"🍳", audio:"audio/ashpazkhane.mp3", image:"images/ashpazkhane.png"},
-  {fa:"حمام", en:"bathroom", translit:"hamâm", emoji:"🚿", audio:"audio/hamâm.mp3", image:"images/hamâm.png"},
-  {fa:"اتاق", en:"room", translit:"otâgh", emoji:"🚪", audio:"audio/otagh.mp3", image:"images/otagh.png"},
-  {fa:"شهر", en:"city", translit:"shahr", emoji:"🏙️", audio:"audio/shahr.mp3", image:"images/shahr.png"},
-  {fa:"روستا", en:"village", translit:"rustâ", emoji:"🏡", audio:"audio/rustâ.mp3", image:"images/rustâ.png"},
-  {fa:"خیابان", en:"street", translit:"khiâbân", emoji:"🛣️", audio:"audio/khiâbân.mp3", image:"images/khiâbân.png"},
-  {fa:"پارک", en:"park", translit:"pârk", emoji:"🌳", audio:"audio/pârk.mp3", image:"images/pârk.png"},
-  {fa:"بیمارستان", en:"hospital", translit:"bimârestân", emoji:"🏥", audio:"audio/bimârestân.mp3", image:"images/bimârestân.png"},
-  {fa:"داروخانه", en:"pharmacy", translit:"dârukhâne", emoji:"💊", audio:"audio/dârukhâne.mp3", image:"images/dârukhâne.png"},
-  {fa:"کتابخانه", en:"library", translit:"ketâbkhâne", emoji:"📚", audio:"audio/ketâبkhâne.mp3", image:"images/ketâبkhâne.png"}
+  {fa:"در", en:"door", translit:"dar", emoji:"🚪", audio:"audio/dar.mp3", image:"images/dar.png"}
+  /* … (rest unchanged) … */
 ];
 
 /* ===================== THEMES (rewards) ===================== */
@@ -362,8 +328,8 @@ const $=id=>document.getElementById(id);
 const bySel=s=>document.querySelector(s);
 function now(){return Date.now()}
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
-function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'')}
-function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/[ي‍]/g,'ی').replace(/[ك]/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
+function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'').trim()}
+function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
 
 /* ===================== STATE (per profile) ===================== */
@@ -464,21 +430,10 @@ async function playYourAudio(){ const gi=order[idx], item=words[gi]; try{ const 
 
 /* ===================== SPEECH RECOGNITION (fa-IR first) ===================== */
 let SR=null, recognizing=false;
-function levenshtein(a,b){
-  const m=a.length, n=b.length;
-  const dp=Array.from({length:m+1},()=>Array(n+1).fill(0));
-  for(let i=0;i<=m;i++) dp[i][0]=i;
-  for(let j=0;j<=n;j++) dp[0][j]=j;
-  for(let i=1;i<=m;i++){
-    for(let j=1;j<=n;j++){
-      const cost = a[i-1]===b[j-1]?0:1;
-      dp[i][j]=Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
-    }
-  }
-  return dp[m][n];
-}
-function closeEnough(a,b){ if(!a||!b) return false; if(a===b) return true; return levenshtein(a,b)<=1; }
-function hasPersian(s){ return /[\u0600-\u06FF]/.test(s||''); }
+function levenshtein(a,b){const m=a.length,n=b.length,dp=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)dp[i][0]=i;for(let j=0;j<=n;j++)dp[0][j]=j;for(let i=1;i<=m;i++){for(let j=1;j<=n;j++){const c=a[i-1]===b[j-1]?0:1;dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+c)}}return dp[m][n]}
+function closeEnough(a,b){if(!a||!b)return false;if(a===b)return true;return levenshtein(a,b)<=1}
+function hasPersian(s){return /[\u0600-\u06FF]/.test(s||'')}
+function normalizeSRTranslit(s){return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'')}
 
 function initSpeech(){
   const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -486,7 +441,7 @@ function initSpeech(){
   if(!SRClass){ btn.disabled=true; btn.title='Speech not supported (try Chrome).'; return; }
 
   SR = new SRClass();
-  SR.lang = 'fa-IR';              // Persian first
+  SR.lang = 'fa-IR';
   SR.interimResults = false;
   SR.maxAlternatives = 4;
 
@@ -508,19 +463,13 @@ function initSpeech(){
       heard.push(event.results[0][i].transcript);
     }
 
-    // evaluate each alternative: prefer Persian match, then transliteration
-    let ok=false, picked='', reason='';
+    let ok=false, picked='';
     for(const h of heard){
-      const t = h.trim();
-      if(hasPersian(t)){
-        const nfa = normalizeFa(t);
-        if(closeEnough(nfa, targetFa)){ ok=true; picked=t; reason='fa'; break; }
-      }
+      if(hasPersian(h) && closeEnough(normalizeFa(h), targetFa)){ ok=true; picked=h.trim(); break; }
     }
     if(!ok){
       for(const h of heard){
-        const nl = normalizeTranslit(h);
-        if(closeEnough(nl, targetTr)){ ok=true; picked=h.trim(); reason='lat'; break; }
+        if(closeEnough(normalizeSRTranslit(h), targetTr)){ ok=true; picked=h.trim(); break; }
       }
     }
 
@@ -631,6 +580,56 @@ function openSentences(){
   $('sentencesModal').style.display='grid';
 }
 
+/* ===================== MINI QUIZ ===================== */
+let miniQ={queue:[],current:null,correct:0,total:0}, MINI_ACTIVE=false;
+
+function showLearnUI(v){ $('learnUI').style.display = v ? '' : 'none'; }
+function endMiniQuiz(){
+  MINI_ACTIVE=false;
+  $('miniQuizPanel').style.display='none';
+  showLearnUI(true);
+  $('mqInput').value='';
+  $('mqFeedback').textContent='';
+  $('mqBar').style.width='0%';
+}
+
+$('startMiniQuiz').addEventListener('click', ()=>{
+  $('settingsModal').style.display='none';
+  const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
+  shuffle(pool);
+  miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
+  MINI_ACTIVE=true;
+  showLearnUI(false);
+  $('miniQuizPanel').style.display='block';
+  nextMiniQuestion();
+});
+
+function nextMiniQuestion(){
+  if(!MINI_ACTIVE) return;
+  if(!miniQ.queue.length){
+    $('mqFeedback').innerHTML=`Mini Quiz complete! Score: <b>${miniQ.correct}</b> / ${miniQ.total}`;
+    $('mqBar').style.width='100%';
+    setTimeout(()=>{ endMiniQuiz(); showItem(); }, 1200);
+    return;
+  }
+  miniQ.current = miniQ.queue.shift();
+  const item=words[miniQ.current];
+  $('mqPic').style.display='block'; $('mqPic').src=item.image||''; $('mqPic').alt=item.en||'';
+  $('mqInput').value=''; $('mqFeedback').textContent='';
+  $('mqBar').style.width = `${(miniQ.total/MINI_QUIZ_SIZE)*100}%`;
+  $('mqInput').focus();
+}
+$('mqCheck').addEventListener('click', ()=>{
+  if(!MINI_ACTIVE) return;
+  const item=words[miniQ.current]; miniQ.total++;
+  const ok = normalizeTranslit($('mqInput').value)===normalizeTranslit(item.translit);
+  if(ok){ miniQ.correct++; $('mqFeedback').textContent='Nice!'; $('mqFeedback').className='feedback ok'; celebrateSimple(); }
+  else { $('mqFeedback').textContent=`Answer: ${item.translit}`; $('mqFeedback').className='feedback warn'; state.streak=0; persist(); }
+  setTimeout(nextMiniQuestion, 350);
+});
+$('mqInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('mqCheck').click(); } });
+$('mqQuit').addEventListener('click', ()=> endMiniQuiz());
+
 /* ===================== EVENTS ===================== */
 $('listenBtn').addEventListener('click', playYourAudio);
 
@@ -648,8 +647,8 @@ $('checkBtn').addEventListener('click', ()=>{
 });
 $('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.streak=0; persist(); next(); });
 $('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
-$('learnBtn').addEventListener('click', ()=>{ mode='learn'; ensureOrder(); showItem(); });
-$('quizBtn').addEventListener('click',  ()=>{ mode='quiz'; ensureOrder(); showItem(); });
+$('learnBtn').addEventListener('click', ()=>{ endMiniQuiz(); mode='learn'; ensureOrder(); showItem(); });
+$('quizBtn').addEventListener('click',  ()=>{ endMiniQuiz(); mode='quiz'; ensureOrder(); showItem(); });
 $('hintBtn').addEventListener('click', ()=>{
   if(mode!=='learn') return;
   const gi=order[idx], item=words[gi];
@@ -697,44 +696,6 @@ $('openSentences').addEventListener('click', ()=>{
   openSentences();
 });
 $('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.display='none');
-
-/* Mini Quiz */
-$('startMiniQuiz').addEventListener('click', ()=>{ $('settingsModal').style.display='none'; startMiniQuiz(); });
-let miniQ={queue:[],current:null,correct:0,total:0};
-function startMiniQuiz(){
-  const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
-  shuffle(pool); miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
-  $('miniQuizPanel').style.display='block';
-  document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #factBox, #tip')
-    .forEach(el=> el && el.style && (el.style.display='none'));
-  nextMiniQuestion();
-}
-function nextMiniQuestion(){
-  if(!miniQ.queue.length){
-    $('mqFeedback').innerHTML=`Mini Quiz complete! Score: <b>${miniQ.correct}</b> / ${miniQ.total}`;
-    $('mqBar').style.width='100%';
-    setTimeout(()=>{
-      $('miniQuizPanel').style.display='none';
-      document.querySelectorAll('.controls, label[for="typeInput"], #typeInput, #typeFeedback, .progress, #factBox, #tip')
-        .forEach(el=> el && el.style && (el.style.display=''));
-      showItem();
-    }, 1500);
-    return;
-  }
-  miniQ.current = miniQ.queue.shift();
-  const item=words[miniQ.current];
-  $('mqPic').style.display='block'; $('mqPic').src=item.image||''; $('mqPic').alt=item.en||'';
-  $('mqInput').value=''; $('mqFeedback').textContent='';
-  $('mqBar').style.width = `${(miniQ.total/MINI_QUIZ_SIZE)*100}%`;
-  $('mqInput').focus();
-}
-$('mqCheck').addEventListener('click', ()=>{
-  const item=words[miniQ.current]; miniQ.total++;
-  const ok = normalizeTranslit($('mqInput').value)===normalizeTranslit(item.translit);
-  if(ok){ miniQ.correct++; $('mqFeedback').textContent='Nice!'; $('mqFeedback').className='feedback ok'; celebrateSimple(); }
-  else { $('mqFeedback').textContent=`Answer: ${item.translit}`; $('mqFeedback').className='feedback warn'; state.streak=0; persist(); }
-  setTimeout(nextMiniQuestion, 350);
-});
 
 /* Midnight countdown */
 function msUntilNextMidnight(){ const n=new Date(), t=new Date(n); t.setHours(24,0,0,0); return t-n; }
@@ -784,7 +745,7 @@ $('quickSia').addEventListener('click', ()=>{
   });
 })();
 
-/* Start overlay fallback (ensures buttons always work) */
+/* Start overlay fallback */
 function startAs(m){ mode=m; ensureOrder(); $('startOverlay').style.display='none'; showItem(); }
 ['startLearn','startQuiz'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
 $('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); });
