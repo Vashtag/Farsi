@@ -32,7 +32,6 @@
   .pic,.mq-pic{width:min(420px,92%);height:min(280px,45vw);object-fit:contain;background:#0b1229;border:1px solid #1f2937;border-radius:16px;display:none}
   .emoji{font-size:clamp(64px,12vw,120px);text-align:center;line-height:1;filter:drop-shadow(0 10px 20px rgba(0,0,0,.35))}
   .word{display:flex;flex-direction:column;gap:6px;align-items:flex-start;justify-content:center}
-  /* Learn-mode typography */
   .en{font-size:clamp(26px,3.4vw,34px);font-weight:700;color:#e2e8f0}
   .fa{font-size:clamp(18px,2.6vw,22px);color:#cbd5e1;direction:rtl;text-align:right}
   .trans{font-size:clamp(26px,3.4vw,34px);font-weight:600;color:#e2e8f0}
@@ -47,14 +46,12 @@
   .tip{margin-top:12px;font-size:14px;color:#a5b4fc}
   .cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.92);border:1px solid #1f2937;padding:14px 18px;border-radius:14px;font-weight:800;z-index:20}
   .fade-out{animation:fadeOut .9s ease forwards}@keyframes fadeOut{to{opacity:0}}
-  /* Overlays / Modals */
   .overlay{position:fixed;inset:0;background:radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%), rgba(15,23,42,.94);display:grid;place-items:center;z-index:10}
   .overlay-card,.modal-card{background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:760px;margin:0 16px}
   .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45);z-index:12}
   .grid{display:grid;gap:10px}@media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
   .stat{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px}
   .chip{display:inline-flex;gap:6px;background:#0b1229;border:1px solid #1f2937;border-radius:999px;padding:6px 10px;font-size:12px;color:#94a3b8;margin:2px 4px 0 0}
-  /* Bazaar map */
   .map{display:grid;grid-template-columns:repeat(4, minmax(60px,1fr));gap:8px;margin-top:10px}
   .tile{aspect-ratio:1/1;background:#0b1229;border:1px dashed #334155;border-radius:10px;display:grid;place-items:center;font-size:28px;color:#334155}
   .tile.unlocked{border-style:solid;color:#e5e7eb}
@@ -80,16 +77,10 @@
   <div class="overlay-card" style="position:relative; text-align:center">
     <h2 style="margin-top:0">Who are you?</h2>
     <p class="tiny" style="margin-bottom:20px">Choose your profile to continue</p>
-
-    <!-- Big Nicole button -->
     <button id="quickNicole" class="primary" style="font-size:20px; padding:14px 28px;">Nicole</button>
-
-    <!-- Hidden dev button (revealed by key combo 3232) -->
     <button id="quickSia"
       style="position:absolute; bottom:10px; right:10px; font-size:12px; padding:4px 8px; opacity:0.75; display:none;"
-      class="btn" title="Developer">
-      Siyavash
-    </button>
+      class="btn" title="Developer">Siyavash</button>
   </div>
 </div>
 
@@ -99,8 +90,8 @@
     <h2>How do you want to learn today?</h2>
     <p>Pick a mode to get started. You can switch later.</p>
     <div style="display:flex; gap:12px; flex-wrap:wrap">
-      <button id="startLearn" class="primary">📚 Learn Mode</button>
-      <button id="startQuiz" class="accent">🎯 Quiz Mode</button>
+      <button id="startLearn" class="primary" type="button">📚 Learn Mode</button>
+      <button id="startQuiz" class="accent" type="button">🎯 Quiz Mode</button>
     </div>
     <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s. New words unlock at <button id="midnightBtn0" class="btn" style="padding:2px 6px">midnight</button>.</p>
   </div>
@@ -205,6 +196,14 @@
       <button id="closeSettings" class="btn">Close</button>
     </div>
     <div class="grid">
+      <!-- Theme Rewards -->
+      <div class="stat">
+        <b>Themes (rewards)</b>
+        <p class="tiny">Unlock a new theme for every <b>50</b> words learned.</p>
+        <select id="themeSelect" style="width:100%"></select>
+        <div id="themeNote" class="tiny" style="margin-top:6px"></div>
+      </div>
+
       <div class="stat">
         <b>Mini Quiz</b><p class="tiny">Practice 5 items (image → type the transliteration).</p>
         <button id="startMiniQuiz" class="btn">⚡ Start Mini Quiz</button>
@@ -214,7 +213,6 @@
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
 
-      <!-- NEW: Sentence Mode + Sentence Practice -->
       <div class="stat">
         <b>Sentence Mode</b>
         <p class="tiny">Show example sentences in a separate window.</p>
@@ -274,7 +272,7 @@ const words = [
   {fa:"آب", en:"water", translit:"âb", emoji:"💧", audio:"audio/ab.mp3", image:"images/ab.png",
    sentence:{fa:"آب سرد است.", translit:"âb sard ast.", en:"The water is cold."}},
   {fa:"نان", en:"bread", translit:"nân", emoji:"🍞", audio:"audio/nan.mp3", image:"images/nan.png",
-   sentence:{fa:"من نان دوست دارم.", translit:"man nân dust dâram.", en:"I like bread."}},
+   sentence:{fa:"من نان دوست دارم.", translit:"man نان dust dâram.".replace('ن','n'), en:"I like bread."}},
   {fa:"چای", en:"tea", translit:"chây", emoji:"🍵", audio:"audio/chay.mp3", image:"images/chay.png",
    sentence:{fa:"چای می‌نوشم.", translit:"chây minusham.", en:"I drink tea."}},
   {fa:"ماشین", en:"car", translit:"mâshin", emoji:"🚗", audio:"audio/mashin.mp3", image:"images/mashin.png",
@@ -284,6 +282,42 @@ const words = [
   {fa:"در", en:"door", translit:"dar", emoji:"🚪", image:"images/dar.png",
    sentence:{fa:"در را ببند.", translit:"dar râ bebande.", en:"Close the door."}},
 ];
+
+/* ===================== THEMES (rewards) ===================== */
+const THEMES = [
+  // index 0 is always unlocked
+  {key:'default', name:'Ocean (default)', unlockAt:0,  vars:{'--grad1':'#0b1229','--grad2':'#121a36','--accent-2':'#38bdf8','--accent':'#22c55e','--bg':'#0f172a'}},
+  {key:'sunset',  name:'Sunset',          unlockAt:50, vars:{'--grad1':'#2a0f1b','--grad2':'#3a1f2a','--accent-2':'#fb923c','--accent':'#f59e0b','--bg':'#1a0c12'}},
+  {key:'mint',    name:'Mint',            unlockAt:100,vars:{'--grad1':'#0d1f1a','--grad2':'#123227','--accent-2':'#34d399','--accent':'#10b981','--bg':'#0b1814'}},
+  {key:'amethyst',name:'Amethyst',        unlockAt:150,vars:{'--grad1':'#1b1330','--grad2':'#2a1f4d','--accent-2':'#a78bfa','--accent':'#8b5cf6','--bg':'#130f24'}},
+  {key:'night',   name:'Night Bazaar',    unlockAt:200,vars:{'--grad1':'#0a0a0f','--grad2':'#15151f','--accent-2':'#60a5fa','--accent':'#22d3ee','--bg':'#0a0b12'}},
+];
+function applyTheme(key){
+  const t = THEMES.find(x=>x.key===key) || THEMES[0];
+  for(const [k,v] of Object.entries(t.vars)) document.documentElement.style.setProperty(k, v);
+  state.theme = t.key; persist();
+}
+function learnedCount(){ return (state.covered||[]).length; }
+function isThemeUnlocked(theme){ return learnedCount() >= theme.unlockAt; }
+function nextUnlockNote(){
+  const learned = learnedCount();
+  const next = THEMES.find(t=>t.unlockAt>learned);
+  return next ? `Next theme unlocks at <b>${next.unlockAt}</b> learned. (You: ${learned})` : `All themes unlocked! 🎉 (You: ${learned})`;
+}
+function populateThemeDropdown(){
+  const sel = $('themeSelect'); if(!sel) return;
+  sel.innerHTML='';
+  THEMES.forEach(t=>{
+    const opt=document.createElement('option');
+    opt.value=t.key;
+    const locked = !isThemeUnlocked(t);
+    opt.textContent = locked ? `${t.name} — locked (needs ${t.unlockAt})` : t.name;
+    opt.disabled = locked;
+    if((state.theme||'default')===t.key) opt.selected=true;
+    sel.appendChild(opt);
+  });
+  $('themeNote').innerHTML = nextUnlockNote();
+}
 
 /* ===================== UTILITIES ===================== */
 const $=id=>document.getElementById(id);
@@ -300,7 +334,8 @@ const defaultState = ()=>({
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
   difficulty:'easy',
   mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
-  settings:{reviewAll:false, sentenceMode:true}
+  settings:{reviewAll:false, sentenceMode:true},
+  theme:'default'
 });
 let state = defaultState();
 let mode='learn', order=[], idx=0;
@@ -329,8 +364,8 @@ function quizPool(){ const due=dueIndices(); if(due.length) return due; const m=
 function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return [...due,...rest]; }
 
 /* ===================== PERSIST ===================== */
-function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); }
-function loadState(){ state = store.get('state', defaultState()); initDailyUnlock(); }
+function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); populateThemeDropdown(); }
+function loadState(){ state = store.get('state', defaultState()); initDailyUnlock(); applyTheme(state.theme||'default'); }
 
 /* ===================== UI UPDATE ===================== */
 function updateBadges(){
@@ -356,7 +391,6 @@ function showItem(){
   if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
   else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
 
-  // controls visibility
   $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
 
@@ -391,7 +425,7 @@ const audioCache=new Map();
 function getAudio(item){ const url=item.audio||`audio/${(item.translit||'').toLowerCase()}.mp3`; if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);} return audioCache.get(url);}
 async function playYourAudio(){ const gi=order[idx], item=words[gi]; try{ const a=getAudio(item); a.currentTime=0; await a.play(); }catch{} }
 
-/* ===================== ANSWERING (SRS + score + map) ===================== */
+/* ===================== ANSWERING (SRS + score + map + theme unlock check) ===================== */
 function handleAnswer(correct, gi, source='typing', transcript=''){
   const r=ensureSRS(gi); r.seen++;
   if(correct){
@@ -402,6 +436,8 @@ function handleAnswer(correct, gi, source='typing', transcript=''){
     celebrateSimple();
     if(state.streak===7) celebrateStreak7();
     checkDailyGoalAndMap();
+    // theme unlock note refresh
+    populateThemeDropdown();
   }else{
     r.wrong++; r.stage=Math.max(0,r.stage-1); scheduleAfter(gi,2);
     state.streak=0; $('typeFeedback').textContent = source==='speech' ? 'Try again!' : 'Not quite.'; $('typeFeedback').className='feedback warn';
@@ -518,6 +554,7 @@ $('openSettings').addEventListener('click', ()=>{
   $('settingsModal').style.display='grid'; 
   $('reviewToggle').textContent=`Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`;
   reflectSentenceToggle();
+  populateThemeDropdown();
 });
 $('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
 $('settingsModal').addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
@@ -527,13 +564,16 @@ $('reviewToggle').addEventListener('click', ()=>{
   $('reviewToggle').textContent=`Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`;
 });
 
-/* Sentence controls now live in Settings */
+/* Theme selection */
+$('themeSelect').addEventListener('change', (e)=> applyTheme(e.target.value));
+
+/* Sentence controls */
 $('sentenceToggle').addEventListener('click', ()=>{
   const v = !(state.settings?.sentenceMode);
   state.settings.sentenceMode = v;
   persist();
   reflectSentenceToggle();
-  openSentences(); // open the window when toggled
+  openSentences();
 });
 $('openSentences').addEventListener('click', ()=>{
   $('settingsModal').style.display='none';
@@ -627,7 +667,12 @@ $('quickSia').addEventListener('click', ()=>{
   });
 })();
 
-/* Close modals on backdrop click (sentences/map/achievements/settings) */
+/* Start overlay fallback (ensures buttons always work) */
+function startAs(m){ mode=m; ensureOrder(); $('startOverlay').style.display='none'; showItem(); }
+['startLearn','startQuiz'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
+$('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); });
+
+/* Close modals on backdrop click */
 document.addEventListener('click', (e)=>{
   if(e.target.id==='settingsModal') e.target.style.display='none';
   if(e.target.id==='sentencesModal') e.target.style.display='none';
@@ -635,26 +680,6 @@ document.addEventListener('click', (e)=>{
   if(e.target.id==='mapModal') e.target.style.display='none';
 });
 
-// --- Failsafe: make the Start overlay buttons always work ---
-function startAs(m){
-  mode = m;
-  ensureOrder();
-  $('startOverlay').style.display = 'none';
-  showItem();
-}
-
-// Ensure buttons don't behave like submit buttons
-['startLearn','startQuiz'].forEach(id => {
-  const el = $(id);
-  if (el) el.setAttribute('type','button');
-});
-
-// Event delegation on the overlay (works even if direct listeners failed)
-$('startOverlay').addEventListener('click', (e)=>{
-  if (e.target && e.target.id === 'startLearn') startAs('learn');
-  if (e.target && e.target.id === 'startQuiz')  startAs('quiz');
-});
-  
 /* Init (shows profile overlay by default) */
 </script>
 </body>
