@@ -40,7 +40,7 @@
   .feedback{margin-top:8px;min-height:24px;font-size:15px}
   .ok{color:var(--accent)} .warn{color:var(--warn)} .err{color:var(--err)}
   .progress{margin-top:12px;height:10px;background:#0b1229;border-radius:999px;border:1px solid #1f2937;overflow:hidden}
-  .bar{height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#22c55e);transition:width .4s ease}
+  .bar{height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#22c55e);transition:width .3s ease}
   .mode{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
   .tiny{font-size:12px;color:#94a3b8}
   .cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.92);border:1px solid #1f2937;padding:14px 18px;border-radius:14px;font-weight:800;z-index:20}
@@ -460,6 +460,19 @@ const defaultState = ()=>({
 let state = defaultState();
 let mode='learn', order=[], idx=0;
 
+/* ===== Session progress (separate per mode; resets on switch) ===== */
+let sessionTotal = 0;                 // denominator for progress bar
+let sessionAnswered = new Set();      // set of indices answered this session
+function resetSessionProgress(){
+  sessionTotal = unlockedCount();     // progress goal = currently unlocked words
+  sessionAnswered = new Set();
+  updateSessionBar();
+}
+function updateSessionBar(){
+  const pct = Math.round((sessionAnswered.size/Math.max(1,sessionTotal))*100);
+  $('progressBar').style.width = pct + '%';
+}
+
 /* Helpers for SRS & pools */
 function ensureSRS(i){ if(!state.srs[i]) state.srs[i]={stage:0,due:0,seen:0,correct:0,wrong:0}; return state.srs[i]; }
 function isDue(i){ return ensureSRS(i).due <= now(); }
@@ -532,8 +545,8 @@ function updateBadges(){
   $('scoreBadge').textContent = `Score: ${state.score}`;
   $('streakBadge').textContent = `Streak: ${state.streak} 🔥`;
   $('unlockedBadge').textContent = `${unlockedCount()}/${words.length} unlocked`;
-  const pct = Math.round((getCoveredSet().size/Math.max(1,unlockedCount()))*100);
-  $('progressBar').style.width = pct + '%';
+  // Progress bar is session-based; updated separately:
+  updateSessionBar();
 }
 function showImageOrEmoji(item){
   const pic=$('pic'), emo=$('emoji');
@@ -641,6 +654,8 @@ function handleAnswer(correct, gi, source='typing'){
     r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1);
     scheduleAfter(gi,SRS_INTERVALS_HOURS[r.stage]||24);
     state.score+=10; state.streak+=1; addCovered(gi);
+    sessionAnswered.add(gi);                 // session progress
+    updateSessionBar();
     if(source!=='speech'){ $('typeFeedback').textContent='Great! +10 points'; $('typeFeedback').className='feedback ok'; }
     celebrateSimple();
     if(state.streak===7) celebrateStreak7();
@@ -688,7 +703,6 @@ function renderMap(){
       wrap.appendChild(t);
     }
   }else{
-    // Once at least one cat is unlocked, hide the grid and show only the roaming cats arena
     wrap.style.display='none';
     wrap.innerHTML='';
     container.classList.add('arena');
@@ -848,7 +862,12 @@ $('mqQuit').addEventListener('click', ()=> endMiniQuiz());
 
 /* ===================== EVENTS ===================== */
 $('listenBtn').addEventListener('click', playYourAudio);
-$('typeInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('checkBtn').click(); } });
+
+/* Enter-to-submit for main input */
+$('typeInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){ e.preventDefault(); $('checkBtn').click(); }
+});
+
 $('checkBtn').addEventListener('click', ()=>{
   const gi=order[idx], item=words[gi];
   const guess=normalizeTranslit($('typeInput').value);
@@ -859,12 +878,28 @@ $('checkBtn').addEventListener('click', ()=>{
 });
 $('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.streak=0; persist(); next(); });
 $('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
-$('learnBtn').addEventListener('click', ()=>{ endMiniQuiz(); mode='learn'; ensureOrder(); showItem(); });
-$('quizBtn').addEventListener('click',  ()=>{ endMiniQuiz(); mode='quiz'; ensureOrder(); showItem(); });
 
-$('hintBtn').addEventListener('click', ()=>{ if(mode!=='learn') return; const gi=order[idx], item=words[gi]; $('trans').textContent=item.translit; $('en').textContent=item.en; });
-$('revealBtn').addEventListener('click', ()=>{ const gi=order[idx], item=words[gi]; $('fa').textContent=item.fa; $('trans').textContent=item.translit;
-  const s=$('sadFace'); s.style.display='block'; setTimeout(()=>s.classList.add('fade-out'),700); setTimeout(()=>{s.classList.remove('fade-out'); s.style.display='none';},1500); });
+/* Mode switchers — reset session progress on each switch */
+function startMode(newMode){
+  endMiniQuiz();
+  mode = newMode;
+  resetSessionProgress();    // << reset per-mode progress bar
+  ensureOrder();
+  showItem();
+}
+$('learnBtn').addEventListener('click', ()=> startMode('learn'));
+$('quizBtn').addEventListener('click',  ()=> startMode('quiz'));
+
+$('hintBtn').addEventListener('click', ()=>{
+  if(mode!=='learn') return;
+  const gi=order[idx], item=words[gi];
+  $('trans').textContent=item.translit; $('en').textContent=item.en;
+});
+$('revealBtn').addEventListener('click', ()=>{
+  const gi=order[idx], item=words[gi];
+  $('fa').textContent=item.fa; $('trans').textContent=item.translit;
+  const s=$('sadFace'); s.style.display='block'; setTimeout(()=>s.classList.add('fade-out'),700); setTimeout(()=>{s.classList.remove('fade-out'); s.style.display='none';},1500);
+});
 
 $('openAchievements').addEventListener('click', ()=>{ reflectBadges(); $('achModal').style.display='grid'; });
 $('closeAch').addEventListener('click', ()=> $('achModal').style.display='none');
@@ -936,7 +971,13 @@ $('quickSia').addEventListener('click', ()=>{
 })();
 
 /* Start overlay fallback */
-function startAs(m){ mode=m; ensureOrder(); $('startOverlay').style.display='none'; showItem(); }
+function startAs(m){
+  mode=m;
+  resetSessionProgress();   // start with 0% for chosen mode
+  ensureOrder();
+  $('startOverlay').style.display='none';
+  showItem();
+}
 ['startLearn','startQuiz'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
 $('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); });
 
