@@ -712,6 +712,7 @@ function showItem(){
 
   $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
+  $('hintBtn').style.display = 'none'; // ADDED: hide hint button in all modes
 
   $('typeInput').value='';
   maybeFocusInput();
