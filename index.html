@@ -73,6 +73,10 @@
     height:clamp(260px, 45vh, 380px);
   }
 
+  /* Rewards panel */
+  .shop-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .muted{color:#94a3b8}
+
   /* Heavy blur for profile/start overlays */
   #profileOverlay,#startOverlay{
     background:
@@ -198,13 +202,37 @@
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <h3 style="margin:0">🗺️ Persian Bazaar Progress</h3>
-      <button id="closeMap" class="btn">Close</button>
+      <div class="shop-row">
+        <button id="openShop" class="btn accent" title="Redeem cat rewards">💠 Redeem</button>
+        <button id="closeMap" class="btn">Close</button>
+      </div>
     </div>
     <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile. Lots of cats live here 🐈.</p>
 
     <div class="map-wrap" id="mapWrap">
       <div id="mapGrid" class="map"></div>
       <div id="catLayer" class="cat-layer"></div>
+    </div>
+
+    <!-- Cat Rewards panel (toggles from Redeem button) -->
+    <div id="shopPanel" class="stat" style="display:none; margin-top:10px">
+      <div class="shop-row" style="justify-content:space-between">
+        <div class="muted">Score: <b id="shopScore">0</b> • Fish: <b id="shopFish">0</b></div>
+        <div class="shop-row">
+          <button id="buyFishBtn" class="btn">🐟 Buy Fish (30)</button>
+          <button id="feedFishBtn" class="btn">🍽️ Feed Cats</button>
+          <button id="toggleNameArea" class="btn">📝 Name a Cat (100)</button>
+        </div>
+      </div>
+      <div id="nameArea" style="display:none; margin-top:8px">
+        <div class="shop-row">
+          <select id="catSelect" class="btn"></select>
+          <input id="catNameInput" class="input" placeholder="Enter a cute name…" style="max-width:260px"/>
+          <button id="confirmNameBtn" class="primary">Save Name</button>
+          <span class="tiny muted">Costs 100 points.</span>
+        </div>
+      </div>
+      <div id="shopMsg" class="feedback"></div>
     </div>
   </div>
 </div>
@@ -304,6 +332,10 @@ const store = {
 const DAILY_WORDS = 5;
 const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
 const MINI_QUIZ_SIZE = 5;
+
+/* Cat shop pricing */
+const FISH_COST = 30;
+const NAME_COST = 100;
 
 /* Example sentences shown in Sentence Practice modal */
 const SENTENCES = [
@@ -455,7 +487,9 @@ const defaultState = ()=>({
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
   mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
   settings:{reviewAll:false},
-  theme:'default'
+  theme:'default',
+  inventory:{fish:0},
+  catNames:{} // {0:"Mishi", 1:"…"}
 });
 let state = defaultState();
 let mode='learn', order=[], idx=0;
@@ -497,8 +531,14 @@ function quizPool(){ const due=dueIndices(); if(due.length) return due; const m=
 function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return [...due,...rest]; }
 
 /* ===================== PERSIST ===================== */
-function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); populateThemeDropdown(); }
-function loadState(){ state = store.get('state', defaultState()); initDailyUnlock(); applyTheme(state.theme||'default'); }
+function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); populateThemeDropdown(); updateShopUI(); }
+function loadState(){
+  state = store.get('state', defaultState());
+  // backfill new fields if coming from an older save
+  if(!state.inventory) state.inventory = {fish:0};
+  if(!state.catNames) state.catNames = {};
+  initDailyUnlock(); applyTheme(state.theme||'default');
+}
 
 /* ======== SHARED NICOLE SYNC ======== */
 const SYNC_ENDPOINT = "https://ff-sync.9rmcqs6hjc.workers.dev";
@@ -508,10 +548,12 @@ const SYNC_WRITE_TOKEN = "Gravity123!!";
 function mergeStates(local, remote){
   if(!remote || !remote.updated_at) return local;
   const newer = (local.updated_at||0) >= (remote.updated_at||0) ? local : remote;
-  const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]);
-  newer.covered = [...cov];
+  const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]); newer.covered = [...cov];
   newer.score = Math.max(local.score||0, remote.score||0);
   newer.streak = (newer===local ? local.streak : remote.streak) || 0;
+  // merge cat data & inventory
+  newer.inventory = {fish: (local.inventory?.fish||0) + (remote.inventory?.fish||0)}; // additive merge
+  newer.catNames = {...remote.catNames, ...local.catNames};
   return newer;
 }
 async function syncPullNicole(){
@@ -545,7 +587,6 @@ function updateBadges(){
   $('scoreBadge').textContent = `Score: ${state.score}`;
   $('streakBadge').textContent = `Streak: ${state.streak} 🔥`;
   $('unlockedBadge').textContent = `${unlockedCount()}/${words.length} unlocked`;
-  // Progress bar is session-based; updated separately:
   updateSessionBar();
 }
 function showImageOrEmoji(item){
@@ -724,6 +765,8 @@ const CAT_EMOJIS = ['🐈','🐈‍⬛','🐱'];
 let cats = [];
 let catAnim = { running:false, lastTs:0, bounds:null };
 
+function getCatName(i){ return state.catNames && state.catNames[i] ? state.catNames[i] : `Cat ${i+1}`; }
+
 function spawnCats(count){
   const layer = $('catLayer'); if(!layer) return;
   layer.innerHTML = '';
@@ -735,6 +778,7 @@ function spawnCats(count){
     const el = document.createElement('div');
     el.className = 'cat';
     el.textContent = CAT_EMOJIS[i % CAT_EMOJIS.length];
+    el.title = getCatName(i);
     layer.appendChild(el);
 
     const speed = 30 + Math.random()*50; // px/sec
@@ -745,7 +789,7 @@ function spawnCats(count){
     const x = Math.random()*(catAnim.bounds.w-40);
     const y = Math.random()*(catAnim.bounds.h-40);
 
-    cats.push({ el, x, y, vx, vy, speed, nextTurn: performance.now()+800+Math.random()*1600 });
+    cats.push({ el, x, y, vx, vy, speed, idx:i, nextTurn: performance.now()+800+Math.random()*1600 });
     el.style.left = x + 'px';
     el.style.top  = y + 'px';
     if(vx<0) el.classList.add('flip');
@@ -762,6 +806,8 @@ function stepCats(ts){
     if(ts > c.nextTurn){
       const dTheta = (Math.random()-0.5) * (Math.PI/3);
       const angle = Math.atan2(c.vy, c.vx) + dTheta;
+      const sp = Math.max(20, Math.min(90, c.speed + (Math.random()-0.5)*20));
+      c.speed = sp;
       c.vx = Math.cos(angle)*c.speed;
       c.vy = Math.sin(angle)*c.speed;
       c.nextTurn = ts + 800 + Math.random()*1600;
@@ -807,6 +853,23 @@ function onResizeCats(){
     c.x = Math.max(6, Math.min(c.x, catAnim.bounds.w-40-6));
     c.y = Math.max(6, Math.min(c.y, catAnim.bounds.h-40-6));
   }
+}
+/* Feeding boost */
+function boostCatsFor(ms, factor=1.6){
+  for(const c of cats){
+    const angle = Math.atan2(c.vy, c.vx);
+    c.speed *= factor;
+    c.vx = Math.cos(angle)*c.speed;
+    c.vy = Math.sin(angle)*c.speed;
+  }
+  setTimeout(()=>{
+    for(const c of cats){
+      const angle = Math.atan2(c.vy, c.vx);
+      c.speed /= factor;
+      c.vx = Math.cos(angle)*c.speed;
+      c.vy = Math.sin(angle)*c.speed;
+    }
+  }, ms);
 }
 
 /* ===================== SENTENCE PRACTICE ===================== */
@@ -883,7 +946,7 @@ $('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); })
 function startMode(newMode){
   endMiniQuiz();
   mode = newMode;
-  resetSessionProgress();    // << reset per-mode progress bar
+  resetSessionProgress();    // per-mode progress bar
   ensureOrder();
   showItem();
 }
@@ -909,8 +972,79 @@ $('openMap').addEventListener('click', ()=>{
   renderMap();
   $('mapModal').style.display='grid';
   requestAnimationFrame(startCats); // will no-op if 0 cats
+  updateShopUI();
 });
 $('closeMap').addEventListener('click', ()=>{ $('mapModal').style.display='none'; stopCats(); });
+
+/* --------- Cat Rewards (Shop) --------- */
+function updateShopUI(){
+  const scoreEl=$('shopScore'), fishEl=$('shopFish');
+  if(scoreEl) scoreEl.textContent = state.score;
+  if(fishEl) fishEl.textContent = state.inventory?.fish || 0;
+
+  const buyBtn=$('buyFishBtn'), feedBtn=$('feedFishBtn'), nameBtn=$('toggleNameArea');
+  if(buyBtn) buyBtn.disabled = state.score < FISH_COST;
+  if(feedBtn) feedBtn.disabled = (state.inventory?.fish||0) <= 0;
+  if(nameBtn) nameBtn.disabled = state.score < NAME_COST || (state.mapUnlocked||0) === 0;
+
+  const sel=$('catSelect');
+  if(sel){
+    const n = state.mapUnlocked||0;
+    sel.innerHTML='';
+    for(let i=0;i<n;i++){
+      const opt=document.createElement('option');
+      opt.value=String(i);
+      opt.textContent = `${i+1}: ${getCatName(i)}`;
+      sel.appendChild(opt);
+    }
+  }
+
+  // refresh tooltips on roaming cats
+  if(cats && cats.length){
+    cats.forEach(c => { c.el.title = getCatName(c.idx); });
+  }
+}
+$('openShop').addEventListener('click', ()=>{
+  const panel = $('shopPanel');
+  panel.style.display = panel.style.display==='none' ? 'block' : 'none';
+  updateShopUI();
+});
+$('buyFishBtn').addEventListener('click', ()=>{
+  if(state.score < FISH_COST) return;
+  state.score -= FISH_COST;
+  state.inventory.fish = (state.inventory.fish||0) + 1;
+  $('shopMsg').textContent = 'Bought 1 fish! 🐟';
+  $('shopMsg').className='feedback ok';
+  persist();
+});
+$('feedFishBtn').addEventListener('click', ()=>{
+  if((state.inventory.fish||0) <= 0) return;
+  state.inventory.fish -= 1;
+  $('shopMsg').textContent = 'Fed the cats! They’re zooming 😺💨';
+  $('shopMsg').className='feedback ok';
+  confetti({origin:{x:0.2,y:1},particleCount:60,spread:70,startVelocity:45});
+  confetti({origin:{x:0.8,y:1},particleCount:60,spread:70,startVelocity:45});
+  boostCatsFor(3500,1.6);
+  persist();
+});
+$('toggleNameArea').addEventListener('click', ()=>{
+  const area=$('nameArea');
+  area.style.display = area.style.display==='none' ? 'block' : 'none';
+  updateShopUI();
+});
+$('confirmNameBtn').addEventListener('click', ()=>{
+  const idx = parseInt(($('catSelect').value||'0'),10);
+  const name = String(($('catNameInput').value||'').trim());
+  if(!name){ $('shopMsg').textContent='Enter a name first.'; $('shopMsg').className='feedback warn'; return; }
+  if(state.score < NAME_COST){ $('shopMsg').textContent='Not enough points to name a cat.'; $('shopMsg').className='feedback warn'; return; }
+  state.score -= NAME_COST;
+  if(!state.catNames) state.catNames = {};
+  state.catNames[idx] = name;
+  $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`;
+  $('shopMsg').className='feedback ok';
+  $('catNameInput').value='';
+  persist();
+});
 
 /* Settings etc */
 $('openSettings').addEventListener('click', ()=>{ 
