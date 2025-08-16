@@ -377,6 +377,9 @@ const MINI_QUIZ_SIZE = 5;
 const FISH_COST = 100;
 const NAME_COST = 500;
 
+/* === NEW: Cats unlock when learned words reach these thresholds === */
+const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
+
 /* Example sentences shown in Sentence Practice modal */
 const SENTENCES = [
   { fa:"من آب می‌نوشم.", translit:"man âb minusham.", en:"I drink water." },
@@ -495,6 +498,12 @@ function scheduleAfter(i,h){ ensureSRS(i).due = now()+h*3600*1000; }
 function getCoveredSet(){ return new Set(state.covered||[]); }
 function addCovered(i){ const s=getCoveredSet(); s.add(i); state.covered=[...s]; persist(); }
 
+/* ===== NEW: compute cats from learned-word milestones ===== */
+function computeCatsUnlocked(){
+  const learned = learnedCount();
+  return CAT_UNLOCK_THRESHOLDS.filter(t => learned >= t).length;
+}
+
 function initDailyUnlock(){
   if(!state.start_date){ state.start_date=todayISO(); }
   const startDate = new Date(state.start_date+'T00:00:00');
@@ -512,7 +521,12 @@ function quizPool(){ const due=dueIndices(); if(due.length) return due; const m=
 function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return [...due,...rest]; }
 
 /* ===================== PERSIST ===================== */
-function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); populateThemeDropdown(); updateShopUI(); }
+function persist(){
+  /* NEW: keep cats in sync with learned milestones */
+  state.mapUnlocked = computeCatsUnlocked();
+  store.set('state', state);
+  reflectBadges(); updateBadges(); renderMap(); populateThemeDropdown(); updateShopUI();
+}
 function loadState(){
   state = store.get('state', defaultState());
   if(!state.inventory) state.inventory = {fish:0, nameTokens:0};
@@ -520,6 +534,8 @@ function loadState(){
   if(!state.achievements) state.achievements = defaultState().achievements;
   state.achFx = state.achFx || {}; // NEW
   initDailyUnlock(); applyTheme(state.theme||'default');
+  /* NEW: initialize cats from learned milestones on load */
+  state.mapUnlocked = computeCatsUnlocked();
 }
 
 /* ======== SHARED NICOLE SYNC ======== */
@@ -583,7 +599,7 @@ function reflectBadges(){
   const defs = [
     {key:'first10',     label:'First 10 mastered',  ico:'🥇'},
     {key:'perfectMini', label:'Perfect Mini Quiz',  ico:'🎯'},
-    {key:'streak7',     label:'7‑day streak',       ico:'🏅'},
+    {key:'streak7',     label:'7-day streak',       ico:'🏅'},
     {key:'mastered50',  label:'50 mastered',        ico:'💪'}
   ];
   const box = $('achList');
@@ -924,8 +940,10 @@ function checkDailyGoalAndMap(){
   todayRec.correct++;
   if(!todayRec.goalMet && todayRec.correct>=DAILY_WORDS){
     todayRec.goalMet=true;
-    state.mapUnlocked = Math.min((state.mapUnlocked||0)+1, 12);
-    confetti({origin:{y:1,x:Math.random()},particleCount:60,spread:70,startVelocity:45,scalar:1.1});
+    /* REMOVED: daily goal no longer increments cats. Cats now unlock by learned-word milestones. */
+    if(window.confetti){
+      confetti({origin:{y:1,x:Math.random()},particleCount:60,spread:70,startVelocity:45,scalar:1.1});
+    }
   }
   state.mapDays = days;
   persist();
