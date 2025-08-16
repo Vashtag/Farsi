@@ -956,9 +956,11 @@ function renderMap(){
   const wrap = $('mapGrid'), layer=$('catLayer'), container=$('mapWrap');
   if(!wrap || !layer || !container) return;
 
-const catCount = getCatUnlockCount();
+  const catCount = getCatUnlockCount();          // milestone cats
+  const tileCount = state.mapUnlocked || 0;      // daily tiles (existing)
 
-if((state.mapUnlocked||0) <= 0 && catCount <= 0){
+  if (tileCount <= 0 && catCount <= 0){
+    // nothing unlocked yet — show grid with placeholders
     container.classList.remove('arena');
     wrap.style.display='grid';
     layer.style.display='none';
@@ -970,7 +972,8 @@ if((state.mapUnlocked||0) <= 0 && catCount <= 0){
       t.textContent='?';
       wrap.appendChild(t);
     }
-  }else{
+  } else {
+    // show arena + roaming cats layer
     wrap.style.display='none';
     wrap.innerHTML='';
     container.classList.add('arena');
