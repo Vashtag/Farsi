@@ -156,6 +156,29 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   50%{box-shadow:0 0 22px 6px rgba(56,189,248,.25)}
   100%{box-shadow:0 0 0px 0 rgba(56,189,248,.0)}
 }
+
+/* ====== NEW: Night Owl Twinkles (10s on open, 22:00–02:00) ====== */
+.twinkle-overlay{
+  position:fixed; inset:0; pointer-events:none; z-index:1; opacity:1;
+}
+.tw-star{
+  position:absolute;
+  color:rgba(255,255,255,.9);
+  font-size:8px;
+  opacity:0;
+  animation:twPulse 1.8s ease-in-out infinite;
+  filter:drop-shadow(0 0 6px rgba(255,255,255,.35));
+  will-change: opacity;
+}
+@keyframes twPulse{
+  0%{opacity:0}
+  35%{opacity:1}
+  70%{opacity:.15}
+  100%{opacity:0}
+}
+@media (prefers-reduced-motion: reduce){
+  .tw-star{animation:none; opacity:.35}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
@@ -1444,6 +1467,41 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
       setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},1800);
     }
   });
+})();
+
+/* ========== NEW: Night Owl Twinkles (22:00–02:00, 10s) ========== */
+(function nightOwlTwinkles(){
+  try{
+    const hr = new Date().getHours();
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // 22:00–23:59 OR 00:00–01:59 local time
+    if(reduce || !(hr>=22 || hr<2)) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'twinkleOverlay';
+    overlay.className = 'twinkle-overlay';
+    document.body.appendChild(overlay);
+
+    const count = Math.max(40, Math.min(100, Math.round((window.innerWidth*window.innerHeight)/30000)));
+    for(let i=0;i<count;i++){
+      const s = document.createElement('span');
+      s.className = 'tw-star';
+      s.textContent = (Math.random()<0.5) ? '✦' : '✧';
+      s.style.left = (Math.random()*100) + 'vw';
+      s.style.top  = (Math.random()*100) + 'vh';
+      s.style.fontSize = (6 + Math.random()*8) + 'px';
+      s.style.animationDuration = (1.2 + Math.random()*2.2) + 's';
+      s.style.animationDelay = (Math.random()*2) + 's';
+      overlay.appendChild(s);
+    }
+
+    // Fade out after 10s, then remove
+    setTimeout(()=>{
+      overlay.style.transition = 'opacity .6s ease';
+      overlay.style.opacity = '0';
+      setTimeout(()=> overlay.remove(), 650);
+    }, 10000);
+  }catch{}
 })();
 
 /* Init */
