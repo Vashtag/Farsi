@@ -146,40 +146,28 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   100%{ transform:translateY(0) scale(1); opacity:0; }
 }
 
-/* ====== NEW: Weekend Aura (Sat/Sun) ====== */
-.map-wrap.weekend{
-  /* was: animation: weekendGlow 3.5s ease-in-out infinite; */
-  animation: weekendGlow 5s ease-in-out 1 forwards; /* 5s then settle */
+/* ====== Night Sky Twinkles (10pm–2am; persistent while in window) ====== */
+.night-sky{
+  position:fixed; inset:0; pointer-events:none;
+  z-index:1; /* below header(5)/modals(10)/cat-layer(2), above body bg */
+  mix-blend-mode:screen; /* stars brighten dark areas subtly */
 }
-@keyframes weekendGlow{
-  0%  { box-shadow:0 0 0px 0 rgba(56,189,248,.0) }
-  20% { box-shadow:0 0 14px 4px rgba(56,189,248,.18) }
-  50% { box-shadow:0 0 22px 6px rgba(56,189,248,.25) }
-  80% { box-shadow:0 0 14px 4px rgba(56,189,248,.18) }
-  100%{ box-shadow:0 0 0px 0 rgba(56,189,248,.0) } /* fade away */
-}
-
-/* ====== NEW: Night Owl Twinkles (10s on open, 22:00–02:00) ====== */
-.twinkle-overlay{
-  position:fixed; inset:0; pointer-events:none; z-index:1; opacity:1;
-}
-.tw-star{
+.night-star{
   position:absolute;
-  color:rgba(255,255,255,.9);
-  font-size:8px;
+  width:2px; height:2px; border-radius:50%;
+  background: radial-gradient(circle, rgba(255,255,255,.95), rgba(255,255,255,0) 60%);
   opacity:0;
-  animation:twPulse 1.8s ease-in-out infinite;
-  filter:drop-shadow(0 0 6px rgba(255,255,255,.35));
-  will-change: opacity;
+  animation: starTwinkle var(--dur,2.2s) ease-in-out var(--delay,0s) infinite alternate;
+  filter: drop-shadow(0 0 6px rgba(255,255,255,.35));
+  will-change: opacity, transform;
 }
-@keyframes twPulse{
-  0%{opacity:0}
-  35%{opacity:1}
-  70%{opacity:.15}
-  100%{opacity:0}
+@keyframes starTwinkle{
+  0%{ opacity:.05; transform: scale(.9) }
+  50%{ opacity:.9;  transform: scale(1.1) }
+  100%{ opacity:.15; transform: scale(.9) }
 }
 @media (prefers-reduced-motion: reduce){
-  .tw-star{animation:none; opacity:.35}
+  .night-star{ animation: none; opacity:.25 }
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
@@ -421,9 +409,9 @@ const NAME_COST = 500;
 const CATNIP_COST = 250;
 const CATNIP_DURATION_MS = 180000;    // 3 minutes
 const CATNIP_SPEED_FACTOR = 3.0;      // faster than fish boost (2.3)
-const CATNIP_TURN_FACTOR = 0.45;      // more frequent turns (smaller = more turns)
+const CATNIP_TURN_FACTOR = 0.45;      // more frequent turns
 
-/* Cats unlock when learned-word milestones reached */
+/* Cats unlock at learned-word milestones */
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
 
 /* Example sentences */
@@ -1439,31 +1427,7 @@ function showItem(){
 }
 function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
-/* ========== NEW: Weekend Aura (5s only, re-triggers on Bazaar open) ========== */
-(function weekendAura(){
-  try{
-    const isWeekend = [0,6].includes(new Date().getDay()); // 0=Sun, 6=Sat
-    if(!isWeekend) return;
-
-    function triggerWeekendAura(){
-      const mw = $('mapWrap'); if(!mw) return;
-      // Restart the CSS animation reliably:
-      mw.classList.remove('weekend');
-      void mw.offsetWidth; // reflow to reset animation
-      mw.classList.add('weekend');
-      // After ~5s (plus a small buffer), remove the class entirely:
-      setTimeout(()=> mw.classList.remove('weekend'), 5200);
-    }
-
-    // Run once on page load:
-    triggerWeekendAura();
-
-    // Also re-run whenever the Bazaar is opened (so Nicole always sees it):
-    $('openMap')?.addEventListener('click', triggerWeekendAura);
-  }catch{}
-})();
-
-/* ========== NEW: Header Easter‑Tap (7 taps → toggle Night Bazaar theme) ========== */
+/* ========== Header Easter‑Tap (7 taps → toggle Night Bazaar theme) ========== */
 (function headerEasterTap(){
   const h = document.querySelector('header h1'); if(!h) return;
   let taps = [];
@@ -1484,38 +1448,68 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
   });
 })();
 
-/* ========== NEW: Night Owl Twinkles (22:00–02:00, 10s) ========== */
-(function nightOwlTwinkles(){
+/* ========== Night Sky Background (22:00–02:00, persistent) ========== */
+(function nightSkyBackground(){
   try{
-    const hr = new Date().getHours();
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // 22:00–23:59 OR 00:00–01:59 local time
-    if(reduce || !(hr>=22 || hr<2)) return;
+    let sky = null;
 
-    const overlay = document.createElement('div');
-    overlay.id = 'twinkleOverlay';
-    overlay.className = 'twinkle-overlay';
-    document.body.appendChild(overlay);
-
-    const count = Math.max(40, Math.min(100, Math.round((window.innerWidth*window.innerHeight)/30000)));
-    for(let i=0;i<count;i++){
-      const s = document.createElement('span');
-      s.className = 'tw-star';
-      s.textContent = (Math.random()<0.5) ? '✦' : '✧';
-      s.style.left = (Math.random()*100) + 'vw';
-      s.style.top  = (Math.random()*100) + 'vh';
-      s.style.fontSize = (6 + Math.random()*8) + 'px';
-      s.style.animationDuration = (1.2 + Math.random()*2.2) + 's';
-      s.style.animationDelay = (Math.random()*2) + 's';
-      overlay.appendChild(s);
+    function inWindow(){
+      const h = new Date().getHours();
+      return (h>=22 || h<2); // 10pm–2am local
     }
 
-    // Fade out after 10s, then remove
-    setTimeout(()=>{
-      overlay.style.transition = 'opacity .6s ease';
-      overlay.style.opacity = '0';
-      setTimeout(()=> overlay.remove(), 650);
-    }, 10000);
+    function createSky(){
+      if(sky) return;
+      sky = document.createElement('div');
+      sky.id = 'nightSky';
+      sky.className = 'night-sky';
+      document.body.appendChild(sky);
+
+      // Density scales with viewport area (bounded).
+      const area = Math.max(1, window.innerWidth * window.innerHeight);
+      const count = Math.max(90, Math.min(240, Math.round(area / 8000)));
+
+      for(let i=0;i<count;i++){
+        const s = document.createElement('span');
+        s.className = 'night-star';
+        // random position anchored to viewport
+        s.style.left = (Math.random()*100).toFixed(2) + 'vw';
+        s.style.top  = (Math.random()*100).toFixed(2) + 'vh';
+        // subtle size variance
+        const size = (Math.random()<0.78 ? (1 + Math.random()*1.4) : (2 + Math.random()*2.2));
+        s.style.width = size + 'px';
+        s.style.height = size + 'px';
+        // varied twinkle timing
+        const dur = (1.2 + Math.random()*3.6).toFixed(2) + 's';
+        const delay = (Math.random()*3).toFixed(2) + 's';
+        s.style.setProperty('--dur', dur);
+        s.style.setProperty('--delay', delay);
+        if(reduce){ s.style.opacity = '.25'; }
+        sky.appendChild(s);
+      }
+    }
+
+    function destroySky(){
+      if(!sky) return;
+      sky.remove();
+      sky = null;
+    }
+
+    function tick(){ inWindow() ? createSky() : destroySky(); }
+
+    // Initial check, then re-check every minute to handle crossing midnight
+    tick();
+    setInterval(tick, 60000);
+
+    // Optional: if the user changes motion preference live
+    if(window.matchMedia){
+      try{
+        const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+        mq.addEventListener?.('change', tick);
+      }catch{}
+    }
+    // Stars use vw/vh so they adapt on resize without regen.
   }catch{}
 })();
 
