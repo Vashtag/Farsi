@@ -378,19 +378,19 @@ const MINI_QUIZ_SIZE = 5;
 /* Cat unlock milestones (by total words learned) */
 const CAT_WORD_THRESHOLDS = [5, 20, 50, 100, 250, 500];
 
-function catsUnlocked(){
+function getCatUnlockCount(){
   const learned = learnedCount();
   return CAT_WORD_THRESHOLDS.filter(t => learned >= t).length;
 }
 
-function nextCatNote(){
+function getNextCatNote(){
   const learned = learnedCount();
   const next = CAT_WORD_THRESHOLDS.find(t => learned < t);
   if(!next){
     return `All cats unlocked! 🎉 (You: ${learned} words)`;
   }
   const remaining = next - learned;
-  return `Next cat unlocks at <b>${next}</b> words — only <b>${remaining}</b> more to go! (You: ${learned})`;
+  return `Next cat unlocks at <b>${next}</b> words — only <b>${remaining}</b> to go! (You: ${learned})`;
 }
 
 /* Cat shop pricing */
@@ -688,7 +688,7 @@ function stepCats(ts){
 }
 
 function startCats(){
-  const count = Math.max(0, catsUnlocked());
+  const count = Math.max(0, getCatUnlockCount());
   if(count<=0){ stopCats(); return; }
   spawnCats(count);
   catAnim.running = true;
@@ -956,9 +956,9 @@ function renderMap(){
   const wrap = $('mapGrid'), layer=$('catLayer'), container=$('mapWrap');
   if(!wrap || !layer || !container) return;
 
-const catsUnlocked = catsUnlocked();
+const catCount = getCatUnlockCount();
 
-  if(catsUnlocked<=0){
+if((state.mapUnlocked||0) <= 0 && catCount <= 0){
     container.classList.remove('arena');
     wrap.style.display='grid';
     layer.style.display='none';
@@ -1038,7 +1038,7 @@ function updateShopUI(){
   const scoreEl=$('shopScore'), fishEl=$('shopFish');
   if(scoreEl) scoreEl.textContent = state.score;
   if(fishEl) fishEl.textContent = state.inventory?.fish || 0;
-  const note = $('catNote'); if(note) note.innerHTML = nextCatNote();
+  const catNoteEl = $('catNote'); if (catNoteEl) catNoteEl.innerHTML = getNextCatNote();
 
   const buyBtn=$('buyFishBtn'), feedBtn=$('feedFishBtn'), nameBtn=$('toggleNameArea');
   if(buyBtn){
@@ -1050,13 +1050,13 @@ function updateShopUI(){
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){
     nameBtn.textContent = hasToken ? `📝 Name a Cat (${state.inventory.nameTokens} ready)` : `📝 Name a Cat (${NAME_COST})`;
-    nameBtn.disabled = !hasToken && (state.score < NAME_COST || catsUnlocked() === 0);
+    nameBtn.disabled = !hasToken && (state.score < NAME_COST || getCatUnlockCount() === 0);
   }
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
 
 const sel=$('catSelect');
 if(sel){
-  const n = catsUnlocked();
+  const n = getCatUnlockCount();
   sel.innerHTML='';
   for(let i=0;i<n;i++){
     const opt=document.createElement('option');
