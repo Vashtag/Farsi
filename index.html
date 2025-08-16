@@ -131,6 +131,16 @@
     40%{ transform:translateY(0) scale(1.2); opacity:1; }
     100%{ transform:translateY(0) scale(1); opacity:0; }
   }
+
+  /* === NEW: Catnip bounce/roll animation === */
+  @keyframes catnipBounce {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    20% { transform: translateY(-10px) rotate(-12deg); }
+    40% { transform: translateY(0) rotate(12deg); }
+    60% { transform: translateY(-6px) rotate(-8deg); }
+    80% { transform: translateY(0) rotate(8deg); }
+  }
+  .cat.catnip{ animation: catnipBounce 0.8s infinite ease-in-out; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
@@ -247,7 +257,7 @@
         <button id="closeMap" class="btn">Close</button>
       </div>
     </div>
-    <p class="tiny">Lots of cats live here 🐈. Cats are unlocked at 5, 20, 100, 250, 500. </p>
+    <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile. Lots of cats live here 🐈.</p>
 
     <div class="map-wrap" id="mapWrap">
       <div id="mapGrid" class="map"></div>
@@ -261,6 +271,8 @@
         <div class="shop-row">
           <button id="buyFishBtn" class="btn">🐟 Buy Fish (100)</button>
           <button id="feedFishBtn" class="btn">🍽️ Feed Cats</button>
+          <!-- === NEW: Catnip button === -->
+          <button id="catnipBtn" class="btn">🌿 Catnip (300)</button>
           <button id="toggleNameArea" class="btn">📝 Name a Cat (500)</button>
         </div>
       </div>
@@ -376,6 +388,9 @@ const MINI_QUIZ_SIZE = 5;
 /* Cat shop pricing */
 const FISH_COST = 100;
 const NAME_COST = 500;
+/* === NEW: Catnip pricing & duration === */
+const CATNIP_COST = 300;
+const CATNIP_DURATION = 180000; // 3 minutes
 
 /* === NEW: Cats unlock when learned words reach these thresholds === */
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
@@ -458,7 +473,7 @@ function now(){return Date.now()}
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
 function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'').trim()}
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
-function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+function shuffle(a){ for(let i=a.length-1;i>0;i++){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
 
 /* Mobile detection for input focus */
 const isMobile = () => window.matchMedia('(max-width:700px)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -940,7 +955,7 @@ function checkDailyGoalAndMap(){
   todayRec.correct++;
   if(!todayRec.goalMet && todayRec.correct>=DAILY_WORDS){
     todayRec.goalMet=true;
-    /* REMOVED: daily goal no longer increments cats. Cats now unlock by learned-word milestones. */
+    /* Cats no longer increment from daily goal; milestones handle it. */
     if(window.confetti){
       confetti({origin:{y:1,x:Math.random()},particleCount:60,spread:70,startVelocity:45,scalar:1.1});
     }
@@ -1036,12 +1051,17 @@ function updateShopUI(){
   if(scoreEl) scoreEl.textContent = state.score;
   if(fishEl) fishEl.textContent = state.inventory?.fish || 0;
 
-  const buyBtn=$('buyFishBtn'), feedBtn=$('feedFishBtn'), nameBtn=$('toggleNameArea');
+  const buyBtn=$('buyFishBtn'), feedBtn=$('feedFishBtn'), nameBtn=$('toggleNameArea'), catnipBtn=$('catnipBtn');
   if(buyBtn){
     buyBtn.textContent = `🐟 Buy Fish (${FISH_COST})`;
     buyBtn.disabled = state.score < FISH_COST;
   }
   if(feedBtn) feedBtn.disabled = (state.inventory?.fish||0) <= 0;
+
+  if(catnipBtn){
+    catnipBtn.textContent = `🌿 Catnip (${CATNIP_COST})`;
+    catnipBtn.disabled = state.score < CATNIP_COST || (state.mapUnlocked||0)===0;
+  }
 
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){
@@ -1097,6 +1117,56 @@ $('feedFishBtn').addEventListener('click', ()=>{
 
   persist();
 });
+
+/* === NEW: Catnip vendor click === */
+$('catnipBtn').addEventListener('click', ()=>{
+  if(state.score < CATNIP_COST) return;
+  if((state.mapUnlocked||0) === 0){
+    $('shopMsg').textContent = 'Unlock a cat first!';
+    $('shopMsg').className = 'feedback warn';
+    return;
+  }
+
+  state.score -= CATNIP_COST;
+  $('shopMsg').textContent = 'The cats go wild on catnip! 🌿😹';
+  $('shopMsg').className = 'feedback ok';
+
+  // Visual celebration
+  if(window.confetti){
+    confetti({origin:{x:0.25,y:1},particleCount:80,spread:80,startVelocity:55,scalar:1});
+    confetti({origin:{x:0.75,y:1},particleCount:80,spread:80,startVelocity:55,scalar:1});
+  }
+
+  // Apply strong speed boost + rolling/bouncing animation
+  const factor = 3.5; // faster than fish
+  cats.forEach(c=>{
+    c.el.classList.add('catnip');
+    const angle = Math.atan2(c.vy, c.vx);
+    c.speed *= factor;
+    c.vx = Math.cos(angle)*c.speed;
+    c.vy = Math.sin(angle)*c.speed;
+  });
+
+  // Extra hearts burst
+  burstHearts(40);
+
+  // Revert after duration
+  setTimeout(()=>{
+    cats.forEach(c=>{
+      c.el.classList.remove('catnip');
+      const angle = Math.atan2(c.vy, c.vx);
+      c.speed /= factor;
+      c.vx = Math.cos(angle)*c.speed;
+      c.vy = Math.sin(angle)*c.speed;
+    });
+    $('shopMsg').textContent = 'Catnip wore off. 💤';
+    $('shopMsg').className = 'feedback muted';
+    persist();
+  }, CATNIP_DURATION);
+
+  persist();
+});
+
 $('toggleNameArea').addEventListener('click', ()=>{
   const nCats = state.mapUnlocked||0;
   if(nCats===0){ $('shopMsg').textContent='Unlock a cat first!'; $('shopMsg').className='feedback warn'; return; }
@@ -1145,10 +1215,13 @@ $('openSettings').addEventListener('click', ()=>{
   populateThemeDropdown();
 });
 $('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
-$('settingsModal').addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
+$('settingsModal
+.addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
 
+/* Review toggle */
 $('reviewToggle').addEventListener('click', ()=>{
-  state.settings.reviewAll = !state.settings.reviewAll; persist();
+  state.settings.reviewAll = !state.settings.reviewAll; 
+  persist();
   $('reviewToggle').textContent=`Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`;
 });
 
@@ -1217,16 +1290,24 @@ document.addEventListener('click', (e)=>{
 });
 
 /* Item order & display */
-function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=pool.slice(); shuffle(order); idx=0; }
+function ensureOrder(){ 
+  const pool = (mode==='quiz')
+    ? (state.settings?.reviewAll ? masteredIndices() : quizPool())
+    : learnPool();
+  order=pool.slice(); shuffle(order); idx=0; 
+}
 function showImageOrEmoji(item){
   const pic=$('pic'), emo=$('emoji');
   if(item.image){ pic.style.display='block'; emo.style.display='none'; pic.src=item.image; pic.alt=item.en; }
   else { pic.style.display='none'; emo.style.display='block'; emo.textContent=item.emoji||'❓'; }
 }
 function showItem(){
-  const pool = (mode==='quiz')? quizPool(): learnPool();
+  const pool = (mode==='quiz')
+    ? (state.settings?.reviewAll ? masteredIndices() : quizPool())
+    : learnPool();
   if(order.length===0 || order.some(i=>!pool.includes(i))) ensureOrder();
-  const gi = order[idx % order.length]; const item = words[gi];
+  const gi = order.length ? order[idx % order.length] : 0;
+  const item = words[gi] || words[0];
 
   showImageOrEmoji(item);
   if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
@@ -1234,12 +1315,23 @@ function showItem(){
 
   $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
-  $('hintBtn').style.display = 'none'; // hide hint button in all modes
+  $('hintBtn').style.display = 'none'; // hint hidden in all modes (kept from original behavior)
 
   $('typeInput').value='';
   maybeFocusInput();
 }
 function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
+
+/* Danger zone: reset progress */
+$('resetBtn').addEventListener('click', ()=>{
+  if(!confirm('Reset all progress for this profile? This cannot be undone.')) return;
+  const keyPrefix = `${GLOBAL_PREFIX}:${ACTIVE_PROFILE||'__anon'}:`;
+  Object.keys(localStorage).forEach(k=>{ if(k.startsWith(keyPrefix)) localStorage.removeItem(k); });
+  state = defaultState();
+  persist();
+  updateBadges();
+  alert('Progress reset.');
+});
 
 /* Init */
 initSpeech();
