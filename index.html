@@ -247,8 +247,10 @@
         <button id="closeMap" class="btn">Close</button>
       </div>
     </div>
-    <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile. Lots of cats live here 🐈.</p>
-
+<p class="tiny">
+  Cats unlock by total words learned: <b>5, 20, 50, 100, 250, 500</b>.
+  <span id="catNote"></span>
+</p>
     <div class="map-wrap" id="mapWrap">
       <div id="mapGrid" class="map"></div>
       <div id="catLayer" class="cat-layer"></div>
@@ -372,6 +374,24 @@ const store = {
 const DAILY_WORDS = 5;
 const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
 const MINI_QUIZ_SIZE = 5;
+
+/* Cat unlock milestones (by total words learned) */
+const CAT_WORD_THRESHOLDS = [5, 20, 50, 100, 250, 500];
+
+function catsUnlocked(){
+  const learned = learnedCount();
+  return CAT_WORD_THRESHOLDS.filter(t => learned >= t).length;
+}
+
+function nextCatNote(){
+  const learned = learnedCount();
+  const next = CAT_WORD_THRESHOLDS.find(t => learned < t);
+  if(!next){
+    return `All cats unlocked! 🎉 (You: ${learned} words)`;
+  }
+  const remaining = next - learned;
+  return `Next cat unlocks at <b>${next}</b> words — only <b>${remaining}</b> more to go! (You: ${learned})`;
+}
 
 /* Cat shop pricing */
 const FISH_COST = 100;
@@ -668,7 +688,7 @@ function stepCats(ts){
 }
 
 function startCats(){
-  const count = Math.max(0, state.mapUnlocked || 0);
+  const count = Math.max(0, catsUnlocked());
   if(count<=0){ stopCats(); return; }
   spawnCats(count);
   catAnim.running = true;
@@ -936,7 +956,7 @@ function renderMap(){
   const wrap = $('mapGrid'), layer=$('catLayer'), container=$('mapWrap');
   if(!wrap || !layer || !container) return;
 
-  const catsUnlocked = state.mapUnlocked||0;
+const catsUnlocked = catsUnlocked();
 
   if(catsUnlocked<=0){
     container.classList.remove('arena');
@@ -1006,6 +1026,7 @@ $('closeAch').addEventListener('click', ()=> $('achModal').style.display='none')
 /* Bazaar open/close + roaming cats */
 $('openMap').addEventListener('click', ()=>{
   renderMap();
+  const note = $('catNote'); if(note) note.innerHTML = nextCatNote();
   $('mapModal').style.display='grid';
   requestAnimationFrame(startCats); // will no-op if 0 cats
   updateShopUI();
@@ -1017,6 +1038,7 @@ function updateShopUI(){
   const scoreEl=$('shopScore'), fishEl=$('shopFish');
   if(scoreEl) scoreEl.textContent = state.score;
   if(fishEl) fishEl.textContent = state.inventory?.fish || 0;
+  const note = $('catNote'); if(note) note.innerHTML = nextCatNote();
 
   const buyBtn=$('buyFishBtn'), feedBtn=$('feedFishBtn'), nameBtn=$('toggleNameArea');
   if(buyBtn){
@@ -1028,21 +1050,21 @@ function updateShopUI(){
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){
     nameBtn.textContent = hasToken ? `📝 Name a Cat (${state.inventory.nameTokens} ready)` : `📝 Name a Cat (${NAME_COST})`;
-    nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0);
+    nameBtn.disabled = !hasToken && (state.score < NAME_COST || catsUnlocked() === 0);
   }
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
 
-  const sel=$('catSelect');
-  if(sel){
-    const n = state.mapUnlocked||0;
-    sel.innerHTML='';
-    for(let i=0;i<n;i++){
-      const opt=document.createElement('option');
-      opt.value=String(i);
-      opt.textContent = `${i+1}: ${getCatName(i)}`;
-      sel.appendChild(opt);
-    }
+const sel=$('catSelect');
+if(sel){
+  const n = catsUnlocked();
+  sel.innerHTML='';
+  for(let i=0;i<n;i++){
+    const opt=document.createElement('option');
+    opt.value=String(i);
+    opt.textContent = `${i+1}: ${getCatName(i)}`;
+    sel.appendChild(opt);
   }
+}
 
   // refresh tooltips on roaming cats
   if(cats && cats.length){
