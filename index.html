@@ -247,7 +247,8 @@
         <button id="closeMap" class="btn">Close</button>
       </div>
     </div>
-    <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile. Lots of cats live here 🐈.</p>
+    <p class="tiny">Meet your daily goal (learn/check <b>at least 5 words</b>) to unlock a new bazaar tile.</p>
+    <p class="tiny" id="catMilestoneNote">Cats unlock by word milestones.</p>
 
     <div class="map-wrap" id="mapWrap">
       <div id="mapGrid" class="map"></div>
@@ -377,6 +378,9 @@ const MINI_QUIZ_SIZE = 5;
 const FISH_COST = 100;
 const NAME_COST = 500;
 
+/* >>> NEW: Cat unlock milestones by words learned <<< */
+const CAT_MILESTONES = [5, 20, 50, 100, 250, 500];
+
 /* Example sentences shown in Sentence Practice modal */
 const SENTENCES = [
   { fa:"من آب می‌نوشم.", translit:"man âb minusham.", en:"I drink water." },
@@ -448,6 +452,19 @@ function populateThemeDropdown(){
   $('themeNote').innerHTML = nextUnlockNote();
 }
 
+/* >>> NEW: Cats unlocked by milestones & helper note <<< */
+function catsUnlockedByWords(){
+  const n = learnedCount();
+  return CAT_MILESTONES.filter(m => n >= m).length;
+}
+function nextCatNote(){
+  const n = learnedCount();
+  const next = CAT_MILESTONES.find(m => n < m);
+  return next
+    ? `Cats unlock at <b>${CAT_MILESTONES.join(', ')}</b> words. Next cat at <b>${next}</b> — ${next-n} to go (You: ${n}).`
+    : `All ${CAT_MILESTONES.length} cats unlocked! 🐾 (You: ${n}).`;
+}
+
 /* ===================== UTILITIES ===================== */
 const $=id=>document.getElementById(id);
 const bySel=s=>document.querySelector(s);
@@ -455,7 +472,7 @@ function now(){return Date.now()}
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
 function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'').trim()}
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
-function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j]]} return a }
 
 /* Mobile detection for input focus */
 const isMobile = () => window.matchMedia('(max-width:700px)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -466,7 +483,7 @@ const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false},
   achFx:{},                 // NEW: remembers if a badge already sparkled
-  mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
+  mapUnlocked:0, mapDays:[], // {date, correct, goalMet}  (tiles remain daily-goal based)
   settings:{reviewAll:false},
   theme:'default',
   inventory:{fish:0, nameTokens:0},
@@ -512,7 +529,7 @@ function quizPool(){ const due=dueIndices(); if(due.length) return due; const m=
 function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return [...due,...rest]; }
 
 /* ===================== PERSIST ===================== */
-function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); populateThemeDropdown(); updateShopUI(); }
+function persist(){ store.set('state', state); reflectBadges(); updateBadges(); renderMap(); populateThemeDropdown(); updateShopUI(); updateCatMilestoneNote(); }
 function loadState(){
   state = store.get('state', defaultState());
   if(!state.inventory) state.inventory = {fish:0, nameTokens:0};
@@ -583,7 +600,7 @@ function reflectBadges(){
   const defs = [
     {key:'first10',     label:'First 10 mastered',  ico:'🥇'},
     {key:'perfectMini', label:'Perfect Mini Quiz',  ico:'🎯'},
-    {key:'streak7',     label:'7‑day streak',       ico:'🏅'},
+    {key:'streak7',     label:'7-day streak',       ico:'🏅'},
     {key:'mastered50',  label:'50 mastered',        ico:'💪'}
   ];
   const box = $('achList');
@@ -668,7 +685,8 @@ function stepCats(ts){
 }
 
 function startCats(){
-  const count = Math.max(0, state.mapUnlocked || 0);
+  /* >>> CHANGED: number of cats comes from milestones, not daily goal tiles <<< */
+  const count = Math.max(0, catsUnlockedByWords());
   if(count<=0){ stopCats(); return; }
   spawnCats(count);
   catAnim.running = true;
@@ -853,7 +871,7 @@ function initSpeech(){
   SR.maxAlternatives = 4;
 
   btn.disabled=false;
-  btn.title='Say the word in Persian (e.g., «خانه»). Speaking the transliteration also works.';
+  btn.title='Say the word in Persian (e.g., «خانه»). Speaking the transliteration also works.'';
 
   SR.onstart = ()=>{ $('speechFeedback').textContent='🎙️ Listening…'; $('speechFeedback').className='feedback tiny'; };
   SR.onerror = ()=>{ $('speechFeedback').textContent='Mic error. Try again.'; $('speechFeedback').className='feedback err'; };
@@ -896,7 +914,7 @@ function handleAnswer(correct, gi, source='typing'){
     if(source!=='speech'){ $('typeFeedback').textContent='Great! +10 points'; $('typeFeedback').className='feedback ok'; }
     celebrateSimple();
     if(state.streak===7) celebrateStreak7();
-    checkDailyGoalAndMap();
+    checkDailyGoalAndMap();       // still awards tiles by daily goal (unchanged)
     populateThemeDropdown();
 
     /* NEW: check mastery-based badges */
@@ -924,11 +942,17 @@ function checkDailyGoalAndMap(){
   todayRec.correct++;
   if(!todayRec.goalMet && todayRec.correct>=DAILY_WORDS){
     todayRec.goalMet=true;
-    state.mapUnlocked = Math.min((state.mapUnlocked||0)+1, 12);
+    state.mapUnlocked = Math.min((state.mapUnlocked||0)+1, 12); // tiles only
     confetti({origin:{y:1,x:Math.random()},particleCount:60,spread:70,startVelocity:45,scalar:1.1});
   }
   state.mapDays = days;
   persist();
+}
+
+/* >>> NEW: update note about next cat milestone <<< */
+function updateCatMilestoneNote(){
+  const el = $('catMilestoneNote');
+  if(el) el.innerHTML = nextCatNote();
 }
 
 /* ===================== MAP RENDER ===================== */
@@ -936,7 +960,8 @@ function renderMap(){
   const wrap = $('mapGrid'), layer=$('catLayer'), container=$('mapWrap');
   if(!wrap || !layer || !container) return;
 
-  const catsUnlocked = state.mapUnlocked||0;
+  /* >>> CHANGED: cats unlocked based on words learned <<< */
+  const catsUnlocked = catsUnlockedByWords();
 
   if(catsUnlocked<=0){
     container.classList.remove('arena');
@@ -1027,14 +1052,17 @@ function updateShopUI(){
 
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){
+    /* >>> CHANGED: need at least one unlocked cat by milestones <<< */
+    const canName = catsUnlockedByWords() > 0;
     nameBtn.textContent = hasToken ? `📝 Name a Cat (${state.inventory.nameTokens} ready)` : `📝 Name a Cat (${NAME_COST})`;
-    nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0);
+    nameBtn.disabled = !hasToken && (state.score < NAME_COST || !canName);
   }
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
 
   const sel=$('catSelect');
   if(sel){
-    const n = state.mapUnlocked||0;
+    /* >>> CHANGED: number of selectable cats comes from milestones <<< */
+    const n = catsUnlockedByWords();
     sel.innerHTML='';
     for(let i=0;i<n;i++){
       const opt=document.createElement('option');
@@ -1080,8 +1108,9 @@ $('feedFishBtn').addEventListener('click', ()=>{
   persist();
 });
 $('toggleNameArea').addEventListener('click', ()=>{
-  const nCats = state.mapUnlocked||0;
-  if(nCats===0){ $('shopMsg').textContent='Unlock a cat first!'; $('shopMsg').className='feedback warn'; return; }
+  /* >>> CHANGED: require at least one milestone cat <<< */
+  const nCats = catsUnlockedByWords();
+  if(nCats===0){ $('shopMsg').textContent='Unlock a cat first by learning more words!'; $('shopMsg').className='feedback warn'; return; }
 
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(!hasToken){
@@ -1225,6 +1254,12 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
 /* Init */
 initSpeech();
+
+/* >>> Ensure milestone note is shown at boot <<< */
+function onReady(){
+  updateCatMilestoneNote();
+}
+if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', onReady); } else { onReady(); }
 </script>
 </body>
 </html>
