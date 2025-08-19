@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,6 +81,11 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   100%{transform:translateY(0) rotate(360deg)}
 }
 
+/* NEW: Furniture (behind cats, fixed spots) */
+.furn-layer{position:absolute; inset:0; pointer-events:none; z-index:1; overflow:hidden}
+.furn{position:absolute; font-size:32px; filter:drop-shadow(0 6px 10px rgba(0,0,0,.35))}
+@media(min-width:760px){ .furn{font-size:40px} }
+
 /* Arena when cats are unlocked (grid hidden) */
 .map-wrap.arena{
   background:#0b1229;border:1px solid #1f2937;border-radius:12px;
@@ -150,8 +154,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 /* ====== Night Sky Twinkles (22:00–02:00; BEHIND EVERYTHING) ====== */
 .night-sky{
   position:fixed; inset:0; pointer-events:none;
-  z-index:-1;            /* behind all UI, above page background */
-  /* no blend mode: pure, subtle stars */
+  z-index:-1;
 }
 .night-star{
   position:absolute;
@@ -162,9 +165,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   filter: drop-shadow(0 0 6px rgba(255,255,255,.28));
   will-change: opacity, transform;
 }
-/* Random sparkle boost will momentarily add a second animation layer */
 .night-star.spark{
-  /* keep base twinkle + add a short sparkle */
   animation: starTwinkle var(--dur,2.2s) ease-in-out var(--delay,0s) infinite alternate,
              starSpark var(--sparkDur,.9s) ease-out 1;
 }
@@ -293,6 +294,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 
     <div class="map-wrap" id="mapWrap">
       <div id="mapGrid" class="map"></div>
+      <div id="furnLayer" class="furn-layer"></div> <!-- Furniture layer -->
       <div id="catLayer" class="cat-layer"></div>
     </div>
 
@@ -307,6 +309,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
           <button id="feedFishBtn" class="btn">🍽️ Feed Cats</button>
           <button id="buyCatnipBtn" class="btn">🌿 Buy Catnip (250)</button>
           <button id="useCatnipBtn" class="btn">🌿 Use Catnip</button>
+          <button id="buyFurnitureBtn" class="btn">🪑 Buy Furniture (—)</button>
           <button id="toggleNameArea" class="btn">📝 Name a Cat (500)</button>
         </div>
       </div>
@@ -427,6 +430,15 @@ const CATNIP_TURN_FACTOR = 0.45;      // more frequent turns
 /* Cats unlock at learned-word milestones */
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
 
+/* NEW: Furniture catalog (fixed spots & prices) */
+const FURNITURE = [
+  {key:'rug',      label:'Bazaar Rug',      emoji:'🧺', cost:300, pos:{left:'14%', top:'72%'}},
+  {key:'lamp',     label:'Hanging Lantern', emoji:'🏮', cost:400, pos:{left:'80%', top:'8%'}},
+  {key:'plant',    label:'Potted Palm',     emoji:'🪴', cost:450, pos:{left:'6%',  top:'10%'}},
+  {key:'bench',    label:'Wooden Bench',    emoji:'🪑', cost:500, pos:{left:'68%', top:'70%'}},
+  {key:'fountain', label:'Fountain',        emoji:'⛲', cost:600, pos:{left:'46%', top:'44%'}}
+];
+
 /* Example sentences */
 const SENTENCES = [
   { fa:"من آب می‌نوشم.", translit:"man âb minusham.", en:"I drink water." },
@@ -457,101 +469,101 @@ const words = [
   {fa:"متشکرم", en:"thank you", translit:"merci", emoji:"🙏", audio:"audio/merci.mp3", image:"images/merci.png"},
   {fa:"صبح بخیر", en:"good morning", translit:"sobh bekheir", emoji:"🌅", audio:"audio/sobh_bekheir.mp3", image:"images/sobh_bekheir.png"},
   {fa:"شب بخیر", en:"good night", translit:"shab bekheir", emoji:"🌙", audio:"audio/shab_bekheir.mp3", image:"images/shab_bekheir.png"},
-    {fa:"فردا", en:"tomorrow", translit:"fardâ", emoji:"📅", audio:"audio/farda.mp3", image:"images/farda.png"},
+  {fa:"فردا", en:"tomorrow", translit:"fardâ", emoji:"📅", audio:"audio/farda.mp3", image:"images/farda.png"},
   {fa:"دیروز", en:"yesterday", translit:"diruz", emoji:"📅", audio:"audio/diruz.mp3", image:"images/diruz.png"},
-{fa:"امروز", en:"today", translit:"emruz", emoji:"📅", audio:"audio/emruz.mp3", image:"images/emruz.png"},
-{fa:"کره", en:"butter", translit:"kare", emoji:"🧈", audio:"audio/kare.mp3", image:"images/kare.png"},
-{fa:"پنیر", en:"cheese", translit:"panir", emoji:"🧀", audio:"audio/panir.mp3", image:"images/panir.png"},
-{fa:"تخم مرغ", en:"egg", translit:"tokhm morgh", emoji:"🥚", audio:"audio/tokhm_morgh.mp3", image:"images/tokhm_morgh.png"},
-{fa:"گوشت", en:"meat", translit:"gusht", emoji:"🥩", audio:"audio/gusht.mp3", image:"images/gusht.png"},
-{fa:"مرغ", en:"chicken", translit:"morgh", emoji:"🍗", audio:"audio/morgh.mp3", image:"images/morgh.png"},
-{fa:"گاو", en:"cow", translit:"gâv", emoji:"🍗", audio:"audio/gav.mp3", image:"images/gav.png"},
-{fa:"ماهی", en:"fish", translit:"mâhi", emoji:"🐟", audio:"audio/mahi.mp3", image:"images/mahi.png"},
-{fa:"برنج", en:"rice", translit:"berenj", emoji:"🍚", audio:"audio/berenj.mp3", image:"images/berenj.png"},
-{fa:"شکر", en:"sugar", translit:"shekar", emoji:"🍬", audio:"audio/shekar.mp3", image:"images/shekar.png"},
-{fa:"نمک", en:"salt", translit:"namak", emoji:"🧂", audio:"audio/namak.mp3", image:"images/namak.png"},
-{fa:"فلفل", en:"pepper", translit:"felfel", emoji:"🌶️", audio:"audio/felfel.mp3", image:"images/felfel.png"},
-{fa:"لیمو", en:"lemon", translit:"limu", emoji:"🍋", audio:"audio/limu.mp3", image:"images/limu.png"},
-{fa:"پرتقال", en:"orange", translit:"porteghâl", emoji:"🍊", audio:"audio/porteghal.mp3", image:"images/porteghal.png"},
-{fa:"موز", en:"banana", translit:"moz", emoji:"🍌", audio:"audio/moz.mp3", image:"images/moz.png"},
-{fa:"هندوانه", en:"watermelon", translit:"hendune", emoji:"🍉", audio:"audio/hendune.mp3", image:"images/hendune.png"},
-{fa:"انگور", en:"grape", translit:"angur", emoji:"🍇", audio:"audio/angur.mp3", image:"images/angur.png"},
-{fa:"کیوی", en:"kiwi", translit:"kivi", emoji:"🥝", audio:"audio/kivi.mp3", image:"images/kivi.png"},
-{fa:"توت فرنگی", en:"strawberry", translit:"tut farangi", emoji:"🍓", audio:"audio/tut_farangi.mp3", image:"images/tut_farangi.png"},
-{fa:"خیار", en:"cucumber", translit:"khiâr", emoji:"🥒", audio:"audio/khiar.mp3", image:"images/khiar.png"},
-{fa:"گوجه", en:"tomato", translit:"goje", emoji:"🍅", audio:"audio/goje.mp3", image:"images/goje.png"},
-{fa:"سیب زمینی", en:"potato", translit:"sib zamini", emoji:"🥔", audio:"audio/sib_zamini.mp3", image:"images/sib_zamini.png"},
-{fa:"هویج", en:"carrot", translit:"havij", emoji:"🥕", audio:"audio/havij.mp3", image:"images/havij.png"},
-{fa:"قارچ", en:"mushroom", translit:"ghârch", emoji:"🍄", audio:"audio/gharch.mp3", image:"images/gharch.png"},
-{fa:"بادمجان", en:"eggplant", translit:"bâdemjân", emoji:"🍆", audio:"audio/bademjan.mp3", image:"images/bademjan.png"},
-{fa:"لوبیا", en:"bean", translit:"lubiâ", emoji:"🫘", audio:"audio/lubia.mp3", image:"images/lubia.png"},
-{fa:"عدس", en:"lentil", translit:"adas", emoji:"🫘", audio:"audio/adas.mp3", image:"images/adas.png"},
-{fa:"غذا", en:"food", translit:"ghazâ", emoji:"🍽️", audio:"audio/ghaza.mp3", image:"images/ghaza.png"},
-{fa:"آبمیوه", en:"juice", translit:"âb mive", emoji:"🧃", audio:"audio/ab_mive.mp3", image:"images/ab_mive.png"},
-{fa:"شیر", en:"milk", translit:"shir", emoji:"🥛", audio:"audio/shir.mp3", image:"images/shir.png"},
-{fa:"قهوه", en:"coffee", translit:"ghahve", emoji:"☕", audio:"audio/ghahve.mp3", image:"images/ghahve.png"},
-{fa:"آبجو", en:"beer", translit:"âbjo", emoji:"🍺", audio:"audio/abjo.mp3", image:"images/abjo.png"},
-{fa:"شراب", en:"wine", translit:"sharâb", emoji:"🍷", audio:"audio/sharab.mp3", image:"images/sharab.png"},
-{fa:"دوغ", en:"doogh", translit:"dugh", emoji:"🥛", audio:"audio/dugh.mp3", image:"images/dugh.png"},
-{fa:"بستنی", en:"ice cream", translit:"bastani", emoji:"🍨", audio:"audio/bastani.mp3", image:"images/bastani.png"},
-{fa:"شکلات", en:"chocolate", translit:"shokolât", emoji:"🍫", audio:"audio/shokolat.mp3", image:"images/shokolat.png"},
-{fa:"کیک", en:"cake", translit:"keyk", emoji:"🎂", audio:"audio/keyk.mp3", image:"images/keyk.png"},
-{fa:"پول نقد", en:"cash", translit:"pul naghd", emoji:"💵", audio:"audio/pul_naghd.mp3", image:"images/pul_naghd.png"},
-{fa:"کارت بانکی", en:"bank card", translit:"kârt bânki", emoji:"💳", audio:"audio/kart_banki.mp3", image:"images/kart_banki.png"},
-{fa:"هدیه", en:"gift", translit:"hedye", emoji:"🎁", audio:"audio/hedye.mp3", image:"images/hedye.png"},
-{fa:"عروسی", en:"wedding", translit:"arusi", emoji:"💒", audio:"audio/arusi.mp3", image:"images/arusi.png"},
-{fa:"تولد", en:"birthday", translit:"tavallod", emoji:"🎉", audio:"audio/tavallod.mp3", image:"images/tavallod.png"},
-{fa:"عشق", en:"love", translit:"eshgh", emoji:"❤️", audio:"audio/eshgh.mp3", image:"images/eshgh.png"},
-{fa:"دوست داشتن", en:"to like", translit:"dust dâshtan", emoji:"👍", audio:"audio/dust_dashtan.mp3", image:"images/dust_dashtan.png"},
-{fa:"رفتن", en:"to go", translit:"raftan", emoji:"🏃", audio:"audio/raftan.mp3", image:"images/raftan.png"},
-{fa:"آمدن", en:"to come", translit:"âmadan", emoji:"🚶", audio:"audio/amadan.mp3", image:"images/amadan.png"},
-{fa:"دیدن", en:"to see", translit:"didan", emoji:"👀", audio:"audio/didan.mp3", image:"images/didan.png"},
-{fa:"شنیدن", en:"to hear", translit:"shenidan", emoji:"👂", audio:"audio/shenidan.mp3", image:"images/shenidan.png"},
-{fa:"گفتن", en:"to say", translit:"goftan", emoji:"🗣️", audio:"audio/goftan.mp3", image:"images/goftan.png"},
-{fa:"خوردن", en:"to eat", translit:"khordan", emoji:"🍽️", audio:"audio/khordan.mp3", image:"images/khordan.png"},
-{fa:"آشامیدن", en:"to drink", translit:"âshâmidan", emoji:"🥤", audio:"audio/ashamidan.mp3", image:"images/ashamidan.png"},
-{fa:"خوابیدن", en:"to sleep", translit:"khâbidan", emoji:"😴", audio:"audio/khabidan.mp3", image:"images/khabidan.png"},
-{fa:"بیدار شدن", en:"to wake up", translit:"bidâr shodan", emoji:"⏰", audio:"audio/bidar_shodan.mp3", image:"images/bidar_shodan.png"},
-{fa:"کار کردن", en:"to work", translit:"kâr kardan", emoji:"💼", audio:"audio/kar_kardan.mp3", image:"images/kar_kardan.png"},
-{fa:"خواندن", en:"to read", translit:"khândan", emoji:"📖", audio:"audio/khandan.mp3", image:"images/khandan.png"},
-{fa:"نوشتن", en:"to write", translit:"neveshtan", emoji:"✍️", audio:"audio/neveshtan.mp3", image:"images/neveshtan.png"},
-{fa:"یاد گرفتن", en:"to learn", translit:"yâd gereftan", emoji:"🧠", audio:"audio/yad_gereftan.mp3", image:"images/yad_gereftan.png"},
-{fa:"درس دادن", en:"to teach", translit:"dars dâdan", emoji:"👩‍🏫", audio:"audio/dars_dadan.mp3", image:"images/dars_dadan.png"},
-{fa:"پرسیدن", en:"to ask", translit:"porsidan", emoji:"❓", audio:"audio/porsidan.mp3", image:"images/porsidan.png"},
-{fa:"پاسخ دادن", en:"to answer", translit:"pâsokh dâdan", emoji:"💬", audio:"audio/pasokh_dadan.mp3", image:"images/pasokh_dadan.png"},
-{fa:"خرید کردن", en:"to shop", translit:"kharid kardan", emoji:"🛍️", audio:"audio/kharid_kardan.mp3", image:"images/kharid_kardan.png"},
-{fa:"رانندگی کردن", en:"to drive", translit:"rânandegi kardan", emoji:"🚗", audio:"audio/ranandegi_kardan.mp3", image:"images/ranandegi_kardan.png"},
-{fa:"پیاده رفتن", en:"to walk", translit:"piâde raftan", emoji:"🚶", audio:"audio/piade_raftan.mp3", image:"images/piade_raftan.png"},
-{fa:"شنا کردن", en:"to swim", translit:"shenâ kardan", emoji:"🏊", audio:"audio/shena_kardan.mp3", image:"images/shena_kardan.png"},
-{fa:"بازی کردن", en:"to play", translit:"bâzi kardan", emoji:"🎮", audio:"audio/bazi_kardan.mp3", image:"images/bazi_kardan.png"},
-{fa:"تماشا کردن", en:"to watch", translit:"tamâshâ kardan", emoji:"📺", audio:"audio/tamasha_kardan.mp3", image:"images/tamasha_kardan.png"},
-{fa:"لبخند", en:"smile", translit:"labkhand", emoji:"😊", audio:"audio/labkhand.mp3", image:"images/labkhand.png"},
-{fa:"گریه", en:"cry", translit:"gerye", emoji:"😢", audio:"audio/gerye.mp3", image:"images/gerye.png"},
-{fa:"خنده", en:"laugh", translit:"khande", emoji:"😂", audio:"audio/khande.mp3", image:"images/khande.png"},
-{fa:"گرسنه", en:"hungry", translit:"gorsne", emoji:"🍽️", audio:"audio/gorsne.mp3", image:"images/gorsne.png"},
-{fa:"تشنه", en:"thirsty", translit:"tashne", emoji:"🥤", audio:"audio/tashne.mp3", image:"images/tashne.png"},
-{fa:"خسته", en:"tired", translit:"khasté", emoji:"😴", audio:"audio/khaste.mp3", image:"images/khaste.png"},
-{fa:"خوشحال", en:"happy", translit:"khoshhâl", emoji:"😄", audio:"audio/khoshhal.mp3", image:"images/khoshhal.png"},
-{fa:"ناراحت", en:"sad", translit:"nârâhat", emoji:"😔", audio:"audio/narahat.mp3", image:"images/narahat.png"},
-{fa:"عصبانی", en:"angry", translit:"asabâni", emoji:"😠", audio:"audio/asabani.mp3", image:"images/asabani.png"},
-{fa:"آرام", en:"calm", translit:"ârâm", emoji:"😌", audio:"audio/aram.mp3", image:"images/aram.png"},
-{fa:"بزرگ", en:"big", translit:"bozorg", emoji:"🔵", audio:"audio/bozorg.mp3", image:"images/bozorg.png"},
-{fa:"کوچک", en:"small", translit:"kuchak", emoji:"⚪", audio:"audio/kuchak.mp3", image:"images/kuchak.png"},
-{fa:"بلند", en:"tall", translit:"boland", emoji:"📏", audio:"audio/boland.mp3", image:"images/boland.png"},
-{fa:"کوتاه", en:"short", translit:"kutâh", emoji:"📏", audio:"audio/kutah.mp3", image:"images/kutah.png"},
-{fa:"گرم", en:"hot", translit:"garm", emoji:"🔥", audio:"audio/garm.mp3", image:"images/garm.png"},
-{fa:"سرد", en:"cold", translit:"sard", emoji:"❄️", audio:"audio/sard.mp3", image:"images/sard.png"},
-{fa:"روشن", en:"light", translit:"roshan", emoji:"💡", audio:"audio/roshan.mp3", image:"images/roshan.png"},
-{fa:"تاریک", en:"dark", translit:"târik", emoji:"🌑", audio:"audio/tarik.mp3", image:"images/tarik.png"},
-{fa:"سفید", en:"white", translit:"sefid", emoji:"⚪", audio:"audio/sefid.mp3", image:"images/sefid.png"},
-{fa:"سیاه", en:"black", translit:"siyâh", emoji:"⚫", audio:"audio/siyah.mp3", image:"images/siyah.png"},
-{fa:"قرمز", en:"red", translit:"ghermez", emoji:"🔴", audio:"audio/ghermez.mp3", image:"images/ghermez.png"},
-{fa:"آبی", en:"blue", translit:"âbi", emoji:"🔵", audio:"audio/abi.mp3", image:"images/abi.png"},
-{fa:"سبز", en:"green", translit:"sabz", emoji:"🟢", audio:"audio/sabz.mp3", image:"images/sabz.png"},
-{fa:"زرد", en:"yellow", translit:"zard", emoji:"🟡", audio:"audio/zard.mp3", image:"images/zard.png"},
-{fa:"بنفش", en:"purple", translit:"banafsh", emoji:"🟣", audio:"audio/banafsh.mp3", image:"images/banafsh.png"},
-{fa:"نارنجی", en:"orange (color)", translit:"nârenji", emoji:"🟠", audio:"audio/narenji.mp3", image:"images/narenji.png"},
-{fa:"صورتی", en:"pink", translit:"surati", emoji:"🌸", audio:"audio/surati.mp3", image:"images/surati.png"}
+  {fa:"امروز", en:"today", translit:"emruz", emoji:"📅", audio:"audio/emruz.mp3", image:"images/emruz.png"},
+  {fa:"کره", en:"butter", translit:"kare", emoji:"🧈", audio:"audio/kare.mp3", image:"images/kare.png"},
+  {fa:"پنیر", en:"cheese", translit:"panir", emoji:"🧀", audio:"audio/panir.mp3", image:"images/panir.png"},
+  {fa:"تخم مرغ", en:"egg", translit:"tokhm morgh", emoji:"🥚", audio:"audio/tokhm_morgh.mp3", image:"images/tokhm_morgh.png"},
+  {fa:"گوشت", en:"meat", translit:"gusht", emoji:"🥩", audio:"audio/gusht.mp3", image:"images/gusht.png"},
+  {fa:"مرغ", en:"chicken", translit:"morgh", emoji:"🍗", audio:"audio/morgh.mp3", image:"images/morgh.png"},
+  {fa:"گاو", en:"cow", translit:"gâv", emoji:"🍗", audio:"audio/gav.mp3", image:"images/gav.png"},
+  {fa:"ماهی", en:"fish", translit:"mâhi", emoji:"🐟", audio:"audio/mahi.mp3", image:"images/mahi.png"},
+  {fa:"برنج", en:"rice", translit:"berenj", emoji:"🍚", audio:"audio/berenj.mp3", image:"images/berenj.png"},
+  {fa:"شکر", en:"sugar", translit:"shekar", emoji:"🍬", audio:"audio/shekar.mp3", image:"images/shekar.png"},
+  {fa:"نمک", en:"salt", translit:"namak", emoji:"🧂", audio:"audio/namak.mp3", image:"images/namak.png"},
+  {fa:"فلفل", en:"pepper", translit:"felfel", emoji:"🌶️", audio:"audio/felfel.mp3", image:"images/felfel.png"},
+  {fa:"لیمو", en:"lemon", translit:"limu", emoji:"🍋", audio:"audio/limu.mp3", image:"images/limu.png"},
+  {fa:"پرتقال", en:"orange", translit:"porteghâl", emoji:"🍊", audio:"audio/porteghal.mp3", image:"images/porteghal.png"},
+  {fa:"موز", en:"banana", translit:"moz", emoji:"🍌", audio:"audio/moz.mp3", image:"images/moz.png"},
+  {fa:"هندوانه", en:"watermelon", translit:"hendune", emoji:"🍉", audio:"audio/hendune.mp3", image:"images/hendune.png"},
+  {fa:"انگور", en:"grape", translit:"angur", emoji:"🍇", audio:"audio/angur.mp3", image:"images/angur.png"},
+  {fa:"کیوی", en:"kiwi", translit:"kivi", emoji:"🥝", audio:"audio/kivi.mp3", image:"images/kivi.png"},
+  {fa:"توت فرنگی", en:"strawberry", translit:"tut farangi", emoji:"🍓", audio:"audio/tut_farangi.mp3", image:"images/tut_farangi.png"},
+  {fa:"خیار", en:"cucumber", translit:"khiâr", emoji:"🥒", audio:"audio/khiar.mp3", image:"images/khiar.png"},
+  {fa:"گوجه", en:"tomato", translit:"goje", emoji:"🍅", audio:"audio/goje.mp3", image:"images/goje.png"},
+  {fa:"سیب زمینی", en:"potato", translit:"sib zamini", emoji:"🥔", audio:"audio/sib_zamini.mp3", image:"images/sib_zamini.png"},
+  {fa:"هویج", en:"carrot", translit:"havij", emoji:"🥕", audio:"audio/havij.mp3", image:"images/havij.png"},
+  {fa:"قارچ", en:"mushroom", translit:"ghârch", emoji:"🍄", audio:"audio/gharch.mp3", image:"images/gharch.png"},
+  {fa:"بادمجان", en:"eggplant", translit:"bâdemjân", emoji:"🍆", audio:"audio/bademjan.mp3", image:"images/bademjan.png"},
+  {fa:"لوبیا", en:"bean", translit:"lubiâ", emoji:"🫘", audio:"audio/lubia.mp3", image:"images/lubia.png"},
+  {fa:"عدس", en:"lentil", translit:"adas", emoji:"🫘", audio:"audio/adas.mp3", image:"images/adas.png"},
+  {fa:"غذا", en:"food", translit:"ghazâ", emoji:"🍽️", audio:"audio/ghaza.mp3", image:"images/ghaza.png"},
+  {fa:"آبمیوه", en:"juice", translit:"âb mive", emoji:"🧃", audio:"audio/ab_mive.mp3", image:"images/ab_mive.png"},
+  {fa:"شیر", en:"milk", translit:"shir", emoji:"🥛", audio:"audio/shir.mp3", image:"images/shir.png"},
+  {fa:"قهوه", en:"coffee", translit:"ghahve", emoji:"☕", audio:"audio/ghahve.mp3", image:"images/ghahve.png"},
+  {fa:"آبجو", en:"beer", translit:"âbjo", emoji:"🍺", audio:"audio/abjo.mp3", image:"images/abjo.png"},
+  {fa:"شراب", en:"wine", translit:"sharâb", emoji:"🍷", audio:"audio/sharab.mp3", image:"images/sharab.png"},
+  {fa:"دوغ", en:"doogh", translit:"dugh", emoji:"🥛", audio:"audio/dugh.mp3", image:"images/dugh.png"},
+  {fa:"بستنی", en:"ice cream", translit:"bastani", emoji:"🍨", audio:"audio/bastani.mp3", image:"images/bastani.png"},
+  {fa:"شکلات", en:"chocolate", translit:"shokolât", emoji:"🍫", audio:"audio/shokolat.mp3", image:"images/shokolat.png"},
+  {fa:"کیک", en:"cake", translit:"keyk", emoji:"🎂", audio:"audio/keyk.mp3", image:"images/keyk.png"},
+  {fa:"پول نقد", en:"cash", translit:"pul naghd", emoji:"💵", audio:"audio/pul_naghd.mp3", image:"images/pul_naghd.png"},
+  {fa:"کارت بانکی", en:"bank card", translit:"kârt bânki", emoji:"💳", audio:"audio/kart_banki.mp3", image:"images/kart_banki.png"},
+  {fa:"هدیه", en:"gift", translit:"hedye", emoji:"🎁", audio:"audio/hedye.mp3", image:"images/hedye.png"},
+  {fa:"عروسی", en:"wedding", translit:"arusi", emoji:"💒", audio:"audio/arusi.mp3", image:"images/arusi.png"},
+  {fa:"تولد", en:"birthday", translit:"tavallod", emoji:"🎉", audio:"audio/tavallod.mp3", image:"images/tavallod.png"},
+  {fa:"عشق", en:"love", translit:"eshgh", emoji:"❤️", audio:"audio/eshgh.mp3", image:"images/eshgh.png"},
+  {fa:"دوست داشتن", en:"to like", translit:"dust dâshtan", emoji:"👍", audio:"audio/dust_dashtan.mp3", image:"images/dust_dashtan.png"},
+  {fa:"رفتن", en:"to go", translit:"raftan", emoji:"🏃", audio:"audio/raftan.mp3", image:"images/raftan.png"},
+  {fa:"آمدن", en:"to come", translit:"âmadan", emoji:"🚶", audio:"audio/amadan.mp3", image:"images/amadan.png"},
+  {fa:"دیدن", en:"to see", translit:"didan", emoji:"👀", audio:"audio/didan.mp3", image:"images/didan.png"},
+  {fa:"شنیدن", en:"to hear", translit:"shenidan", emoji:"👂", audio:"audio/shenidan.mp3", image:"images/shenidan.png"},
+  {fa:"گفتن", en:"to say", translit:"goftan", emoji:"🗣️", audio:"audio/goftan.mp3", image:"images/goftan.png"},
+  {fa:"خوردن", en:"to eat", translit:"khordan", emoji:"🍽️", audio:"audio/khordan.mp3", image:"images/khordan.png"},
+  {fa:"آشامیدن", en:"to drink", translit:"âshâmidan", emoji:"🥤", audio:"audio/ashamidan.mp3", image:"images/ashamidan.png"},
+  {fa:"خوابیدن", en:"to sleep", translit:"khâbidan", emoji:"😴", audio:"audio/khabidan.mp3", image:"images/khabidan.png"},
+  {fa:"بیدار شدن", en:"to wake up", translit:"bidâr shodan", emoji:"⏰", audio:"audio/bidar_shodan.mp3", image:"images/bidar_shodan.png"},
+  {fa:"کار کردن", en:"to work", translit:"kâr kardan", emoji:"💼", audio:"audio/kar_kardan.mp3", image:"images/kar_kardan.png"},
+  {fa:"خواندن", en:"to read", translit:"khândan", emoji:"📖", audio:"audio/khandan.mp3", image:"images/khandan.png"},
+  {fa:"نوشتن", en:"to write", translit:"neveshtan", emoji:"✍️", audio:"audio/neveshtan.mp3", image:"images/neveshtan.png"},
+  {fa:"یاد گرفتن", en:"to learn", translit:"yâd gereftan", emoji:"🧠", audio:"audio/yad_gereftan.mp3", image:"images/yad_gereftan.png"},
+  {fa:"درس دادن", en:"to teach", translit:"dars dâdan", emoji:"👩‍🏫", audio:"audio/dars_dadan.mp3", image:"images/dars_dadan.png"},
+  {fa:"پرسیدن", en:"to ask", translit:"porsidan", emoji:"❓", audio:"audio/porsidan.mp3", image:"images/porsidan.png"},
+  {fa:"پاسخ دادن", en:"to answer", translit:"pâsokh dâdan", emoji:"💬", audio:"audio/pasokh_dadan.mp3", image:"images/pasokh_dadan.png"},
+  {fa:"خرید کردن", en:"to shop", translit:"kharid kardan", emoji:"🛍️", audio:"audio/kharid_kardan.mp3", image:"images/kharid_kardan.png"},
+  {fa:"رانندگی کردن", en:"to drive", translit:"rânandegi kardan", emoji:"🚗", audio:"audio/ranandegi_kardan.mp3", image:"images/ranandegi_kardan.png"},
+  {fa:"پیاده رفتن", en:"to walk", translit:"piâde raftan", emoji:"🚶", audio:"audio/piade_raftan.mp3", image:"images/piade_raftan.png"},
+  {fa:"شنا کردن", en:"to swim", translit:"shenâ kardan", emoji:"🏊", audio:"audio/shena_kardan.mp3", image:"images/shena_kardan.png"},
+  {fa:"بازی کردن", en:"to play", translit:"bâzi kardan", emoji:"🎮", audio:"audio/bazi_kardan.mp3", image:"images/bazi_kardan.png"},
+  {fa:"تماشا کردن", en:"to watch", translit:"tamâshâ kardan", emoji:"📺", audio:"audio/tamasha_kardan.mp3", image:"images/tamasha_kardan.png"},
+  {fa:"لبخند", en:"smile", translit:"labkhand", emoji:"😊", audio:"audio/labkhand.mp3", image:"images/labkhand.png"},
+  {fa:"گریه", en:"cry", translit:"gerye", emoji:"😢", audio:"audio/gerye.mp3", image:"images/gerye.png"},
+  {fa:"خنده", en:"laugh", translit:"khande", emoji:"😂", audio:"audio/khande.mp3", image:"images/khande.png"},
+  {fa:"گرسنه", en:"hungry", translit:"gorsne", emoji:"🍽️", audio:"audio/gorsne.mp3", image:"images/gorsne.png"},
+  {fa:"تشنه", en:"thirsty", translit:"tashne", emoji:"🥤", audio:"audio/tashne.mp3", image:"images/tashne.png"},
+  {fa:"خسته", en:"tired", translit:"khasté", emoji:"😴", audio:"audio/khaste.mp3", image:"images/khaste.png"},
+  {fa:"خوشحال", en:"happy", translit:"khoshhâl", emoji:"😄", audio:"audio/khoshhal.mp3", image:"images/khoshhal.png"},
+  {fa:"ناراحت", en:"sad", translit:"nârâhat", emoji:"😔", audio:"audio/narahat.mp3", image:"images/narahat.png"},
+  {fa:"عصبانی", en:"angry", translit:"asabâni", emoji:"😠", audio:"audio/asabani.mp3", image:"images/asabani.png"},
+  {fa:"آرام", en:"calm", translit:"ârâm", emoji:"😌", audio:"audio/aram.mp3", image:"images/aram.png"},
+  {fa:"بزرگ", en:"big", translit:"bozorg", emoji:"🔵", audio:"audio/bozorg.mp3", image:"images/bozorg.png"},
+  {fa:"کوچک", en:"small", translit:"kuchak", emoji:"⚪", audio:"audio/kuchak.mp3", image:"images/kuchak.png"},
+  {fa:"بلند", en:"tall", translit:"boland", emoji:"📏", audio:"audio/boland.mp3", image:"images/boland.png"},
+  {fa:"کوتاه", en:"short", translit:"kutâh", emoji:"📏", audio:"audio/kutah.mp3", image:"images/kutah.png"},
+  {fa:"گرم", en:"hot", translit:"garm", emoji:"🔥", audio:"audio/garm.mp3", image:"images/garm.png"},
+  {fa:"سرد", en:"cold", translit:"sard", emoji:"❄️", audio:"audio/sard.mp3", image:"images/sard.png"},
+  {fa:"روشن", en:"light", translit:"roshan", emoji:"💡", audio:"audio/roshan.mp3", image:"images/roshan.png"},
+  {fa:"تاریک", en:"dark", translit:"târik", emoji:"🌑", audio:"audio/tarik.mp3", image:"images/tarik.png"},
+  {fa:"سفید", en:"white", translit:"sefid", emoji:"⚪", audio:"audio/sefid.mp3", image:"images/sefid.png"},
+  {fa:"سیاه", en:"black", translit:"siyâh", emoji:"⚫", audio:"audio/siyah.mp3", image:"images/siyah.png"},
+  {fa:"قرمز", en:"red", translit:"ghermez", emoji:"🔴", audio:"audio/ghermez.mp3", image:"images/ghermez.png"},
+  {fa:"آبی", en:"blue", translit:"âbi", emoji:"🔵", audio:"audio/abi.mp3", image:"images/abi.png"},
+  {fa:"سبز", en:"green", translit:"sabz", emoji:"🟢", audio:"audio/sabz.mp3", image:"images/sabz.png"},
+  {fa:"زرد", en:"yellow", translit:"zard", emoji:"🟡", audio:"audio/zard.mp3", image:"images/zard.png"},
+  {fa:"بنفش", en:"purple", translit:"banafsh", emoji:"🟣", audio:"audio/banafsh.mp3", image:"images/banafsh.png"},
+  {fa:"نارنجی", en:"orange (color)", translit:"nârenji", emoji:"🟠", audio:"audio/narenji.mp3", image:"images/narenji.png"},
+  {fa:"صورتی", en:"pink", translit:"surati", emoji:"🌸", audio:"audio/surati.mp3", image:"images/surati.png"}
 ];
 
 /* ===================== THEMES ===================== */
@@ -613,7 +625,8 @@ const defaultState = ()=>({
   settings:{reviewAll:false},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
-  catNames:{} // {0:"Mishi", 1:"…"}
+  catNames:{}, // {0:"Mishi", 1:"…"}
+  furniture:[]          // NEW
 });
 let state = defaultState();
 
@@ -657,6 +670,7 @@ function persist(){
   reflectBadges();
   updateBadges();
   renderMap();
+  renderFurniture();             // NEW
   populateThemeDropdown();
   updateShopUI();
 }
@@ -667,6 +681,7 @@ function loadState(){
   if(state.inventory.catnip===undefined) state.inventory.catnip=0;
   if(state.inventory.nameTokens===undefined) state.inventory.nameTokens=0;
   if(!state.catNames) state.catNames = {};
+  if(!state.furniture) state.furniture = []; // NEW
   if(!state.achievements) state.achievements = defaultState().achievements;
   state.achFx = state.achFx || {};
   initDailyUnlock();
@@ -693,6 +708,9 @@ function mergeStates(local, remote){
   newer.catNames = {...remote.catNames, ...local.catNames};
   newer.achievements = {...local.achievements, ...remote.achievements};
   newer.achFx = {...local.achFx, ...remote.achFx};
+  // furniture is additive
+  const furn = new Set([...(local.furniture||[]), ...(remote.furniture||[])]);
+  newer.furniture = [...furn];
   return newer;
 }
 async function syncPullNicole(){
@@ -1120,21 +1138,50 @@ function checkDailyGoalAndMap(){
   persist();
 }
 
-/* ===================== MAP RENDER ===================== */
+/* ===================== MAP & FURNITURE RENDER ===================== */
 function renderMap(){
-  const wrap = $('mapGrid'), layer=$('catLayer'), container=$('mapWrap');
+  const wrap = $('mapGrid'), layer=$('catLayer'), furn=$('furnLayer'), container=$('mapWrap');
   if(!wrap || !layer || !container) return;
   const catsUnlocked = state.mapUnlocked||0;
   if(catsUnlocked<=0){
     container.classList.remove('arena');
     wrap.style.display='grid'; layer.style.display='none';
+    if(furn) furn.style.display='none';
     wrap.innerHTML='';
     const tiles=12;
     for(let i=0;i<tiles;i++){ const t=document.createElement('div'); t.className='tile'; t.textContent='?'; wrap.appendChild(t); }
   }else{
     wrap.style.display='none'; wrap.innerHTML='';
     container.classList.add('arena'); layer.style.display='block';
+    if(furn) furn.style.display='block';
   }
+}
+
+/* NEW ===== Furniture helpers ===== */
+function nextFurniture(){
+  return FURNITURE.find(f => !(state.furniture||[]).includes(f.key));
+}
+function renderFurniture(){
+  const layer = $('furnLayer');
+  if(!layer) return;
+  layer.innerHTML = '';
+
+  const catsUnlocked = state.mapUnlocked || 0;
+  if(catsUnlocked <= 0){ layer.style.display='none'; return; }
+  layer.style.display = 'block';
+
+  const owned = new Set(state.furniture || []);
+  FURNITURE.forEach(f=>{
+    if(owned.has(f.key)){
+      const el = document.createElement('div');
+      el.className = 'furn';
+      el.textContent = f.emoji;
+      el.title = f.label;
+      el.style.left = f.pos.left;
+      el.style.top  = f.pos.top;
+      layer.appendChild(el);
+    }
+  });
 }
 
 /* ===================== CATNIP PARTY (🌿) ===================== */
@@ -1227,7 +1274,7 @@ $('revealBtn').addEventListener('click', ()=>{ const gi=order[idx], item=words[g
 $('openAchievements').addEventListener('click', ()=>{ reflectBadges(); $('achModal').style.display='grid'; });
 $('closeAch').addEventListener('click', ()=> $('achModal').style.display='none');
 
-$('openMap').addEventListener('click', ()=>{ renderMap(); $('mapModal').style.display='grid'; requestAnimationFrame(startCats); updateShopUI(); });
+$('openMap').addEventListener('click', ()=>{ renderMap(); renderFurniture(); $('mapModal').style.display='grid'; requestAnimationFrame(startCats); updateShopUI(); });
 $('closeMap').addEventListener('click', ()=>{ $('mapModal').style.display='none'; stopCats(); });
 
 /* Shop UI */
@@ -1237,7 +1284,7 @@ function updateShopUI(){
   if(fishEl) fishEl.textContent = state.inventory?.fish || 0;
   if(nipEl) nipEl.textContent = state.inventory?.catnip || 0;
 
-  const buyBtn=$('buyFishBtn'), feedBtn=$('feedFishBtn'), nameBtn=$('toggleNameArea');
+  const buyBtn=$('buyFishBtn'), feedBtn=$('feedFishBtn');
   if(buyBtn){ buyBtn.textContent = `🐟 Buy Fish (${FISH_COST})`; buyBtn.disabled = state.score < FISH_COST; }
   if(feedBtn) feedBtn.disabled = (state.inventory?.fish||0) <= 0;
 
@@ -1245,12 +1292,27 @@ function updateShopUI(){
   if(buyN){ buyN.textContent = `🌿 Buy Catnip (${CATNIP_COST})`; buyN.disabled = state.score < CATNIP_COST; }
   updateCatnipCountdownUI();
 
-  const hasToken = (state.inventory?.nameTokens||0) > 0;
+  /* Always show price, never “ready” */
+  const nameBtn=$('toggleNameArea');
+  const hasNameToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){
-    nameBtn.textContent = hasToken ? `📝 Name a Cat (${state.inventory.nameTokens} ready)` : `📝 Name a Cat (${NAME_COST})`;
-    nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0);
+    nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`;
+    nameBtn.disabled = (state.mapUnlocked||0) === 0 || (!hasNameToken && state.score < NAME_COST);
   }
-  if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
+  if($('nameCostNote')) $('nameCostNote').style.display = hasNameToken ? 'none' : 'inline';
+
+  /* Furniture button */
+  const furnBtn = $('buyFurnitureBtn');
+  if(furnBtn){
+    const nxt = nextFurniture();
+    if(nxt){
+      furnBtn.textContent = `🪑 Buy Furniture (${nxt.cost})`;
+      furnBtn.disabled = state.score < nxt.cost || (state.mapUnlocked||0) === 0;
+    }else{
+      furnBtn.textContent = '🪑 Furniture (all unlocked)';
+      furnBtn.disabled = true;
+    }
+  }
 
   const sel=$('catSelect');
   if(sel){
@@ -1312,6 +1374,32 @@ $('useCatnipBtn').addEventListener('click', ()=>{
   burstLeaves(40);
   startCatnipParty(CATNIP_DURATION_MS);
   persist();
+});
+
+/* Furniture purchase */
+$('buyFurnitureBtn').addEventListener('click', ()=>{
+  const nxt = nextFurniture();
+  if(!nxt){
+    $('shopMsg').textContent = 'All furniture is already unlocked.';
+    $('shopMsg').className = 'feedback ok';
+    return;
+  }
+  if((state.mapUnlocked||0) === 0){
+    $('shopMsg').textContent = 'Unlock a cat first to open the Bazaar.';
+    $('shopMsg').className = 'feedback warn';
+    return;
+  }
+  if(state.score < nxt.cost){
+    $('shopMsg').textContent = 'Not enough points for furniture.';
+    $('shopMsg').className = 'feedback warn';
+    return;
+  }
+  state.score -= nxt.cost;
+  if(!state.furniture) state.furniture = [];
+  state.furniture.push(nxt.key);
+  $('shopMsg').textContent = `Unlocked ${nxt.label}! It will stay in your bazaar.`;
+  $('shopMsg').className = 'feedback ok';
+  persist(); // re-render furniture + UI
 });
 
 $('toggleNameArea').addEventListener('click', ()=>{
@@ -1461,7 +1549,7 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
   });
 })();
 
-/* ========== Night Sky Background (22:00–02:00, BEHIND UI, random sparkles) ========== */
+/* ========== Night Sky Background (22:00–02:00) ========== */
 (function nightSkyBackground(){
   try{
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1480,7 +1568,6 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
       sky.className = 'night-sky';
       document.body.appendChild(sky);
 
-      // Density scales with viewport area (bounded).
       const area = Math.max(1, window.innerWidth * window.innerHeight);
       const count = Math.max(90, Math.min(240, Math.round(area / 8000)));
 
@@ -1515,22 +1602,18 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
       sparkTimer = setInterval(()=>{
         const arr = stars();
         if(!arr.length) return;
-        // Randomly choose 1–3 stars to sparkle at different intensities/times
         const picks = Math.max(1, Math.floor(Math.random()*3)+1);
         for(let i=0;i<picks;i++){
           const s = arr[Math.floor(Math.random()*arr.length)];
           if(!s) continue;
-          // Re-trigger spark by toggling the class
           s.classList.remove('spark');
-          // Randomize sparkle duration a bit each time
           const dur = (0.6 + Math.random()*1.0).toFixed(2) + 's';
           s.style.setProperty('--sparkDur', dur);
-          void s.offsetWidth; // reflow
+          void s.offsetWidth;
           s.classList.add('spark');
-          // Clean up spark class after it runs once
           setTimeout(()=> s && s.classList && s.classList.remove('spark'), 1400);
         }
-      }, 850 + Math.floor(Math.random()*600)); // slightly irregular cadence
+      }, 850 + Math.floor(Math.random()*600));
     }
 
     function stopSparkEngine(){
@@ -1539,18 +1622,15 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
     function tick(){ inWindow() ? createSky() : destroySky(); }
 
-    // Initial check, then re-check every minute to handle crossing midnight
     tick();
     setInterval(tick, 60000);
 
-    // Adapt if user toggles reduced motion live
     if(window.matchMedia){
       try{
         const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
         mq.addEventListener?.('change', ()=>{ if(mq.matches){ stopSparkEngine(); } else if(sky){ startSparkEngine(); } });
       }catch{}
     }
-    // Stars use vw/vh so they adapt on resize without regen.
   }catch{}
 })();
 
