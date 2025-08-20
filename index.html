@@ -62,6 +62,13 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .map{display:grid;grid-template-columns:repeat(4, minmax(60px,1fr));gap:8px;position:relative;z-index:1}
 .tile{aspect-ratio:1/1;background:#0b1229;border:1px dashed #334155;border-radius:10px;display:grid;place-items:center;font-size:28px;color:#334155}
 
+/* Furniture (always-on visuals once purchased) */
+.furniture{
+  position:absolute; top:8px; left:8px;
+  width:92px; height:auto; z-index:1; pointer-events:none;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
+}
+
 /* roaming cats overlay */
 .cat-layer{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
 .cat{position:absolute;font-size:32px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));will-change:transform,left,top}
@@ -147,8 +154,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 /* ====== Night Sky Twinkles (22:00–02:00; BEHIND EVERYTHING) ====== */
 .night-sky{
   position:fixed; inset:0; pointer-events:none;
-  z-index:-1;            /* behind all UI, above page background */
-  /* no blend mode: pure, subtle stars */
+  z-index:-1;
 }
 .night-star{
   position:absolute;
@@ -160,7 +166,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   will-change: opacity, transform;
 }
 .night-star.spark{
-  /* keep base twinkle + add a short sparkle */
   animation: starTwinkle var(--dur,2.2s) ease-in-out var(--delay,0s) infinite alternate,
              starSpark var(--sparkDur,.9s) ease-out 1;
 }
@@ -304,6 +309,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
           <button id="buyCatnipBtn" class="btn">🌿 Buy Catnip (250)</button>
           <button id="useCatnipBtn" class="btn">🌿 Use Catnip</button>
           <button id="toggleNameArea" class="btn">📝 Name a Cat (500)</button>
+          <button id="buyFurnitureBtn" class="btn">🪑 Buy Furniture (400)</button>
         </div>
       </div>
 
@@ -417,8 +423,12 @@ const NAME_COST = 500;
 /* Catnip pricing & effect */
 const CATNIP_COST = 250;
 const CATNIP_DURATION_MS = 180000;    // 3 minutes
-const CATNIP_SPEED_FACTOR = 3.0;      // faster than fish boost (2.3)
-const CATNIP_TURN_FACTOR = 0.45;      // more frequent turns
+const CATNIP_SPEED_FACTOR = 3.0;
+const CATNIP_TURN_FACTOR = 0.45;
+
+/* Furniture */
+const FURNITURE_COST = 400;
+const CAT_TREE_IMG = 'images/cat_tree.png';
 
 /* Cats unlock at learned-word milestones */
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
@@ -546,7 +556,7 @@ const words = [
 {fa:"سبز", en:"green", translit:"sabz", emoji:"🟢", audio:"audio/sabz.mp3", image:"images/sabz.png"},
 {fa:"زرد", en:"yellow", translit:"zard", emoji:"🟡", audio:"audio/zard.mp3", image:"images/zard.png"},
 {fa:"بنفش", en:"purple", translit:"banafsh", emoji:"🟣", audio:"audio/banafsh.mp3", image:"images/banafsh.png"},
-{fa:"نارنجی", en:"orange (color)", translit:"nârenji", emoji:"🟠", audio:"audio/narenji.mp3", image:"images/narenji.png"},
+{fa:"نارنجی", en:"orange (color)", translit:"نârenji", emoji:"🟠", audio:"audio/narenji.mp3", image:"images/narenji.png"},
 {fa:"صورتی", en:"pink", translit:"surati", emoji:"🌸", audio:"audio/surati.mp3", image:"images/surati.png"}
 ];
 
@@ -605,16 +615,16 @@ function maybeFocusInput(){ if(!isMobile()) $('typeInput').focus(); }
 const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false}, achFx:{},
-  mapUnlocked:0, mapDays:[], // {date, correct, goalMet}
+  mapUnlocked:0, mapDays:[],
   settings:{reviewAll:false},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
-  catNames:{} // {0:"Mishi", 1:"…"}
+  furniture:{catTree:false},        // NEW: persistent furniture
+  catNames:{}
 });
 let state = defaultState();
 
 let mode='learn', order=[], idx=0;
-/* ===== Session progress ===== */
 let sessionTotal = 0;
 let sessionAnswered = new Set();
 function resetSessionProgress(){ sessionTotal = unlockedCount(); sessionAnswered = new Set(); updateSessionBar(); }
@@ -653,6 +663,7 @@ function persist(){
   reflectBadges();
   updateBadges();
   renderMap();
+  renderFurniture();            // NEW: keep furniture drawn
   populateThemeDropdown();
   updateShopUI();
 }
@@ -662,6 +673,7 @@ function loadState(){
   if(state.inventory.fish===undefined) state.inventory.fish=0;
   if(state.inventory.catnip===undefined) state.inventory.catnip=0;
   if(state.inventory.nameTokens===undefined) state.inventory.nameTokens=0;
+  if(!state.furniture) state.furniture = {catTree:false};    // ensure field exists
   if(!state.catNames) state.catNames = {};
   if(!state.achievements) state.achievements = defaultState().achievements;
   state.achFx = state.achFx || {};
@@ -689,6 +701,8 @@ function mergeStates(local, remote){
   newer.catNames = {...remote.catNames, ...local.catNames};
   newer.achievements = {...local.achievements, ...remote.achievements};
   newer.achFx = {...local.achFx, ...remote.achFx};
+  // Keep furniture if either side has it
+  newer.furniture = {catTree: !!(local.furniture?.catTree || remote.furniture?.catTree)};
   return newer;
 }
 async function syncPullNicole(){
@@ -797,7 +811,7 @@ function spawnCats(count){
 
 function stepCats(ts){
   if(!catAnim.running) return;
-  const dt = Math.min(0.04, (ts - catAnim.lastTs)/1000); // seconds
+  const dt = Math.min(0.04, (ts - catAnim.lastTs)/1000);
   catAnim.lastTs = ts;
   const B = catAnim.bounds;
   for(const c of cats){
@@ -1116,7 +1130,7 @@ function checkDailyGoalAndMap(){
   persist();
 }
 
-/* ===================== MAP RENDER ===================== */
+/* ===================== MAP & FURNITURE RENDER ===================== */
 function renderMap(){
   const wrap = $('mapGrid'), layer=$('catLayer'), container=$('mapWrap');
   if(!wrap || !layer || !container) return;
@@ -1130,6 +1144,25 @@ function renderMap(){
   }else{
     wrap.style.display='none'; wrap.innerHTML='';
     container.classList.add('arena'); layer.style.display='block';
+  }
+  renderFurniture();   // ensure furniture displays in either layout
+}
+
+/* NEW: draw/remove the cat tree as a permanent fixture */
+function renderFurniture(){
+  const container = $('mapWrap');
+  if(!container) return;
+  let el = $('furnCatTree');
+  const owned = !!(state.furniture?.catTree);
+  if(owned && !el){
+    el = document.createElement('img');
+    el.id = 'furnCatTree';
+    el.className = 'furniture';
+    el.src = CAT_TREE_IMG;
+    el.alt = 'Cat Tree';
+    container.appendChild(el);
+  }else if(!owned && el){
+    el.remove();
   }
 }
 
@@ -1233,7 +1266,7 @@ function updateShopUI(){
   if(fishEl) fishEl.textContent = state.inventory?.fish || 0;
   if(nipEl) nipEl.textContent = state.inventory?.catnip || 0;
 
-  const buyBtn=$('buyFishBtn'), feedBtn=$('feedFishBtn'), nameBtn=$('toggleNameArea');
+  const buyBtn=$('buyFishBtn'), feedBtn=$('feedFishBtn'), nameBtn=$('toggleNameArea'), furnBtn=$('buyFurnitureBtn');
   if(buyBtn){ buyBtn.textContent = `🐟 Buy Fish (${FISH_COST})`; buyBtn.disabled = state.score < FISH_COST; }
   if(feedBtn) feedBtn.disabled = (state.inventory?.fish||0) <= 0;
 
@@ -1243,11 +1276,18 @@ function updateShopUI(){
 
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){
-    /* === FIX: always show price; do NOT display token counts in the label === */
+    /* Fixed: always show price; no "ready" count in label */
     nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`;
     nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0);
   }
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
+
+  /* Furniture button state */
+  if(furnBtn){
+    const owned = !!(state.furniture?.catTree);
+    furnBtn.textContent = owned ? '🪑 Cat Tree — Owned' : `🪑 Buy Furniture (${FURNITURE_COST})`;
+    furnBtn.disabled = owned || state.score < FURNITURE_COST;
+  }
 
   const sel=$('catSelect');
   if(sel){
@@ -1311,6 +1351,7 @@ $('useCatnipBtn').addEventListener('click', ()=>{
   persist();
 });
 
+/* Name-a-cat flow (unchanged logic; fixed label above) */
 $('toggleNameArea').addEventListener('click', ()=>{
   const nCats = state.mapUnlocked||0;
   if(nCats===0){ $('shopMsg').textContent='Unlock a cat first!'; $('shopMsg').className='feedback warn'; return; }
@@ -1326,7 +1367,6 @@ $('toggleNameArea').addEventListener('click', ()=>{
   $('nameArea').style.display='block';
   updateShopUI();
 });
-
 $('confirmNameBtn').addEventListener('click', ()=>{
   const idx = parseInt(($('catSelect').value||'0'),10);
   const name = String(($('catNameInput').value||'').trim());
@@ -1339,6 +1379,29 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   $('shopMsg').className='feedback ok';
   $('catNameInput').value='';
   $('nameArea').style.display='none';
+  persist();
+});
+
+/* NEW: Buy Furniture (Cat Tree) */
+$('buyFurnitureBtn').addEventListener('click', ()=>{
+  if(state.furniture?.catTree){
+    $('shopMsg').textContent='Cat Tree already owned.';
+    $('shopMsg').className='feedback tiny';
+    return;
+  }
+  if(state.score < FURNITURE_COST){
+    $('shopMsg').textContent='Not enough points for the Cat Tree.';
+    $('shopMsg').className='feedback warn';
+    return;
+  }
+  state.score -= FURNITURE_COST;
+  state.furniture = state.furniture || {};
+  state.furniture.catTree = true;
+  $('shopMsg').textContent='Cat Tree placed! The cats are thrilled. 🐈🌳';
+  $('shopMsg').className='feedback ok';
+  if(window.confetti){
+    confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55});
+  }
   persist();
 });
 
@@ -1441,7 +1504,7 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 (function headerEasterTap(){
   const h = document.querySelector('header h1'); if(!h) return;
   let taps = [];
-  const LIMIT_MS = 10000; // 10 seconds window
+  const LIMIT_MS = 10000;
   h.addEventListener('click', ()=>{
     const t = Date.now();
     taps = taps.filter(x=> t - x < LIMIT_MS);
@@ -1458,7 +1521,7 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
   });
 })();
 
-/* ========== Night Sky Background (22:00–02:00, BEHIND UI, random sparkles) ========== */
+/* ========== Night Sky Background ========== */
 (function nightSkyBackground(){
   try{
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1467,7 +1530,7 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
     function inWindow(){
       const h = new Date().getHours();
-      return (h>=22 || h<2); // 10pm–2am local
+      return (h>=22 || h<2);
     }
 
     function createSky(){
@@ -1477,7 +1540,6 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
       sky.className = 'night-sky';
       document.body.appendChild(sky);
 
-      // Density scales with viewport area (bounded).
       const area = Math.max(1, window.innerWidth * window.innerHeight);
       const count = Math.max(90, Math.min(240, Math.round(area / 8000)));
 
@@ -1512,22 +1574,18 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
       sparkTimer = setInterval(()=>{
         const arr = stars();
         if(!arr.length) return;
-        // Randomly choose 1–3 stars to sparkle at different intensities/times
         const picks = Math.max(1, Math.floor(Math.random()*3)+1);
         for(let i=0;i<picks;i++){
           const s = arr[Math.floor(Math.random()*arr.length)];
           if(!s) continue;
-          // Re-trigger spark by toggling the class
           s.classList.remove('spark');
-          // Randomize sparkle duration a bit each time
           const dur = (0.6 + Math.random()*1.0).toFixed(2) + 's';
           s.style.setProperty('--sparkDur', dur);
-          void s.offsetWidth; // reflow
+          void s.offsetWidth;
           s.classList.add('spark');
-          // Clean up spark class after it runs once
           setTimeout(()=> s && s.classList && s.classList.remove('spark'), 1400);
         }
-      }, 850 + Math.floor(Math.random()*600)); // slightly irregular cadence
+      }, 850 + Math.floor(Math.random()*600));
     }
 
     function stopSparkEngine(){
@@ -1536,18 +1594,15 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
     function tick(){ inWindow() ? createSky() : destroySky(); }
 
-    // Initial check, then re-check every minute to handle crossing midnight
     tick();
     setInterval(tick, 60000);
 
-    // Adapt if user toggles reduced motion live
     if(window.matchMedia){
       try{
         const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
         mq.addEventListener?.('change', ()=>{ if(mq.matches){ stopSparkEngine(); } else if(sky){ startSparkEngine(); } });
       }catch{}
     }
-    // Stars use vw/vh so they adapt on resize without regen.
   }catch{}
 })();
 
