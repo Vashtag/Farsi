@@ -75,6 +75,14 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .cat.flip{transform:scaleX(-1)}
 @media(min-width:760px){ .cat{font-size:40px} }
 
+/* Cat name label (child of .cat so it follows the emoji) */
+.cat-label{
+  position:absolute; top:-18px; left:50%; transform:translateX(-50%);
+  background:rgba(17,24,39,.9); color:#e5e7eb; border:1px solid #1f2937;
+  border-radius:8px; font-size:12px; line-height:1; padding:2px 6px;
+  pointer-events:none; white-space:nowrap; display:none;
+}
+
 /* Inner emoji span so flip (parent) + animations (child) compose cleanly */
 .cat .cat-emoji{display:inline-block}
 
@@ -109,29 +117,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 @keyframes floatLeaf{
   0%{transform:translateY(0) rotate(0deg);opacity:.9}
   100%{transform:translateY(-90px) rotate(180deg);opacity:0}
-}
-
-/* Cat name badge (shown on Feed, Catnip, or via toggle) */
-.name-tag{
-  position:absolute;
-  left:50%;
-  top:-18px;
-  transform:translate(-50%,0);
-  background:#111827;
-  border:1px solid #1f2937;
-  padding:2px 6px;
-  border-radius:8px;
-  font-size:12px;
-  color:#e5e7eb;
-  pointer-events:none;
-  white-space:nowrap;
-  opacity:0;
-  transition:opacity .25s ease, transform .25s ease;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,.35));
-}
-.name-tag.visible{
-  opacity:1;
-  transform:translate(-50%,-2px);
 }
 
 /* Heavy blur for profile/start overlays */
@@ -306,18 +291,18 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 <!-- Bazaar Map Modal -->
 <div id="mapModal" class="modal">
   <div class="modal-card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <!-- Left side: title + new toggle -->
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <h3 style="margin:0">🗺️ Persian Bazaar Progress</h3>
-        <button id="toggleNamesBtn" class="btn" title="Show/Hide cat name labels">🏷️ Names: OFF</button>
+    <!-- Header row with Names toggle (left), title (center), Redeem/Close (right) -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px">
+      <div class="shop-row">
+        <button id="toggleCatNamesBtn" class="btn" title="Show or hide cat names on the map">🪪 Names: OFF</button>
       </div>
-      <!-- Right side: Redeem + Close -->
+      <h3 style="margin:0; flex:1; text-align:center">🗺️ Persian Bazaar Progress</h3>
       <div class="shop-row">
         <button id="openShop" class="btn accent" title="Redeem cat rewards">💠 Redeem</button>
         <button id="closeMap" class="btn">Close</button>
       </div>
     </div>
+
     <p class="tiny">Lots of cats live here 🐈. Cats are unlocked at 5, 20, 100, 250, 500. </p>
 
     <div class="map-wrap" id="mapWrap">
@@ -499,7 +484,7 @@ const words = [
   {fa:"تخم مرغ", en:"egg", translit:"tokhm morgh", emoji:"🥚", audio:"audio/tokhm_morgh.mp3", image:"images/tokhm_morgh.png"},
   {fa:"گوشت", en:"meat", translit:"gusht", emoji:"🥩", audio:"audio/gusht.mp3", image:"images/gusht.png"},
   {fa:"مرغ", en:"chicken", translit:"morgh", emoji:"🍗", audio:"audio/morgh.mp3", image:"images/morgh.png"},
-  {fa:"گاو", en:"cow", translit:"gâv", emoji:"🍗", audio:"audio/gav.mp3", image:"images/gav.png"},
+  {fa:"گاو", en:"cow", translit:"gâv", emoji:"🐄", audio:"audio/gav.mp3", image:"images/gav.png"},
   {fa:"ماهی", en:"fish", translit:"mâhi", emoji:"🐟", audio:"audio/mahi.mp3", image:"images/mahi.png"},
   {fa:"برنج", en:"rice", translit:"berenj", emoji:"🍚", audio:"audio/berenj.mp3", image:"images/berenj.png"},
   {fa:"شکر", en:"sugar", translit:"shekar", emoji:"🍬", audio:"audio/shekar.mp3", image:"images/shekar.png"},
@@ -584,7 +569,7 @@ const words = [
   {fa:"سبز", en:"green", translit:"sabz", emoji:"🟢", audio:"audio/sabz.mp3", image:"images/sabz.png"},
   {fa:"زرد", en:"yellow", translit:"zard", emoji:"🟡", audio:"audio/zard.mp3", image:"images/zard.png"},
   {fa:"بنفش", en:"purple", translit:"banafsh", emoji:"🟣", audio:"audio/banafsh.mp3", image:"images/banafsh.png"},
-  {fa:"نارنجی", en:"orange (color)", translit:"نârenji", emoji:"🟠", audio:"audio/narenji.mp3", image:"images/narenji.png"},
+  {fa:"نارنجی", en:"orange (color)", translit:"nârenji", emoji:"🟠", audio:"audio/narenji.mp3", image:"images/narenji.png"},
   {fa:"صورتی", en:"pink", translit:"surati", emoji:"🌸", audio:"audio/surati.mp3", image:"images/surati.png"}
 ];
 
@@ -644,24 +629,21 @@ const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false}, achFx:{},
   mapUnlocked:0, mapDays:[],
-  settings:{reviewAll:false, showCatNames:false},   // <- persist toggle here
+  settings:{reviewAll:false, showCatNames:false},   // <-- added toggle for names
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
   furniture:{catTree:false},        // persistent furniture
-  catNames:{}                       // {0:"Mishi", ...}
+  catNames:{},                      // index -> name
+  nameCursor:-1                     // remember last named cat index
 });
 let state = defaultState();
 
 let mode='learn', order=[], idx=0;
+/* ===== Session progress ===== */
 let sessionTotal = 0;
 let sessionAnswered = new Set();
 function resetSessionProgress(){ sessionTotal = unlockedCount(); sessionAnswered = new Set(); updateSessionBar(); }
 function updateSessionBar(){ const pct = Math.round((sessionAnswered.size/Math.max(1,sessionTotal))*100); $('progressBar').style.width = pct + '%'; }
-
-/* ===== Names overlay control (toggle + temporary reveals) ===== */
-let namesPinned = false;         // user toggle (persisted)
-let namesOverlayActive = false;  // actual visibility (pinned, catnip, or temp)
-let namesOverlayTimer = null;
 
 /* Helpers for SRS & pools */
 function ensureSRS(i){ if(!state.srs[i]) state.srs[i]={stage:0,due:0,seen:0,correct:0,wrong:0}; return state.srs[i]; }
@@ -696,9 +678,10 @@ function persist(){
   reflectBadges();
   updateBadges();
   renderMap();
-  renderFurniture();
+  renderFurniture();   // keep furniture visible
   populateThemeDropdown();
   updateShopUI();
+  updateCatNamesToggleUI(); // keep names UI/visibility synced
 }
 function loadState(){
   state = store.get('state', defaultState());
@@ -710,12 +693,11 @@ function loadState(){
   if(!state.catNames) state.catNames = {};
   if(!state.achievements) state.achievements = defaultState().achievements;
   if(!state.settings) state.settings = {reviewAll:false, showCatNames:false};
+  if(state.nameCursor===undefined) state.nameCursor = -1;
   state.achFx = state.achFx || {};
   initDailyUnlock();
   applyTheme(state.theme||'default');
   state.mapUnlocked = computeCatsUnlocked();
-  // Restore pinned-state for names toggle
-  namesPinned = !!(state.settings?.showCatNames);
 }
 
 /* ======== SHARED NICOLE SYNC ======== */
@@ -737,8 +719,11 @@ function mergeStates(local, remote){
   newer.catNames = {...remote.catNames, ...local.catNames};
   newer.achievements = {...local.achievements, ...remote.achievements};
   newer.achFx = {...local.achFx, ...remote.achFx};
+  // Keep furniture if either side has it
   newer.furniture = {catTree: !!(local.furniture?.catTree || remote.furniture?.catTree)};
-  // settings (respect either side; prefer newer)
+  // Keep last cursor if either has it (prefer newer)
+  newer.nameCursor = (newer===local ? local.nameCursor : remote.nameCursor) ?? -1;
+  // Keep names toggle
   newer.settings = {...local.settings, ...remote.settings};
   return newer;
 }
@@ -825,6 +810,13 @@ function spawnCats(count){
     inner.className = 'cat-emoji';
     inner.textContent = CAT_EMOJIS[i % CAT_EMOJIS.length];
     el.appendChild(inner);
+
+    // Label that follows the cat
+    const label = document.createElement('div');
+    label.className = 'cat-label';
+    label.textContent = getCatName(i);
+    el.appendChild(label);
+
     el.title = getCatName(i);
     layer.appendChild(el);
 
@@ -835,7 +827,7 @@ function spawnCats(count){
     const x = Math.random()*(catAnim.bounds.w-40);
     const y = Math.random()*(catAnim.bounds.h-40);
 
-    const c = { el, x, y, vx, vy, speed, idx:i, nextTurn: performance.now()+800+Math.random()*1600, turnMult:1 };
+    const c = { el, x, y, vx, vy, speed, idx:i, nextTurn: performance.now()+800+Math.random()*1600, turnMult:1, label };
     cats.push(c);
 
     el.style.left = x + 'px';
@@ -843,12 +835,9 @@ function spawnCats(count){
     if(vx<0) el.classList.add('flip');
 
     if(catnipActive){ applyCatnipToCat(c); }
-    // If overlay is currently active, ensure tag is present/visible
-    if(namesOverlayActive){
-      const tag = ensureNameTag(c);
-      if(tag) tag.classList.add('visible');
-    }
   }
+  // Apply current names visibility (toggle or hidden by default)
+  updateNamesVisibility();
 }
 
 function stepCats(ts){
@@ -908,41 +897,6 @@ function onResizeCats(){
     c.x = Math.max(6, Math.min(c.x, catAnim.bounds.w-40-6));
     c.y = Math.max(6, Math.min(c.y, catAnim.bounds.h-40-6));
   }
-}
-
-/* ===== Cat name overlay helpers ===== */
-function ensureNameTag(c){
-  const name = state.catNames && state.catNames[c.idx];
-  if(!name){ clearNameTag(c); return null; }
-  if(!c.nameTagEl){
-    const tag = document.createElement('div');
-    tag.className = 'name-tag';
-    tag.textContent = name;
-    c.el.appendChild(tag);
-    c.nameTagEl = tag;
-  }else{
-    c.nameTagEl.textContent = name;
-  }
-  return c.nameTagEl;
-}
-function clearNameTag(c){
-  if(c && c.nameTagEl){ c.nameTagEl.remove(); c.nameTagEl = null; }
-}
-function showNamesOverlay(active){
-  namesOverlayActive = !!active;
-  for(const c of cats){
-    const tag = ensureNameTag(c);
-    if(!tag) continue;
-    if(active) tag.classList.add('visible');
-    else tag.classList.remove('visible');
-  }
-}
-function showCatNamesFor(ms=6000){
-  // If catnip party is active, keep visible; otherwise show briefly then revert to pinned
-  if(catnipActive){ showNamesOverlay(true); return; }
-  showNamesOverlay(true);
-  clearTimeout(namesOverlayTimer);
-  namesOverlayTimer = setTimeout(()=> showNamesOverlay(namesPinned || catnipActive), ms);
 }
 
 /* Fish boost */
@@ -1222,7 +1176,7 @@ function renderMap(){
     wrap.style.display='none'; wrap.innerHTML='';
     container.classList.add('arena'); layer.style.display='block';
   }
-  renderFurniture();
+  renderFurniture();   // ensure furniture displays in either layout
 }
 
 /* Draw/remove the cat tree as a permanent fixture */
@@ -1299,10 +1253,6 @@ function startCatnipParty(ms = CATNIP_DURATION_MS){
   clearTimeout(catnipTimer); clearInterval(catnipTicker);
   catnipTimer = setTimeout(stopCatnipParty, ms);
   catnipTicker = setInterval(updateCatnipCountdownUI, 1000);
-
-  // Keep names visible during party
-  showNamesOverlay(true);
-
   updateCatnipCountdownUI();
   updateShopUI();
 }
@@ -1311,10 +1261,32 @@ function stopCatnipParty(){
   clearTimeout(catnipTimer); clearInterval(catnipTicker);
   catnipActive=false; catnipTimer=null; catnipTicker=null;
   for(const c of cats){ removeCatnipFromCat(c); }
-  // Return to pinned preference when party ends
-  showNamesOverlay(namesPinned);
   updateCatnipCountdownUI();
   updateShopUI();
+}
+
+/* ===================== NAME VISIBILITY (toggle + flash on events) ===================== */
+let namesFlashTimer = null;
+function updateNamesVisibility(){
+  const show = !!(state.settings?.showCatNames);
+  for(const c of cats){
+    if(!c.label) continue;
+    c.label.style.display = show ? 'block' : 'none';
+    c.label.textContent = getCatName(c.idx);
+  }
+}
+function updateCatNamesToggleUI(){
+  const btn = $('toggleCatNamesBtn');
+  if(btn){
+    btn.textContent = state.settings?.showCatNames ? '🪪 Names: ON' : '🪪 Names: OFF';
+  }
+  updateNamesVisibility();
+}
+function flashCatNames(ms=6000){
+  if(state.settings?.showCatNames) return; // already visible
+  for(const c of cats){ if(c.label) c.label.style.display='block'; }
+  clearTimeout(namesFlashTimer);
+  namesFlashTimer = setTimeout(()=>{ for(const c of cats){ if(c.label) c.label.style.display='none'; } }, ms);
 }
 
 /* ===================== EVENTS ===================== */
@@ -1339,23 +1311,23 @@ $('revealBtn').addEventListener('click', ()=>{ const gi=order[idx], item=words[g
 $('openAchievements').addEventListener('click', ()=>{ reflectBadges(); $('achModal').style.display='grid'; });
 $('closeAch').addEventListener('click', ()=> $('achModal').style.display='none');
 
-/* Map modal open/close */
-function updateNamesToggleUI(){
-  const btn = $('toggleNamesBtn');
-  if(!btn) return;
-  btn.textContent = `🏷️ Names: ${namesPinned ? 'ON' : 'OFF'}`;
-  btn.disabled = (state.mapUnlocked || 0) === 0; // no cats yet
-}
-$('openMap').addEventListener('click', ()=>{
-  renderMap();
-  $('mapModal').style.display='grid';
-  requestAnimationFrame(()=>{ startCats(); showNamesOverlay(namesPinned || catnipActive); });
-  updateShopUI();
-  updateNamesToggleUI();
-});
+$('openMap').addEventListener('click', ()=>{ renderMap(); $('mapModal').style.display='grid'; requestAnimationFrame(startCats); updateShopUI(); updateCatNamesToggleUI(); });
 $('closeMap').addEventListener('click', ()=>{ $('mapModal').style.display='none'; stopCats(); });
 
 /* Shop UI */
+function getNextCatIndex(cur){
+  const n = state.mapUnlocked || 0;
+  if(n <= 0) return 0;
+  const base = (cur == null ? -1 : cur);
+  // Prefer the next UNNAMED cat after the current index
+  for(let step=1; step<=n; step++){
+    const i = (base + step) % n;
+    if(!state.catNames || !state.catNames[i]) return i;
+  }
+  // If all named, just move sequentially
+  return (base + 1) % n;
+}
+
 function updateShopUI(){
   const scoreEl=$('shopScore'), fishEl=$('shopFish'), nipEl=$('shopCatnip');
   if(scoreEl) scoreEl.textContent = state.score;
@@ -1372,7 +1344,7 @@ function updateShopUI(){
 
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){
-    // Always show the price; no "(ready)" text
+    // Always show price (no "ready" text)
     nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`;
     nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0);
   }
@@ -1395,33 +1367,28 @@ function updateShopUI(){
       opt.textContent = `${i+1}: ${getCatName(i)}`;
       sel.appendChild(opt);
     }
+    // Auto-advance selection to the next cat (prefer unnamed)
+    const cur = (state.nameCursor==null ? -1 : state.nameCursor);
+    const nextIdx = getNextCatIndex(cur);
+    if(n>0) sel.value = String(nextIdx);
   }
+
+  // Keep titles/labels in sync with names
   if(cats && cats.length){
-    cats.forEach(c=>{
-      c.el.title = getCatName(c.idx);
-      if(namesOverlayActive){
-        const tag = ensureNameTag(c);
-        if(tag){
-          tag.textContent = getCatName(c.idx);
-          tag.classList.add('visible');
-        }else{
-          clearNameTag(c);
-        }
-      }else{
-        if(c.nameTagEl){ c.nameTagEl.textContent = getCatName(c.idx); c.nameTagEl.classList.remove('visible'); }
-      }
+    cats.forEach(c => {
+      const nm = getCatName(c.idx);
+      c.el.title = nm;
+      if(c.label) c.label.textContent = nm;
     });
   }
 }
 
-/* Redeem panel toggle */
 $('openShop').addEventListener('click', ()=>{
   const panel = $('shopPanel');
   panel.style.display = panel.style.display==='none' ? 'block' : 'none';
   updateShopUI();
 });
 
-/* Buy/Feed fish */
 $('buyFishBtn').addEventListener('click', ()=>{
   if(state.score < FISH_COST) return;
   state.score -= FISH_COST;
@@ -1430,6 +1397,7 @@ $('buyFishBtn').addEventListener('click', ()=>{
   $('shopMsg').className='feedback ok';
   persist();
 });
+
 $('feedFishBtn').addEventListener('click', ()=>{
   if((state.inventory.fish||0) <= 0) return;
   state.inventory.fish -= 1;
@@ -1441,9 +1409,9 @@ $('feedFishBtn').addEventListener('click', ()=>{
     confetti({origin:{x:0.8,y:1},particleCount:70,spread:75,startVelocity:50});
   }
   boostCatsFor(8000,2.3);
-  // Briefly show names after feeding
-  showCatNamesFor(6000);
   persist();
+  // Flash names on feed if not permanently shown
+  flashCatNames(6000);
 });
 
 /* Catnip handlers */
@@ -1463,6 +1431,14 @@ $('useCatnipBtn').addEventListener('click', ()=>{
   burstLeaves(40);
   startCatnipParty(CATNIP_DURATION_MS);
   persist();
+  // Flash names at party start if not permanently shown
+  flashCatNames(6000);
+});
+
+/* Toggle permanent name visibility button (top of bazaar) */
+$('toggleCatNamesBtn').addEventListener('click', ()=>{
+  state.settings.showCatNames = !state.settings.showCatNames;
+  persist(); // updates UI + visibility
 });
 
 /* Name-a-cat flow */
@@ -1481,11 +1457,14 @@ $('toggleNameArea').addEventListener('click', ()=>{
   $('nameArea').style.display='block';
   updateShopUI();
 });
+
 $('confirmNameBtn').addEventListener('click', ()=>{
-  const selIdx = parseInt(($('catSelect').value||'0'),10);
+  const selEl = $('catSelect');
+  const selIdx = parseInt((selEl.value||'0'),10);
   const name = String(($('catNameInput').value||'').trim());
   if(!name){ $('shopMsg').textContent='Enter a name first.'; $('shopMsg').className='feedback warn'; return; }
   if((state.inventory.nameTokens||0) <= 0){ $('shopMsg').textContent='You need to buy a new name token first.'; $('shopMsg').className='feedback warn'; return; }
+
   if(!state.catNames) state.catNames = {};
   state.catNames[selIdx] = name;
   state.inventory.nameTokens = Math.max(0, (state.inventory.nameTokens||0)-1);
@@ -1493,15 +1472,11 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   $('shopMsg').className='feedback ok';
   $('catNameInput').value='';
   $('nameArea').style.display='none';
+
+  // Remember which cat you just named; next default goes to the next
+  state.nameCursor = selIdx;
+
   persist();
-  // If names are currently visible (Feed/Catnip/Toggle), refresh tag immediately
-  if(namesOverlayActive){
-    const cat = cats.find(c => c.idx === selIdx);
-    if(cat){
-      const t = ensureNameTag(cat);
-      if(t) t.classList.add('visible');
-    }
-  }
 });
 
 /* NEW: Buy Furniture (Cat Tree) */
@@ -1525,18 +1500,6 @@ $('buyFurnitureBtn').addEventListener('click', ()=>{
     confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55});
   }
   persist();
-});
-
-/* Names toggle button (top-left in Bazaar header) */
-$('toggleNamesBtn').addEventListener('click', ()=>{
-  namesPinned = !namesPinned;
-  state.settings = state.settings || {};
-  state.settings.showCatNames = namesPinned;
-  updateNamesToggleUI();
-  // Persist (and sync for Nicole)
-  persist();
-  // Respect pinned state immediately
-  showNamesOverlay(namesPinned || catnipActive);
 });
 
 /* Settings & sentences */
