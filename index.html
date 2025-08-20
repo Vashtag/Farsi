@@ -189,6 +189,24 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   .night-star{ animation: none; opacity:.22 }
   .night-star.spark{ animation: none; }
 }
+
+/* ===== Audio Quiz options ===== */
+.aq-option{
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  background:#0b1229; border:1px solid #1f2937; border-radius:12px; padding:10px;
+  cursor:pointer; transition:transform .06s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.aq-option:active{ transform:scale(.98); }
+.aq-option img{
+  width:min(180px,32vw); height:min(140px,26vw);
+  object-fit:contain; background:#0b1229; border:1px solid #1f2937; border-radius:8px; display:block;
+}
+.aq-option.correct{ border-color:var(--accent); box-shadow:0 0 0 2px rgba(34,197,94,.25) inset; }
+.aq-option.wrong{ border-color:var(--err); box-shadow:0 0 0 2px rgba(239,68,68,.25) inset; }
+.visually-hidden{
+  position:absolute !important; height:1px; width:1px; overflow:hidden;
+  clip:rect(1px,1px,1px,1px); white-space:nowrap; border:0; padding:0; margin:-1px;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
@@ -233,6 +251,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   <div class="mode">
     <button id="learnBtn" class="btn">Learn Mode</button>
     <button id="quizBtn" class="btn">Quiz Mode</button>
+    <button id="audioQuizBtn" class="btn">Audio Quiz</button>
     <span class="tiny">New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰</span>
   </div>
 
@@ -359,6 +378,11 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
         <button id="startMiniQuiz" class="btn">⚡ Start Mini Quiz</button>
       </div>
       <div class="stat">
+        <b>Audio Quiz</b>
+        <p class="tiny">Listen and pick the matching picture (4 choices).</p>
+        <button id="startAudioQuiz" class="btn">🔊 Start Audio Quiz</button>
+      </div>
+      <div class="stat">
         <b>Review Mode</b><p class="tiny">Quiz only on words she has mastered (ignores SRS order).</p>
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
@@ -419,6 +443,25 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <input id="mqInput" class="input" placeholder="Type the transliteration…" style="margin-top:12px"/>
     <div class="controls" style="justify-content:flex-end"><button id="mqCheck" class="primary">Check</button></div>
     <div id="mqFeedback" class="feedback"></div>
+  </div>
+</div>
+
+<!-- Audio Quiz Modal -->
+<div id="audioQuizModal" class="modal">
+  <div class="modal-card" style="max-width:860px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <h3 style="margin:0">🔊 Audio Quiz</h3>
+      <div class="shop-row">
+        <button id="aqReplay" class="accent">🔊 Replay</button>
+        <button id="aqQuit" class="btn" title="Exit Audio Quiz">✖ Quit</button>
+      </div>
+    </div>
+    <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:12px">
+      <div id="aqBar" class="bar" style="height:8px;width:0%"></div>
+    </div>
+    <div id="aqPrompt" class="tiny" style="margin-bottom:8px;color:#94a3b8">Listen and tap the matching picture.</div>
+    <div id="aqOptions" class="grid"></div>
+    <div id="aqFeedback" class="feedback"></div>
   </div>
 </div>
 
@@ -526,7 +569,7 @@ const words = [
   {fa:"قرمز", en:"red", translit:"ghermez", emoji:"🔴", audio:"audio/ghermez.mp3", image:"images/ghermez.png"},
   {fa:"آبی", en:"blue", translit:"âbi", emoji:"🔵", audio:"audio/abi.mp3", image:"images/abi.png"},
   {fa:"سبز", en:"green", translit:"sabz", emoji:"🟢", audio:"audio/sabz.mp3", image:"images/sabz.png"},
-  {fa:"زرد", en:"yellow", translit:"zard", emoji:"🟡", audio:"audio/zard.mp3", image:"images/zard.png"},
+  {fa:"زرد", en:"yellow", translit:"zard", emoji:"🟡", audio:"audio/zard.mp3", image:"images/zard.png"}, <!-- fixed .png -->
   {fa:"بنفش", en:"purple", translit:"banafsh", emoji:"🟣", audio:"audio/banafsh.mp3", image:"images/banafsh.png"},
   {fa:"نارنجی", en:"orange (color)", translit:"nârenji", emoji:"🟠", audio:"audio/narenji.mp3", image:"images/narenji.png"},
   {fa:"صورتی", en:"pink", translit:"surati", emoji:"🌸", audio:"audio/surati.mp3", image:"images/surati.png"},
@@ -578,7 +621,6 @@ const words = [
   {fa:"کوتاه", en:"short", translit:"kutâh", emoji:"📏", audio:"audio/kutah.mp3", image:"images/kutah.png"},
   {fa:"گرم", en:"hot", translit:"garm", emoji:"🔥", audio:"audio/garm.mp3", image:"images/garm.png"},
   {fa:"سرد", en:"cold", translit:"sard", emoji:"❄️", audio:"audio/sard.mp3", image:"images/sard.png"},
-
 ];
 
 /* ===================== THEMES ===================== */
@@ -641,9 +683,9 @@ const defaultState = ()=>({
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
   furniture:{catTree:false},
-  catNames:{},          // {0:"Mishi", 1:"…"}
-  nameCursor:-1,        // last cat index we named; next assignment uses (nameCursor+1)%cats
-  showCatNames:false    // toggle button state
+  catNames:{},
+  nameCursor:-1,
+  showCatNames:false
 });
 let state = defaultState();
 
@@ -1330,7 +1372,6 @@ function updateShopUI(){
   if(buyN){ buyN.textContent = `🌿 Buy Catnip (${CATNIP_COST})`; buyN.disabled = state.score < CATNIP_COST; }
   updateCatnipCountdownUI();
 
-  // Always show price (no "ready")
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){
     nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`;
@@ -1338,14 +1379,12 @@ function updateShopUI(){
   }
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
 
-  // Furniture button
   if(furnBtn){
     const owned = !!(state.furniture?.catTree);
     furnBtn.textContent = owned ? '🪑 Cat Tree — Owned' : `🪑 Buy Furniture (${FURNITURE_COST})`;
     furnBtn.disabled = owned || state.score < FURNITURE_COST;
   }
 
-  // Populate selector
   const sel=$('catSelect');
   if(sel){
     const n = state.mapUnlocked||0;
@@ -1356,7 +1395,6 @@ function updateShopUI(){
       opt.textContent = `${i+1}: ${getCatName(i)}`;
       sel.appendChild(opt);
     }
-    // default to the next cat when opening (if already visible)
     if(n>0 && $('nameArea').style.display!=='none'){
       sel.value = String(Math.min(getNextCatIndex(), n-1));
     }
@@ -1428,7 +1466,6 @@ $('toggleNameArea').addEventListener('click', ()=>{
     persist();
   }
   $('nameArea').style.display='block';
-  // Preselect next cat
   const sel = $('catSelect');
   if(sel){
     const nextIdx = Math.min(getNextCatIndex(), (state.mapUnlocked||1)-1);
@@ -1446,7 +1483,7 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   if((state.inventory.nameTokens||0) <= 0){ $('shopMsg').textContent='You need to buy a new name token first.'; $('shopMsg').className='feedback warn'; return; }
   if(!state.catNames) state.catNames = {};
   state.catNames[idx] = name;
-  state.nameCursor = idx; // advance cursor to this cat (next time goes to the next one)
+  state.nameCursor = idx;
   state.inventory.nameTokens = Math.max(0, (state.inventory.nameTokens||0)-1);
   $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`;
   $('shopMsg').className='feedback ok';
@@ -1522,14 +1559,14 @@ $('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.dis
 $('sentPrev').addEventListener('click', ()=>{ sentenceIdx--; renderSentence(); });
 $('sentNext').addEventListener('click', ()=>{ sentenceIdx++; renderSentence(); });
 
-/* ===== NEW: Reset Cat Names Only (Option A) ===== */
+/* ===== NEW: Reset Cat Names Only ===== */
 $('resetNamesBtn').addEventListener('click', ()=>{
   if(!confirm('Reset ALL cat names for this profile? This cannot be undone.')) return;
 
   state.catNames = {};
   state.nameCursor = -1;
 
-  persist();          // updates UI & debounced sync for Nicole
+  persist();
   updateShopUI();
   updateNamesVisibility();
 
@@ -1598,15 +1635,32 @@ document.addEventListener('click', (e)=>{
   if(e.target.id==='achModal') e.target.style.display='none';
   if(e.target.id==='mapModal'){ e.target.style.display='none'; stopCats(); }
   if(e.target.id==='miniQuizModal'){ endMiniQuiz(); }
+  if(e.target.id==='audioQuizModal'){ endAudioQuiz(); }
 });
 
 /* Item order & display */
 function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=pool.slice(); shuffle(order); idx=0; }
+
+/* ======= IMAGE/EMOJI FALLBACK (updated) ======= */
 function showImageOrEmoji(item){
-  const pic=$('pic'), emo=$('emoji');
-  if(item.image){ pic.style.display='block'; emo.style.display='none'; pic.src=item.image; pic.alt=item.en; }
-  else { pic.style.display='none'; emo.style.display='block'; emo.textContent=item.emoji||'❓'; }
+  const pic = $('pic'), emo = $('emoji');
+
+  // Set emoji as immediate fallback
+  emo.textContent = item.emoji || '❓';
+  emo.style.display = 'block';
+  pic.style.display = 'none';
+  pic.removeAttribute('src');
+  pic.alt = item.en || '';
+
+  // If no image specified, keep emoji
+  if (!item.image) return;
+
+  // Load image with fallback handlers
+  pic.onload = () => { pic.style.display = 'block'; emo.style.display = 'none'; };
+  pic.onerror = () => { pic.removeAttribute('src'); pic.style.display = 'none'; emo.style.display = 'block'; };
+  pic.src = item.image;
 }
+
 function showItem(){
   const pool = (mode==='quiz')? quizPool(): learnPool();
   if(order.length===0 || order.some(i=>!pool.includes(i))) ensureOrder();
@@ -1747,16 +1801,152 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
       }catch{}
     }
 
-    // Clean up on resize so bounds adjust if stars are visible during the burst
+    // Recreate on resize if visible during burst
     window.addEventListener('resize', ()=>{
       if (!sky) return;
-      // Recreate stars on next tick to fit new viewport
       destroySky();
       if (inWindow()) createSky();
     });
   }catch{}
 })();
 
+/* ===================== AUDIO QUIZ ===================== */
+const AUDIO_QUIZ_SIZE = 8; // session length
+
+let AQ = {queue:[], current:null, total:0, correct:0, locked:false, answer:null};
+
+function startAudioQuiz(){
+  const settings = $('settingsModal'); if (settings) settings.style.display='none';
+
+  const base = [...new Set([...quizPool(), ...unlockedIndices()])];
+  shuffle(base);
+
+  const size = Math.max(4, Math.min(AUDIO_QUIZ_SIZE, base.length));
+  AQ = {queue: base.slice(0, size), current:null, total:0, correct:0, locked:false, answer:null};
+
+  $('aqFeedback').textContent = '';
+  $('aqBar').style.width = '0%';
+  $('audioQuizModal').style.display = 'grid';
+
+  nextAQQuestion();
+}
+
+function endAudioQuiz(){
+  $('audioQuizModal').style.display='none';
+  AQ.locked = false;
+  pauseAllAudio();
+}
+
+function nextAQQuestion(){
+  AQ.locked = false;
+
+  if (!AQ.queue.length){
+    $('aqFeedback').innerHTML = `Audio Quiz complete! Score: <b>${AQ.correct}</b> / ${AQ.total}`;
+    $('aqBar').style.width = '100%';
+    setTimeout(endAudioQuiz, 1200);
+    return;
+  }
+
+  AQ.current = AQ.queue.shift();
+  $('aqFeedback').textContent = '';
+  buildAQOptions(AQ.current);
+  $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`;
+
+  aqPlay(); // auto-play the prompt
+}
+
+function buildAQOptions(correctIdx){
+  const grid = $('aqOptions');
+  grid.innerHTML = '';
+
+  const pool = unlockedIndices().filter(i => i !== correctIdx);
+  shuffle(pool);
+  const preferImg = pool.filter(i => !!(words[i].image));
+  const distractors = (preferImg.length >= 3 ? preferImg : pool).slice(0, 3);
+
+  const options = shuffle([correctIdx, ...distractors]);
+  AQ.answer = correctIdx;
+
+  options.forEach(i=>{
+    const item = words[i];
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'aq-option';
+    btn.dataset.idx = String(i);
+    btn.setAttribute('aria-label', item.en || 'option');
+
+    const img = document.createElement('img');
+    img.alt = item.en || '';
+    const fallback = document.createElement('div');
+    fallback.textContent = item.emoji || '❓';
+    fallback.style.fontSize = '48px';
+    fallback.style.lineHeight = '1';
+    fallback.style.display = 'none';
+
+    img.onload  = ()=>{ img.style.display='block'; fallback.style.display='none'; };
+    img.onerror = ()=>{ img.style.display='none';  fallback.style.display='block'; };
+
+    if (item.image){ img.src = item.image; } else { img.style.display='none'; fallback.style.display='block'; }
+
+    const sr = document.createElement('span');
+    sr.className = 'visually-hidden';
+    sr.textContent = item.en || '';
+
+    btn.appendChild(img);
+    btn.appendChild(fallback);
+    btn.appendChild(sr);
+
+    btn.addEventListener('click', onAQOptionClick);
+
+    grid.appendChild(btn);
+  });
+}
+
+function onAQOptionClick(e){
+  if (AQ.locked) return;
+  AQ.locked = true;
+
+  const picked = parseInt(e.currentTarget.dataset.idx, 10);
+  const ok = (picked === AQ.answer);
+
+  AQ.total++;
+  if (ok){
+    e.currentTarget.classList.add('correct');
+    $('aqFeedback').textContent = 'Nice!';
+    $('aqFeedback').className = 'feedback ok';
+    celebrateSimple();
+    AQ.correct++;
+  }else{
+    e.currentTarget.classList.add('wrong');
+    $('aqFeedback').textContent = `Answer: ${words[AQ.answer].en}`;
+    $('aqFeedback').className = 'feedback warn';
+    Array.from($('aqOptions').children).forEach(btn=>{
+      if (parseInt(btn.dataset.idx, 10) === AQ.answer) btn.classList.add('correct');
+    });
+    state.streak = 0; persist();
+  }
+
+  $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`;
+
+  setTimeout(nextAQQuestion, 600);
+}
+
+async function aqPlay(){
+  if (AQ.current == null) return;
+  try{
+    const a = getAudio(words[AQ.current]);
+    a.currentTime = 0;
+    await a.play();
+  }catch{}
+}
+
+function pauseAllAudio(){ try{ audioCache.forEach(a=>{ a.pause(); }); }catch{} }
+
+// Bindings for Audio Quiz
+$('audioQuizBtn')?.addEventListener('click', startAudioQuiz);
+$('startAudioQuiz')?.addEventListener('click', startAudioQuiz);
+$('aqReplay')?.addEventListener('click', aqPlay);
+$('aqQuit')?.addEventListener('click', endAudioQuiz);
 
 /* Init */
 initSpeech();
