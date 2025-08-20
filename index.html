@@ -1643,20 +1643,30 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
   });
 })();
 
-/* ========== Night Sky Background (22:00–02:00) ========== */
+/* ========== Night Sky Background (22:00–02:00, 10s bursts) ========== */
 (function nightSkyBackground(){
   try{
-    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let sky = null;
     let sparkTimer = null;
+    let showTimer = null;
+
+    const SHOW_MS = 10000;   // show stars for 10 seconds
+    const TICK_MS = 60000;   // check once per minute
 
     function inWindow(){
       const h = new Date().getHours();
-      return (h>=22 || h<2);
+      return (h >= 22 || h < 2);
+    }
+
+    function isReducedMotion(){
+      try{
+        return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      }catch{ return false; }
     }
 
     function createSky(){
-      if(sky) return;
+      if (sky) return; // already visible
+
       sky = document.createElement('div');
       sky.id = 'nightSky';
       sky.className = 'night-sky';
@@ -1680,12 +1690,16 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
         sky.appendChild(s);
       }
 
-      if(!reduce) startSparkEngine();
+      if (!isReducedMotion()) startSparkEngine();
+
+      clearTimeout(showTimer);
+      showTimer = setTimeout(destroySky, SHOW_MS);
     }
 
     function destroySky(){
       stopSparkEngine();
-      if(!sky) return;
+      if (showTimer){ clearTimeout(showTimer); showTimer = null; }
+      if (!sky) return;
       sky.remove();
       sky = null;
     }
@@ -1695,7 +1709,7 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
       const stars = ()=> sky ? Array.from(sky.querySelectorAll('.night-star')) : [];
       sparkTimer = setInterval(()=>{
         const arr = stars();
-        if(!arr.length) return;
+        if(!arr.length || isReducedMotion()) return;
         const picks = Math.max(1, Math.floor(Math.random()*3)+1);
         for(let i=0;i<picks;i++){
           const s = arr[Math.floor(Math.random()*arr.length)];
@@ -1703,7 +1717,7 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
           s.classList.remove('spark');
           const dur = (0.6 + Math.random()*1.0).toFixed(2) + 's';
           s.style.setProperty('--sparkDur', dur);
-          void s.offsetWidth;
+          void s.offsetWidth; // reflow for restart
           s.classList.add('spark');
           setTimeout(()=> s && s.classList && s.classList.remove('spark'), 1400);
         }
@@ -1711,22 +1725,38 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
     }
 
     function stopSparkEngine(){
-      if(sparkTimer){ clearInterval(sparkTimer); sparkTimer=null; }
+      if (sparkTimer){ clearInterval(sparkTimer); sparkTimer=null; }
     }
 
-    function tick(){ inWindow() ? createSky() : destroySky(); }
+    function tick(){
+      if (inWindow()) { createSky(); } else { destroySky(); }
+    }
 
+    // Initial run and a once‑per‑minute cycle (10s shown, 50s hidden)
     tick();
-    setInterval(tick, 60000);
+    setInterval(tick, TICK_MS);
 
-    if(window.matchMedia){
+    // Respect reduced‑motion changes live
+    if (window.matchMedia){
       try{
         const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-        mq.addEventListener?.('change', ()=>{ if(mq.matches){ stopSparkEngine(); } else if(sky){ startSparkEngine(); } });
+        mq.addEventListener?.('change', ()=>{
+          if (isReducedMotion()) stopSparkEngine();
+          else if (sky) startSparkEngine();
+        });
       }catch{}
     }
+
+    // Clean up on resize so bounds adjust if stars are visible during the burst
+    window.addEventListener('resize', ()=>{
+      if (!sky) return;
+      // Recreate stars on next tick to fit new viewport
+      destroySky();
+      if (inWindow()) createSky();
+    });
   }catch{}
 })();
+
 
 /* Init */
 initSpeech();
