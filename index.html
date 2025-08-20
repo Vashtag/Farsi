@@ -51,7 +51,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .overlay{position:fixed;inset:0;background:radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%), rgba(15,23,42,.94);display:grid;place-items:center;z-index:10}
 .overlay-card,.modal-card{background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:760px;margin:0 16px}
 .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45);z-index:12}
-#miniQuizModal,#sentencesModal{backdrop-filter:blur(12px) saturate(120%);-webkit-backdrop-filter:blur(12px) saturate(120%)}
+#miniQuizModal,#sentencesModal,#audioQuizModal{backdrop-filter:blur(12px) saturate(120%);-webkit-backdrop-filter:blur(12px) saturate(120%)}
 .grid{display:grid;gap:10px}
 @media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
 .stat{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px}
@@ -190,23 +190,30 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   .night-star.spark{ animation: none; }
 }
 
-/* ===== Audio Quiz options ===== */
+/* ======== Audio Quiz styles ======== */
+.aq-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
 .aq-option{
-  display:flex; flex-direction:column; align-items:center; gap:6px;
-  background:#0b1229; border:1px solid #1f2937; border-radius:12px; padding:10px;
-  cursor:pointer; transition:transform .06s ease, border-color .2s ease, box-shadow .2s ease;
+  position:relative;
+  aspect-ratio:1/1;
+  border:1px solid #1f2937;
+  border-radius:12px;
+  background:#0b1229;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
 }
-.aq-option:active{ transform:scale(.98); }
 .aq-option img{
-  width:min(180px,32vw); height:min(140px,26vw);
-  object-fit:contain; background:#0b1229; border:1px solid #1f2937; border-radius:8px; display:block;
+  width:100%; height:100%; object-fit:contain; display:block;
 }
-.aq-option.correct{ border-color:var(--accent); box-shadow:0 0 0 2px rgba(34,197,94,.25) inset; }
-.aq-option.wrong{ border-color:var(--err); box-shadow:0 0 0 2px rgba(239,68,68,.25) inset; }
-.visually-hidden{
-  position:absolute !important; height:1px; width:1px; overflow:hidden;
-  clip:rect(1px,1px,1px,1px); white-space:nowrap; border:0; padding:0; margin:-1px;
+.aq-option .aq-emoji{
+  font-size:48px; line-height:1;
 }
+.aq-option.correct{ border-color: var(--accent); box-shadow:0 0 0 2px rgba(34,197,94,.25) inset }
+.aq-option.wrong{ border-color: var(--err); box-shadow:0 0 0 2px rgba(239,68,68,.22) inset }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
@@ -242,6 +249,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div style="display:flex; gap:12px; flex-wrap:wrap">
       <button id="startLearn" class="primary" type="button">📚 Learn Mode</button>
       <button id="startQuiz" class="accent" type="button">🎯 Quiz Mode</button>
+      <button id="startAudio" class="btn" type="button">🔊 Audio Quiz</button>
     </div>
     <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s. New words unlock at <button id="midnightBtn0" class="btn" style="padding:2px 6px">midnight</button>.</p>
   </div>
@@ -378,11 +386,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
         <button id="startMiniQuiz" class="btn">⚡ Start Mini Quiz</button>
       </div>
       <div class="stat">
-        <b>Audio Quiz</b>
-        <p class="tiny">Listen and pick the matching picture (4 choices).</p>
-        <button id="startAudioQuiz" class="btn">🔊 Start Audio Quiz</button>
-      </div>
-      <div class="stat">
         <b>Review Mode</b><p class="tiny">Quiz only on words she has mastered (ignores SRS order).</p>
         <button id="reviewToggle" class="btn">🔁 Review All Mastered: OFF</button>
       </div>
@@ -440,6 +443,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
     </div>
     <img id="mqPic" class="mq-pic" alt="" style="display:block;margin:auto"/>
+    <div id="mqEmoji" class="emoji" style="display:none; text-align:center; margin-top:8px"></div>
     <input id="mqInput" class="input" placeholder="Type the transliteration…" style="margin-top:12px"/>
     <div class="controls" style="justify-content:flex-end"><button id="mqCheck" class="primary">Check</button></div>
     <div id="mqFeedback" class="feedback"></div>
@@ -448,19 +452,21 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 
 <!-- Audio Quiz Modal -->
 <div id="audioQuizModal" class="modal">
-  <div class="modal-card" style="max-width:860px">
+  <div class="modal-card" style="max-width:760px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <h3 style="margin:0">🔊 Audio Quiz</h3>
-      <div class="shop-row">
-        <button id="aqReplay" class="accent">🔊 Replay</button>
-        <button id="aqQuit" class="btn" title="Exit Audio Quiz">✖ Quit</button>
-      </div>
+      <button id="aqQuit" class="btn" title="Exit Audio Quiz">✖ Quit</button>
     </div>
     <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:12px">
       <div id="aqBar" class="bar" style="height:8px;width:0%"></div>
     </div>
-    <div id="aqPrompt" class="tiny" style="margin-bottom:8px;color:#94a3b8">Listen and tap the matching picture.</div>
-    <div id="aqOptions" class="grid"></div>
+    <div class="controls" style="justify-content:space-between;margin-bottom:10px">
+      <div class="tiny">Hear the word → pick the picture</div>
+      <div>
+        <button id="aqPlay" class="accent">▶️ Play</button>
+      </div>
+    </div>
+    <div id="aqOptions" class="aq-grid" role="listbox" aria-label="Audio quiz options"></div>
     <div id="aqFeedback" class="feedback"></div>
   </div>
 </div>
@@ -481,6 +487,8 @@ const store = {
 const DAILY_WORDS = 5;
 const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
 const MINI_QUIZ_SIZE = 5;
+const AUDIO_QUIZ_SIZE = 8; // number of questions per Audio Quiz
+
 /* Cat shop pricing */
 const FISH_COST = 100;
 const NAME_COST = 500;
@@ -569,7 +577,7 @@ const words = [
   {fa:"قرمز", en:"red", translit:"ghermez", emoji:"🔴", audio:"audio/ghermez.mp3", image:"images/ghermez.png"},
   {fa:"آبی", en:"blue", translit:"âbi", emoji:"🔵", audio:"audio/abi.mp3", image:"images/abi.png"},
   {fa:"سبز", en:"green", translit:"sabz", emoji:"🟢", audio:"audio/sabz.mp3", image:"images/sabz.png"},
-  {fa:"زرد", en:"yellow", translit:"zard", emoji:"🟡", audio:"audio/zard.mp3", image:"images/zard.png"}, <!-- fixed .png -->
+  {fa:"زرد", en:"yellow", translit:"zard", emoji:"🟡", audio:"audio/zard.mp3", image:"images/zard.png"}, <!-- fixed -->
   {fa:"بنفش", en:"purple", translit:"banafsh", emoji:"🟣", audio:"audio/banafsh.mp3", image:"images/banafsh.png"},
   {fa:"نارنجی", en:"orange (color)", translit:"nârenji", emoji:"🟠", audio:"audio/narenji.mp3", image:"images/narenji.png"},
   {fa:"صورتی", en:"pink", translit:"surati", emoji:"🌸", audio:"audio/surati.mp3", image:"images/surati.png"},
@@ -674,6 +682,25 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.rando
 const isMobile = () => window.matchMedia('(max-width:700px)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 function maybeFocusInput(){ if(!isMobile()) $('typeInput').focus(); }
 
+/* ====== Shared image fallback ====== */
+function setImageWithFallback(imgEl, emojiEl, item){
+  if(!imgEl) return;
+  const useEmoji = ()=>{
+    if(imgEl){ imgEl.style.display='none'; imgEl.removeAttribute('src'); }
+    if(emojiEl){ emojiEl.style.display='block'; emojiEl.textContent = item.emoji || '❓'; }
+  };
+  if(item.image){
+    if(emojiEl) emojiEl.style.display='none';
+    imgEl.onerror = useEmoji;
+    imgEl.onload = ()=>{ imgEl.style.display='block'; if(emojiEl) emojiEl.style.display='none'; };
+    imgEl.alt = item.en || '';
+    imgEl.src = item.image;
+    imgEl.style.display='block';
+  }else{
+    useEmoji();
+  }
+}
+
 /* ===================== STATE (per profile) ===================== */
 const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
@@ -683,9 +710,9 @@ const defaultState = ()=>({
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
   furniture:{catTree:false},
-  catNames:{},
-  nameCursor:-1,
-  showCatNames:false
+  catNames:{},          // {0:"Mishi", 1:"…"}
+  nameCursor:-1,        // last cat index we named; next assignment uses (nameCursor+1)%cats
+  showCatNames:false    // toggle button state
 });
 let state = defaultState();
 
@@ -1068,9 +1095,7 @@ function nextMiniQuestion(){
   }
   miniQ.current = miniQ.queue.shift();
   const item=words[miniQ.current];
-  $('mqPic').style.display='block';
-  $('mqPic').src=item.image||'';
-  $('mqPic').alt=item.en||'';
+  setImageWithFallback($('mqPic'), $('mqEmoji'), item);
   $('mqInput').value='';
   $('mqFeedback').textContent='';
   $('mqBar').style.width = `${(miniQ.total/MINI_QUIZ_SIZE)*100}%`;
@@ -1096,6 +1121,125 @@ $('mqCheck').addEventListener('click', ()=>{
 });
 $('mqInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('mqCheck').click(); } });
 $('mqQuit').addEventListener('click', ()=> endMiniQuiz());
+
+/* ===================== AUDIO QUIZ (audio → 4 images) ===================== */
+let AQ = {queue:[], current:-1, answer:-1, total:0, correct:0, locked:false};
+function endAudioQuiz(){
+  $('audioQuizModal').style.display='none';
+  AQ={queue:[], current:-1, answer:-1, total:0, correct:0, locked:false};
+  $('aqFeedback').textContent='';
+  $('aqBar').style.width='0%';
+  $('aqOptions').innerHTML='';
+}
+function openAudioQuiz(){
+  const pool = unlockedIndices();
+  if(pool.length < 4){
+    alert('Unlock at least 4 items to play Audio Quiz.');
+    return;
+  }
+  const qCount = Math.min(AUDIO_QUIZ_SIZE, pool.length);
+  const shuffled = shuffle(pool.slice());
+  AQ.queue = shuffled.slice(0, qCount);
+  AQ.total = 0; AQ.correct = 0; AQ.locked = false;
+
+  $('audioQuizModal').style.display='grid';
+  nextAQQuestion();
+}
+function randomDistractors(correctIdx, pool, n=3){
+  const others = pool.filter(i=>i!==correctIdx);
+  shuffle(others);
+  return others.slice(0, Math.min(n, others.length));
+}
+function nextAQQuestion(){
+  if(!AQ.queue.length){
+    $('aqFeedback').innerHTML = `Audio Quiz complete! Score: <b>${AQ.correct}</b> / ${AUDIO_QUIZ_SIZE}`;
+    $('aqBar').style.width = '100%';
+    setTimeout(()=> endAudioQuiz(), 1200);
+    return;
+  }
+  AQ.locked = false;
+  AQ.current = AQ.queue.shift();
+  const correctItem = words[AQ.current];
+  const pool = unlockedIndices();
+  const distractors = randomDistractors(AQ.current, pool, 3);
+  const choices = shuffle([AQ.current, ...distractors]);
+
+  // Remember which choice index is correct
+  AQ.answer = choices.indexOf(AQ.current);
+
+  // Render choices
+  const box = $('aqOptions');
+  box.innerHTML='';
+  choices.forEach(idx=>{
+    const item = words[idx];
+    const btn = document.createElement('button');
+    btn.className = 'aq-option';
+    btn.type = 'button';
+    btn.dataset.idx = String(idx);
+    btn.setAttribute('aria-label', item.en||'');
+    // image + emoji fallback
+    const img = document.createElement('img');
+    const emoji = document.createElement('div');
+    emoji.className = 'aq-emoji';
+    emoji.style.display='none';
+    emoji.textContent = item.emoji || '❓';
+    btn.appendChild(img);
+    btn.appendChild(emoji);
+    setImageWithFallback(img, emoji, item);
+
+    btn.addEventListener('click', onAQOptionClick);
+    box.appendChild(btn);
+  });
+
+  // reset feedback/progress
+  $('aqFeedback').textContent='';
+  $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`;
+
+  // Auto play audio at start of each question
+  try{ const a=getAudio(correctItem); a.currentTime=0; a.play(); }catch{}
+}
+function onAQOptionClick(e){
+  if (AQ.locked) return;
+  AQ.locked = true;
+
+  const pickedIdx = parseInt(e.currentTarget.dataset.idx, 10);
+  const ok = (pickedIdx === words[AQ.current] && false); // placeholder to satisfy linter (not used)
+  const isCorrect = (pickedIdx === AQ.current);
+
+  AQ.total++;
+  if (isCorrect){
+    e.currentTarget.classList.add('correct');
+    $('aqFeedback').textContent = 'Nice! +10 points';
+    $('aqFeedback').className = 'feedback ok';
+    celebrateSimple();
+    AQ.correct++;
+
+    // Award +10 points on correct answer
+    state.score += 10;
+    persist();
+  }else{
+    e.currentTarget.classList.add('wrong');
+    $('aqFeedback').textContent = `Answer: ${words[AQ.current].en}`;
+    $('aqFeedback').className = 'feedback warn';
+    // highlight the correct one
+    Array.from($('aqOptions').children).forEach(btn=>{
+      const idx = parseInt(btn.dataset.idx,10);
+      if(idx === AQ.current) btn.classList.add('correct');
+    });
+    state.streak = 0;
+    persist();
+  }
+
+  $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`;
+
+  setTimeout(nextAQQuestion, 600);
+}
+$('aqPlay').addEventListener('click', ()=>{
+  if(AQ.current<0) return;
+  const item = words[AQ.current];
+  try{ const a=getAudio(item); a.currentTime=0; a.play(); }catch{}
+});
+$('aqQuit').addEventListener('click', ()=> endAudioQuiz());
 
 /* ===================== CELEBRATIONS & BADGE HELPERS ===================== */
 function happyDing(){ try{
@@ -1345,9 +1489,10 @@ $('checkBtn').addEventListener('click', ()=>{
 $('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.streak=0; persist(); next(); });
 $('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
 
-function startMode(newMode){ endMiniQuiz(); mode = newMode; resetSessionProgress(); ensureOrder(); showItem(); }
+function startMode(newMode){ endMiniQuiz(); endAudioQuiz(); mode = newMode; resetSessionProgress(); ensureOrder(); showItem(); }
 $('learnBtn').addEventListener('click', ()=> startMode('learn'));
 $('quizBtn').addEventListener('click', ()=> startMode('quiz'));
+$('audioQuizBtn').addEventListener('click', ()=> openAudioQuiz());
 $('hintBtn').addEventListener('click', ()=>{ if(mode!=='learn') return; const gi=order[idx], item=words[gi]; $('trans').textContent=item.translit; $('en').textContent=item.en; });
 $('revealBtn').addEventListener('click', ()=>{ const gi=order[idx], item=words[gi]; $('fa').textContent=item.fa; $('trans').textContent=item.translit; const s=$('sadFace'); s.style.display='block'; setTimeout(()=>s.classList.add('fade-out'),700); setTimeout(()=>{s.classList.remove('fade-out'); s.style.display='none';},1500); });
 
@@ -1372,6 +1517,7 @@ function updateShopUI(){
   if(buyN){ buyN.textContent = `🌿 Buy Catnip (${CATNIP_COST})`; buyN.disabled = state.score < CATNIP_COST; }
   updateCatnipCountdownUI();
 
+  // Always show price (no "ready")
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){
     nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`;
@@ -1379,12 +1525,14 @@ function updateShopUI(){
   }
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
 
+  // Furniture button
   if(furnBtn){
     const owned = !!(state.furniture?.catTree);
     furnBtn.textContent = owned ? '🪑 Cat Tree — Owned' : `🪑 Buy Furniture (${FURNITURE_COST})`;
     furnBtn.disabled = owned || state.score < FURNITURE_COST;
   }
 
+  // Populate selector
   const sel=$('catSelect');
   if(sel){
     const n = state.mapUnlocked||0;
@@ -1395,6 +1543,7 @@ function updateShopUI(){
       opt.textContent = `${i+1}: ${getCatName(i)}`;
       sel.appendChild(opt);
     }
+    // default to the next cat when opening (if already visible)
     if(n>0 && $('nameArea').style.display!=='none'){
       sel.value = String(Math.min(getNextCatIndex(), n-1));
     }
@@ -1466,6 +1615,7 @@ $('toggleNameArea').addEventListener('click', ()=>{
     persist();
   }
   $('nameArea').style.display='block';
+  // Preselect next cat
   const sel = $('catSelect');
   if(sel){
     const nextIdx = Math.min(getNextCatIndex(), (state.mapUnlocked||1)-1);
@@ -1483,7 +1633,7 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   if((state.inventory.nameTokens||0) <= 0){ $('shopMsg').textContent='You need to buy a new name token first.'; $('shopMsg').className='feedback warn'; return; }
   if(!state.catNames) state.catNames = {};
   state.catNames[idx] = name;
-  state.nameCursor = idx;
+  state.nameCursor = idx; // advance cursor to this cat (next time goes to the next one)
   state.inventory.nameTokens = Math.max(0, (state.inventory.nameTokens||0)-1);
   $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`;
   $('shopMsg').className='feedback ok';
@@ -1559,14 +1709,14 @@ $('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.dis
 $('sentPrev').addEventListener('click', ()=>{ sentenceIdx--; renderSentence(); });
 $('sentNext').addEventListener('click', ()=>{ sentenceIdx++; renderSentence(); });
 
-/* ===== NEW: Reset Cat Names Only ===== */
+/* ===== NEW: Reset Cat Names Only (Option A) ===== */
 $('resetNamesBtn').addEventListener('click', ()=>{
   if(!confirm('Reset ALL cat names for this profile? This cannot be undone.')) return;
 
   state.catNames = {};
   state.nameCursor = -1;
 
-  persist();
+  persist();          // updates UI & debounced sync for Nicole
   updateShopUI();
   updateNamesVisibility();
 
@@ -1621,11 +1771,15 @@ $('quickSia').addEventListener('click', ()=>{
 })();
 
 /* Start overlay: choose mode */
-function startAs(m){ mode=m; resetSessionProgress(); ensureOrder(); $('startOverlay').style.display='none'; showItem(); }
-['startLearn','startQuiz'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
+function startAs(m){
+  if(m==='audio'){ $('startOverlay').style.display='none'; openAudioQuiz(); return; }
+  mode=m; resetSessionProgress(); ensureOrder(); $('startOverlay').style.display='none'; showItem();
+}
+['startLearn','startQuiz', 'startAudio'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
 $('startOverlay').addEventListener('click',(e)=>{
   if(e.target.id==='startLearn') startAs('learn');
   if(e.target.id==='startQuiz')  startAs('quiz');
+  if(e.target.id==='startAudio') startAs('audio');
 });
 
 /* Close modals on backdrop click */
@@ -1640,27 +1794,10 @@ document.addEventListener('click', (e)=>{
 
 /* Item order & display */
 function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=pool.slice(); shuffle(order); idx=0; }
-
-/* ======= IMAGE/EMOJI FALLBACK (updated) ======= */
 function showImageOrEmoji(item){
-  const pic = $('pic'), emo = $('emoji');
-
-  // Set emoji as immediate fallback
-  emo.textContent = item.emoji || '❓';
-  emo.style.display = 'block';
-  pic.style.display = 'none';
-  pic.removeAttribute('src');
-  pic.alt = item.en || '';
-
-  // If no image specified, keep emoji
-  if (!item.image) return;
-
-  // Load image with fallback handlers
-  pic.onload = () => { pic.style.display = 'block'; emo.style.display = 'none'; };
-  pic.onerror = () => { pic.removeAttribute('src'); pic.style.display = 'none'; emo.style.display = 'block'; };
-  pic.src = item.image;
+  const pic=$('pic'), emo=$('emoji');
+  setImageWithFallback(pic, emo, item);
 }
-
 function showItem(){
   const pool = (mode==='quiz')? quizPool(): learnPool();
   if(order.length===0 || order.some(i=>!pool.includes(i))) ensureOrder();
@@ -1697,30 +1834,26 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
   });
 })();
 
-/* ========== Night Sky Background (22:00–02:00, 10s bursts) ========== */
+/* ========== Night Sky Background (22:00–02:00) — show briefly for perf ========== */
 (function nightSkyBackground(){
   try{
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let sky = null;
     let sparkTimer = null;
     let showTimer = null;
+    let checkTimer = null;
+    let lastShownAt = 0;
 
-    const SHOW_MS = 10000;   // show stars for 10 seconds
-    const TICK_MS = 60000;   // check once per minute
+    const SHOW_MS = 10000;    // show stars for 10 seconds
+    const COOLDOWN_MS = 60000; // wait at least 60s before showing again
 
     function inWindow(){
       const h = new Date().getHours();
-      return (h >= 22 || h < 2);
-    }
-
-    function isReducedMotion(){
-      try{
-        return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-      }catch{ return false; }
+      return (h>=22 || h<2);
     }
 
     function createSky(){
-      if (sky) return; // already visible
-
+      if(sky) return;
       sky = document.createElement('div');
       sky.id = 'nightSky';
       sky.className = 'night-sky';
@@ -1744,16 +1877,16 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
         sky.appendChild(s);
       }
 
-      if (!isReducedMotion()) startSparkEngine();
-
+      if(!reduce) startSparkEngine();
+      // schedule hide after SHOW_MS
       clearTimeout(showTimer);
       showTimer = setTimeout(destroySky, SHOW_MS);
+      lastShownAt = Date.now();
     }
 
     function destroySky(){
       stopSparkEngine();
-      if (showTimer){ clearTimeout(showTimer); showTimer = null; }
-      if (!sky) return;
+      if(!sky) return;
       sky.remove();
       sky = null;
     }
@@ -1763,7 +1896,7 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
       const stars = ()=> sky ? Array.from(sky.querySelectorAll('.night-star')) : [];
       sparkTimer = setInterval(()=>{
         const arr = stars();
-        if(!arr.length || isReducedMotion()) return;
+        if(!arr.length) return;
         const picks = Math.max(1, Math.floor(Math.random()*3)+1);
         for(let i=0;i<picks;i++){
           const s = arr[Math.floor(Math.random()*arr.length)];
@@ -1771,7 +1904,7 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
           s.classList.remove('spark');
           const dur = (0.6 + Math.random()*1.0).toFixed(2) + 's';
           s.style.setProperty('--sparkDur', dur);
-          void s.offsetWidth; // reflow for restart
+          void s.offsetWidth;
           s.classList.add('spark');
           setTimeout(()=> s && s.classList && s.classList.remove('spark'), 1400);
         }
@@ -1779,174 +1912,35 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
     }
 
     function stopSparkEngine(){
-      if (sparkTimer){ clearInterval(sparkTimer); sparkTimer=null; }
+      if(sparkTimer){ clearInterval(sparkTimer); sparkTimer=null; }
     }
 
-    function tick(){
-      if (inWindow()) { createSky(); } else { destroySky(); }
+    function cycle(){
+      const now = Date.now();
+      if(!inWindow() || reduce){
+        destroySky();
+        return;
+      }
+      // If cooled down and not currently visible, show again
+      if(!sky && (now - lastShownAt >= COOLDOWN_MS)){
+        createSky();
+      }
     }
 
-    // Initial run and a once‑per‑minute cycle (10s shown, 50s hidden)
-    tick();
-    setInterval(tick, TICK_MS);
+    cycle();
+    clearInterval(checkTimer);
+    checkTimer = setInterval(cycle, 30000);
 
-    // Respect reduced‑motion changes live
-    if (window.matchMedia){
-      try{
-        const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-        mq.addEventListener?.('change', ()=>{
-          if (isReducedMotion()) stopSparkEngine();
-          else if (sky) startSparkEngine();
-        });
-      }catch{}
-    }
+    window.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState==='visible'){ cycle(); }
+    });
 
-    // Recreate on resize if visible during burst
     window.addEventListener('resize', ()=>{
-      if (!sky) return;
-      destroySky();
-      if (inWindow()) createSky();
+      // if visible, rebuild to fit new size
+      if(sky){ destroySky(); createSky(); }
     });
   }catch{}
 })();
-
-/* ===================== AUDIO QUIZ ===================== */
-const AUDIO_QUIZ_SIZE = 8; // session length
-
-let AQ = {queue:[], current:null, total:0, correct:0, locked:false, answer:null};
-
-function startAudioQuiz(){
-  const settings = $('settingsModal'); if (settings) settings.style.display='none';
-
-  const base = [...new Set([...quizPool(), ...unlockedIndices()])];
-  shuffle(base);
-
-  const size = Math.max(4, Math.min(AUDIO_QUIZ_SIZE, base.length));
-  AQ = {queue: base.slice(0, size), current:null, total:0, correct:0, locked:false, answer:null};
-
-  $('aqFeedback').textContent = '';
-  $('aqBar').style.width = '0%';
-  $('audioQuizModal').style.display = 'grid';
-
-  nextAQQuestion();
-}
-
-function endAudioQuiz(){
-  $('audioQuizModal').style.display='none';
-  AQ.locked = false;
-  pauseAllAudio();
-}
-
-function nextAQQuestion(){
-  AQ.locked = false;
-
-  if (!AQ.queue.length){
-    $('aqFeedback').innerHTML = `Audio Quiz complete! Score: <b>${AQ.correct}</b> / ${AQ.total}`;
-    $('aqBar').style.width = '100%';
-    setTimeout(endAudioQuiz, 1200);
-    return;
-  }
-
-  AQ.current = AQ.queue.shift();
-  $('aqFeedback').textContent = '';
-  buildAQOptions(AQ.current);
-  $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`;
-
-  aqPlay(); // auto-play the prompt
-}
-
-function buildAQOptions(correctIdx){
-  const grid = $('aqOptions');
-  grid.innerHTML = '';
-
-  const pool = unlockedIndices().filter(i => i !== correctIdx);
-  shuffle(pool);
-  const preferImg = pool.filter(i => !!(words[i].image));
-  const distractors = (preferImg.length >= 3 ? preferImg : pool).slice(0, 3);
-
-  const options = shuffle([correctIdx, ...distractors]);
-  AQ.answer = correctIdx;
-
-  options.forEach(i=>{
-    const item = words[i];
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'aq-option';
-    btn.dataset.idx = String(i);
-    btn.setAttribute('aria-label', item.en || 'option');
-
-    const img = document.createElement('img');
-    img.alt = item.en || '';
-    const fallback = document.createElement('div');
-    fallback.textContent = item.emoji || '❓';
-    fallback.style.fontSize = '48px';
-    fallback.style.lineHeight = '1';
-    fallback.style.display = 'none';
-
-    img.onload  = ()=>{ img.style.display='block'; fallback.style.display='none'; };
-    img.onerror = ()=>{ img.style.display='none';  fallback.style.display='block'; };
-
-    if (item.image){ img.src = item.image; } else { img.style.display='none'; fallback.style.display='block'; }
-
-    const sr = document.createElement('span');
-    sr.className = 'visually-hidden';
-    sr.textContent = item.en || '';
-
-    btn.appendChild(img);
-    btn.appendChild(fallback);
-    btn.appendChild(sr);
-
-    btn.addEventListener('click', onAQOptionClick);
-
-    grid.appendChild(btn);
-  });
-}
-
-function onAQOptionClick(e){
-  if (AQ.locked) return;
-  AQ.locked = true;
-
-  const picked = parseInt(e.currentTarget.dataset.idx, 10);
-  const ok = (picked === AQ.answer);
-
-  AQ.total++;
-  if (ok){
-    e.currentTarget.classList.add('correct');
-    $('aqFeedback').textContent = 'Nice!';
-    $('aqFeedback').className = 'feedback ok';
-    celebrateSimple();
-    AQ.correct++;
-  }else{
-    e.currentTarget.classList.add('wrong');
-    $('aqFeedback').textContent = `Answer: ${words[AQ.answer].en}`;
-    $('aqFeedback').className = 'feedback warn';
-    Array.from($('aqOptions').children).forEach(btn=>{
-      if (parseInt(btn.dataset.idx, 10) === AQ.answer) btn.classList.add('correct');
-    });
-    state.streak = 0; persist();
-  }
-
-  $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`;
-
-  setTimeout(nextAQQuestion, 600);
-}
-
-async function aqPlay(){
-  if (AQ.current == null) return;
-  try{
-    const a = getAudio(words[AQ.current]);
-    a.currentTime = 0;
-    await a.play();
-  }catch{}
-}
-
-function pauseAllAudio(){ try{ audioCache.forEach(a=>{ a.pause(); }); }catch{} }
-
-// Bindings for Audio Quiz
-$('audioQuizBtn')?.addEventListener('click', startAudioQuiz);
-$('startAudioQuiz')?.addEventListener('click', startAudioQuiz);
-$('aqReplay')?.addEventListener('click', aqPlay);
-$('aqQuit')?.addEventListener('click', endAudioQuiz);
 
 /* Init */
 initSpeech();
