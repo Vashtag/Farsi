@@ -249,7 +249,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div style="display:flex; gap:12px; flex-wrap:wrap">
       <button id="startLearn" class="primary" type="button">📚 Learn Mode</button>
       <button id="startQuiz" class="accent" type="button">🎯 Quiz Mode</button>
-      <button id="startAudio" class="btn" type="button">🔊 Audio Quiz</button>
     </div>
     <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s. New words unlock at <button id="midnightBtn0" class="btn" style="padding:2px 6px">midnight</button>.</p>
   </div>
@@ -267,7 +266,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div class="row">
       <div class="media-wrap">
         <img id="pic" class="pic" alt="" />
-        <div class="emoji" id="emoji">🍎</div>
+        <div class="emoji" id="emoji"></div>
       </div>
       <div class="word" id="wordWrap">
         <div class="en" id="en">apple</div>
@@ -1779,7 +1778,6 @@ function startAs(m){
 $('startOverlay').addEventListener('click',(e)=>{
   if(e.target.id==='startLearn') startAs('learn');
   if(e.target.id==='startQuiz')  startAs('quiz');
-  if(e.target.id==='startAudio') startAs('audio');
 });
 
 /* Close modals on backdrop click */
