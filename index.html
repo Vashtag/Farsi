@@ -74,11 +74,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .cat{position:absolute;font-size:32px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));will-change:transform,left,top}
 .cat.flip{transform:scaleX(-1)}
 @media(min-width:760px){ .cat{font-size:40px} }
-
-/* Inner emoji span so flip (parent) + animations (child) compose cleanly */
 .cat .cat-emoji{display:inline-block}
-
-/* Name label above each cat */
 .cat-name{
   position:absolute; left:50%; top:-18px; transform:translateX(-50%);
   font-size:12px; padding:2px 6px; border-radius:8px;
@@ -175,43 +171,18 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   animation: starTwinkle var(--dur,2.2s) ease-in-out var(--delay,0s) infinite alternate,
              starSpark var(--sparkDur,.9s) ease-out 1;
 }
-@keyframes starTwinkle{
-  0%{   opacity:.07; transform: scale(.9) }
-  50%{  opacity:.95; transform: scale(1.1) }
-  100%{ opacity:.15; transform: scale(.92) }
-}
-@keyframes starSpark{
-  0%{   opacity:.25; transform: scale(1) }
-  40%{  opacity:1;   transform: scale(1.35) }
-  100%{ opacity:.25; transform: scale(1) }
-}
+@keyframes starTwinkle{ 0%{opacity:.07;transform:scale(.9)} 50%{opacity:.95;transform:scale(1.1)} 100%{opacity:.15;transform:scale(.92)} }
+@keyframes starSpark{ 0%{opacity:.25;transform:scale(1)} 40%{opacity:1;transform:scale(1.35)} 100%{opacity:.25;transform:scale(1)} }
 @media (prefers-reduced-motion: reduce){
   .night-star{ animation: none; opacity:.22 }
   .night-star.spark{ animation: none; }
 }
 
 /* ======== Audio Quiz styles ======== */
-.aq-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-.aq-option{
-  position:relative;
-  aspect-ratio:1/1;
-  border:1px solid #1f2937;
-  border-radius:12px;
-  background:#0b1229;
-  display:grid;
-  place-items:center;
-  overflow:hidden;
-}
-.aq-option img{
-  width:100%; height:100%; object-fit:contain; display:block;
-}
-.aq-option .aq-emoji{
-  font-size:48px; line-height:1;
-}
+.aq-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.aq-option{ position:relative; aspect-ratio:1/1; border:1px solid #1f2937; border-radius:12px; background:#0b1229; display:grid; place-items:center; overflow:hidden; }
+.aq-option img{ width:100%; height:100%; object-fit:contain; display:block; }
+.aq-option .aq-emoji{ font-size:48px; line-height:1; }
 .aq-option.correct{ border-color: var(--accent); box-shadow:0 0 0 2px rgba(34,197,94,.25) inset }
 .aq-option.wrong{ border-color: var(--err); box-shadow:0 0 0 2px rgba(239,68,68,.22) inset }
 
@@ -233,12 +204,20 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 }
 .pc-emoji{ font-size:48px; line-height:1; display:none }
 .pc-cap{ font-size:13px; color:#cbd5e1; margin-top:8px; text-align:center }
-.pc-lock{
-  position:absolute; inset:0; display:grid; place-items:center; text-align:center;
-  background:rgba(2,6,23,.55); border-radius:12px; color:#e5e7eb; font-weight:600;
-  border:1px solid #1f2937;
+
+/* “More coming” placeholder tile */
+.pc-more{
+  border:1px dashed #334155;
+  background:#0b1229;
+  color:#94a3b8;
+  display:grid;
+  place-items:center;
+  aspect-ratio:4/3;
+  border-radius:12px;
+  cursor:default;
 }
-.pc-lock .tiny{ color:#94a3b8; margin-top:4px }
+.pc-more .pc-q{ font-size:42px; line-height:1; filter:drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
+.pc-more .pc-note{ font-size:12px; margin-top:6px; color:#9aa7b7; text-align:center; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
@@ -251,7 +230,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div class="badge" id="streakBadge">Streak: 0 🔥</div>
     <div class="badge" id="unlockedBadge">0/0 unlocked</div>
     <button id="openMap" class="icon-btn" title="Bazaar Map">🗺️</button>
-    <!-- Postcards button -->
     <button id="openPostcards" class="icon-btn" title="Postcards">🏛️</button>
     <button id="openAchievements" class="icon-btn" title="Badges">🏆</button>
     <button id="openSettings" class="icon-btn" title="Settings">⚙️</button>
@@ -286,6 +264,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <button id="learnBtn" class="btn">Learn Mode</button>
     <button id="quizBtn" class="btn">Quiz Mode</button>
     <button id="audioQuizBtn" class="btn">Audio Quiz</button>
+    <button id="musicToggle" class="btn">🎵 Play Music</button>
     <span class="tiny">New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰</span>
   </div>
 
@@ -343,11 +322,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 <div id="mapModal" class="modal">
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <!-- Left side: names toggle -->
-      <div class="shop-row">
-        <button id="toggleNamesBtn" class="btn" title="Show/hide cat names">🐾 Show Names</button>
-      </div>
-      <!-- Title and right-side controls -->
+      <div class="shop-row"><button id="toggleNamesBtn" class="btn" title="Show/hide cat names">🐾 Show Names</button></div>
       <div style="display:flex;align-items:center;gap:10px">
         <h3 style="margin:0">🗺️ Persian Bazaar Progress</h3>
         <div class="shop-row">
@@ -363,12 +338,9 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <div id="catLayer" class="cat-layer"></div>
     </div>
 
-    <!-- Cat Rewards panel -->
     <div id="shopPanel" class="stat" style="display:none; margin-top:10px">
       <div class="shop-row" style="justify-content:space-between">
-        <div class="muted">
-          Score: <b id="shopScore">0</b> • Fish: <b id="shopFish">0</b> • Catnip: <b id="shopCatnip">0</b>
-        </div>
+        <div class="muted">Score: <b id="shopScore">0</b> • Fish: <b id="shopFish">0</b> • Catnip: <b id="shopCatnip">0</b></div>
         <div class="shop-row">
           <button id="buyFishBtn" class="btn">🐟 Buy Fish (100)</button>
           <button id="feedFishBtn" class="btn">🍽️ Feed Cats</button>
@@ -401,7 +373,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="closePostcards" class="btn">Close</button>
     </div>
 
-    <!-- Viewer -->
+    <!-- Viewer (no play/prev/next) -->
     <div id="pcView" class="stat" style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:12px">
       <div style="display:grid;place-items:center">
         <img id="pcViewImg" alt="" style="display:none;width:min(780px,100%);height:auto;border-radius:12px;border:1px solid #1f2937;background:#0b1229" loading="lazy"/>
@@ -412,14 +384,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
         <div id="pcViewTrans" class="trans" style="font-size:18px;margin-top:6px"></div>
         <div id="pcViewEn" class="en" style="font-size:18px;margin-top:4px"></div>
       </div>
-      <div class="controls" style="justify-content:space-between">
-        <div class="tiny" id="pcUnlockNote"></div>
-        <div>
-          <button id="pcPrev" class="btn">⬅️ Prev</button>
-          <button id="pcPlay" class="accent">▶️ Play</button>
-          <button id="pcNext" class="primary">Next ➡️</button>
-        </div>
-      </div>
+      <div class="tiny" id="pcUnlockNote"></div>
     </div>
 
     <!-- Grid -->
@@ -458,13 +423,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
         <b>Danger zone</b>
         <p class="tiny">Clear this profile’s score, streak, SRS, unlocks, and achievements.</p>
         <button id="resetBtn" class="btn" style="background:linear-gradient(180deg,#ef4444,#dc2626);border-color:#7f1d1d">♻️ Reset Progress</button>
-        <!-- reset cat names only -->
-        <button id="resetNamesBtn"
-          class="btn"
-          style="margin-top:8px;background:linear-gradient(180deg,#f59e0b,#d97706);border-color:#b45309"
-          title="Clear all saved cat names for this profile only">
-          🐾 Reset Cat Names
-        </button>
+        <button id="resetNamesBtn" class="btn" style="margin-top:8px;background:linear-gradient(180deg,#f59e0b,#d97706);border-color:#b45309" title="Clear all saved cat names for this profile only">🐾 Reset Cat Names</button>
       </div>
     </div>
   </div>
@@ -522,9 +481,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     </div>
     <div class="controls" style="justify-content:space-between;margin-bottom:10px">
       <div class="tiny">Hear the word → pick the picture</div>
-      <div>
-        <button id="aqPlay" class="accent">▶️ Play</button>
-      </div>
+      <div><button id="aqPlay" class="accent">▶️ Play</button></div>
     </div>
     <div id="aqOptions" class="aq-grid" role="listbox" aria-label="Audio quiz options"></div>
     <div id="aqFeedback" class="feedback"></div>
@@ -536,7 +493,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 let ACTIVE_PROFILE = null;
 const GLOBAL_PREFIX = 'ff';
 function PKEY(k){ return `${GLOBAL_PREFIX}:${ACTIVE_PROFILE||'__anon'}:${k}`; }
-
 const store = {
   get:(k,def=null)=>{ try{ const v=localStorage.getItem(PKEY(k)); return v===null?def:JSON.parse(v); }catch{ return def; } },
   set:(k,v)=>{ try{ localStorage.setItem(PKEY(k), JSON.stringify(v)); }catch{} },
@@ -548,25 +504,17 @@ const DAILY_WORDS = 5;
 const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
 const MINI_QUIZ_SIZE = 5;
 const AUDIO_QUIZ_SIZE = 8;
-
-/* Cat shop pricing */
 const FISH_COST = 100;
 const NAME_COST = 500;
-/* Catnip pricing & effect */
 const CATNIP_COST = 250;
 const CATNIP_DURATION_MS = 180000;
 const CATNIP_SPEED_FACTOR = 3.0;
 const CATNIP_TURN_FACTOR = 0.45;
-
-/* Furniture */
 const FURNITURE_COST = 1000;
 const CAT_TREE_IMG = 'images/cat_tree.png';
-
-/* Cats unlock at milestones */
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
-
-/* Postcards unlock cadence */
-const POSTCARD_UNLOCK_EVERY = 15; // 1st at 15, 2nd at 30, 3rd at 45 ...
+/* Postcards unlock cadence: every 15 learned */
+const POSTCARD_UNLOCK_EVERY = 15;
 
 /* Example sentences */
 const SENTENCES = [
@@ -578,7 +526,7 @@ const SENTENCES = [
   { fa:"سگ در پارک است.", translit:"sag dar pârk ast.", en:"The dog is in the park." }
 ];
 
-/* ===================== WORDS ===================== */
+/* ===================== WORDS (truncated for brevity in this comment—full list kept) ===================== */
 const words = [
   {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.png"},
   {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.png"},
@@ -640,7 +588,7 @@ const words = [
   {fa:"قرمز", en:"red", translit:"ghermez", emoji:"🔴", audio:"audio/ghermez.mp3", image:"images/ghermez.png"},
   {fa:"آبی", en:"blue", translit:"âbi", emoji:"🔵", audio:"audio/abi.mp3", image:"images/abi.png"},
   {fa:"سبز", en:"green", translit:"sabz", emoji:"🟢", audio:"audio/sabz.mp3", image:"images/sabz.png"},
-  {fa:"زرد", en:"yellow", translit:"zard", emoji:"🟡", audio:"audio/zard.mp3", image:"images/zard.png"}, // fixed
+  {fa:"زرد", en:"yellow", translit:"zard", emoji:"🟡", audio:"audio/zard.mp3", image:"images/zard.png"},
   {fa:"بنفش", en:"purple", translit:"banafsh", emoji:"🟣", audio:"audio/banafsh.mp3", image:"images/banafsh.png"},
   {fa:"نارنجی", en:"orange (color)", translit:"nârenji", emoji:"🟠", audio:"audio/narenji.mp3", image:"images/narenji.png"},
   {fa:"صورتی", en:"pink", translit:"surati", emoji:"🌸", audio:"audio/surati.mp3", image:"images/surati.png"},
@@ -733,12 +681,10 @@ const THEMES = [
  {key:'amethyst',name:'Amethyst', unlockAt:150,vars:{'--grad1':'#1b1330','--grad2':'#2a1f4d','--accent-2':'#a78bfa','--accent':'#8b5cf6','--bg':'#130f24'}},
  {key:'night', name:'Night Bazaar', unlockAt:200,vars:{'--grad1':'#0a0a0f','--grad2':'#15151f','--accent-2':'#60a5fa','--accent':'#22d3ee','--bg':'#0a0b12'}}
 ];
-
 function applyTheme(key){
   const t = THEMES.find(x=>x.key===key) || THEMES[0];
   for(const [k,v] of Object.entries(t.vars)) document.documentElement.style.setProperty(k, v);
-  state.theme = t.key;
-  persist();
+  state.theme = t.key; persist();
 }
 function learnedCount(){ return (state.covered||[]).length; }
 function isThemeUnlocked(theme){ return learnedCount() >= theme.unlockAt; }
@@ -763,23 +709,23 @@ function populateThemeDropdown(){
 }
 
 /* ===================== POSTCARDS DATA ===================== */
-/* Place JPGs in /images/postcards/ with these exact names.
-   Optional narration MP3s can go in /audio/postcards/ with the same base name. */
 const POSTCARDS = [
   {
     id: 'persepolis',
     title: 'Persepolis (Takht‑e Jamshid)',
-    en: 'Persepolis: the ceremonial capital of the Achaemenids is a symbol of the splendor of ancient Iranian art and history.',
+    fa: 'تخت‌جمشید، پایتخت آیینی هخامنشیان، نماد شکوه و هنر ایران باستان است.',
+    translit: 'takht‑e jamshid, pâytakhte âyini‑ye hakhamaneshiân, nemâd‑e shokuh o honar‑e irân‑e bâstân ast.',
+    en: 'Persepolis—the ceremonial capital of the Achaemenids—is a symbol of the splendor of ancient Iranian art and history.',
     image: 'images/postcards/persepolis.jpg',
-    audio: 'audio/postcards/persepolis.mp3',
     emoji: '🏛️'
   },
   {
     id: 'azadi_tower',
-    title: 'Azadi Tower — Tehran',
-    en: 'Azadi Tower: an icon of Tehran that blends traditional Persian forms with modern lines.',
+    title: 'Tehran — Azadi Tower',
+    fa: 'برج آزادی با معماری ایرانی‌ـ‌مدرن، یکی از نمادهای تهران است.',
+    translit: 'borj‑e âzâdi bâ me’mâri‑ye irâni‑modarn, yeki az nemâdhâ‑ye tehrân ast.',
+    en: 'Azadi Tower—an icon of Tehran—blends traditional Persian forms with modern lines.',
     image: 'images/postcards/azadi_tower.jpg',
-    audio: 'audio/postcards/azadi_tower.mp3',
     emoji: '🗼'
   },
   {
@@ -789,7 +735,6 @@ const POSTCARDS = [
     translit: 'meydân‑e naqsh‑e jahân bâ gonbad‑hâ‑ye firuze’i va bâzâr‑e târikhî, qalb‑e tapande‑ye esfahân ast.',
     en: 'Naqsh‑e Jahan Square—turquoise domes and a living bazaar—the beating heart of Isfahan.',
     image: 'images/postcards/naqsh_e_jahan.jpg',
-    audio: 'audio/postcards/naqsh_e_jahan.mp3',
     emoji: '🕌'
   },
   {
@@ -799,7 +744,6 @@ const POSTCARDS = [
     translit: 'shahr‑e târikhî‑ye yazd bâ bâdgirhâ va kuchehâ‑ye kheshti, mirâs‑e jahâni‑ye yunesko ast.',
     en: 'The historic city of Yazd—windcatchers, adobe lanes, and desert skies—is a UNESCO World Heritage site.',
     image: 'images/postcards/yazd.jpg',
-    audio: 'audio/postcards/yazd.mp3',
     emoji: '🏜️'
   },
   {
@@ -809,7 +753,6 @@ const POSTCARDS = [
     translit: 'shirâz, shahr‑e sher o bâgh‑hâ; hâfeziye, sa’diye va ’atr‑e bahâr‑e nâranj.',
     en: 'Shiraz—the city of poetry and gardens—home to Hafez and Saadi, scented with spring orange blossoms.',
     image: 'images/postcards/shiraz.jpg',
-    audio: 'audio/postcards/shiraz.mp3',
     emoji: '🌸'
   },
   {
@@ -819,7 +762,6 @@ const POSTCARDS = [
     translit: 'kâkh‑e golestân, majmu’e‑i qâjâri bâ tâlâr‑e âyene va kâshi‑kâri‑hâ‑ye nafis dar qalb‑e tehrân.',
     en: 'Golestan Palace—a Qajar‑era complex with mirror halls and exquisite tilework in the heart of Tehran.',
     image: 'images/postcards/golestan_palace.jpg',
-    audio: 'audio/postcards/golestan_palace.mp3',
     emoji: '🏛️'
   },
   {
@@ -829,7 +771,6 @@ const POSTCARDS = [
     translit: 'bâbol, shahr‑e bahâr‑e nâranj o rudkhânehâ; darvâze‑ye jangal‑hâ‑ye hirkanî.',
     en: 'Babol—city of orange blossoms and rivers—the gateway to the lush Hyrcanian forests.',
     image: 'images/postcards/babol.jpg',
-    audio: 'audio/postcards/babol.mp3',
     emoji: '🍊'
   },
   {
@@ -839,7 +780,6 @@ const POSTCARDS = [
     translit: 'kuh‑e damâvand, bolandtarin qolle‑ye irân va âtashfeshâni khofte, nemâd‑e ostuvâri dar osturehâ‑ye pârsi.',
     en: 'Mount Damavand—the highest peak in Iran, a dormant volcano and a powerful symbol in Persian mythology.',
     image: 'images/postcards/mount-damavand.jpg',
-    audio: 'audio/postcards/mount-damavand.mp3',
     emoji: '⛰️'
   }
 ];
@@ -854,8 +794,6 @@ function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').re
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
 const isMobile = () => window.matchMedia('(max-width:700px)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 function maybeFocusInput(){ if(!isMobile()) $('typeInput').focus(); }
-
-/* Shared image fallback */
 function setImageWithFallback(imgEl, emojiEl, item){
   if(!imgEl) return;
   const useEmoji = ()=>{
@@ -879,13 +817,11 @@ const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false}, achFx:{},
   mapUnlocked:0, mapDays:[],
-  settings:{reviewAll:false},
+  settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
   furniture:{catTree:false},
-  catNames:{},
-  nameCursor:-1,
-  showCatNames:false
+  catNames:{}, nameCursor:-1, showCatNames:false
 });
 let state = defaultState();
 
@@ -933,7 +869,7 @@ function persist(){
   updateShopUI();
   updateNamesToggleUI();
   updateNamesVisibility();
-  if($('postcardsModal')?.style.display==='grid'){ renderPostcardsGrid(); renderPostcardView(pcIndex); }
+  if($('postcardsModal')?.style.display==='grid'){ renderPostcardsGrid(); const u=postcardsUnlockedCount(); renderPostcardView(u?u-1:-1); }
 }
 function loadState(){
   state = store.get('state', defaultState());
@@ -946,6 +882,9 @@ function loadState(){
   if(typeof state.nameCursor!=='number') state.nameCursor = -1;
   if(typeof state.showCatNames!=='boolean') state.showCatNames = false;
   if(!state.achievements) state.achievements = defaultState().achievements;
+  if(!state.settings) state.settings = {reviewAll:false, musicOn:false, musicVol:0.28};
+  if(typeof state.settings.musicOn!=='boolean') state.settings.musicOn=false;
+  if(typeof state.settings.musicVol!=='number') state.settings.musicVol=0.28;
   state.achFx = state.achFx || {};
   initDailyUnlock();
   applyTheme(state.theme||'default');
@@ -960,17 +899,14 @@ function mergeStates(local, remote){
   if(!remote || !remote.updated_at) return local;
   const localIsNewer = (local.updated_at||0) >= (remote.updated_at||0);
   const newer = localIsNewer ? local : remote;
-
   const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]); newer.covered = [...cov];
   newer.score = Math.max(local.score||0, remote.score||0);
   newer.streak = (newer===local ? local.streak : remote.streak) || 0;
-
   newer.inventory = {
     fish: (local.inventory?.fish||0) + (remote.inventory?.fish||0),
     catnip: (local.inventory?.catnip||0) + (remote.inventory?.catnip||0),
     nameTokens: (local.inventory?.nameTokens||0) + (remote.inventory?.nameTokens||0)
   };
-
   newer.furniture = {catTree: !!(local.furniture?.catTree || remote.furniture?.catTree)};
   newer.catNames = localIsNewer ? {...(local.catNames||{})} : {...(remote.catNames||{})};
   newer.nameCursor = localIsNewer ? (local.nameCursor??-1) : (remote.nameCursor??-1);
@@ -984,10 +920,7 @@ async function syncPullNicole(){
   try{
     const res = await fetch(`${SYNC_ENDPOINT}/p/${SYNC_DOC_ID}`);
     const remote = await res.json().catch(()=>null);
-    if(remote && Object.keys(remote).length){
-      state = mergeStates(state, remote);
-      _persist();
-    }
+    if(remote && Object.keys(remote).length){ state = mergeStates(state, remote); _persist(); }
   }catch{}
 }
 async function syncPushNicole(){
@@ -995,9 +928,7 @@ async function syncPushNicole(){
   try{
     const payload = JSON.stringify({...state, updated_at: Date.now(), profile: ACTIVE_PROFILE});
     await fetch(`${SYNC_ENDPOINT}/p/${SYNC_DOC_ID}`, {
-      method:"PUT",
-      headers:{ "Content-Type":"application/json", ...(SYNC_WRITE_TOKEN?{"X-Token":SYNC_WRITE_TOKEN}:{}) },
-      body:payload
+      method:"PUT", headers:{ "Content-Type":"application/json", ...(SYNC_WRITE_TOKEN?{"X-Token":SYNC_WRITE_TOKEN}:{}) }, body:payload
     });
   }catch{}
 }
@@ -1019,8 +950,6 @@ function updateBadges(){
   $('unlockedBadge').textContent= `${unlockedCount()}/${words.length} unlocked`;
   updateSessionBar();
 }
-
-/* Badges list renderer */
 function reflectBadges(){
   const A = state.achievements || {};
   const defs = [
@@ -1041,211 +970,107 @@ function reflectBadges(){
   });
 }
 
-/* ===================== ROAMING CATS ===================== */
+/* ===================== ROAMING CATS (unchanged) ===================== */
 const CAT_EMOJIS = ['🐈','🐈‍⬛','🐱'];
-let cats = [];
-let catAnim = { running:false, lastTs:0, bounds:null };
-let flashNamesUntil = 0;
-
+let cats = []; let catAnim = { running:false, lastTs:0, bounds:null }; let flashNamesUntil = 0;
 function getCatName(i){ return state.catNames && state.catNames[i] ? state.catNames[i] : `Cat ${i+1}`; }
 function getNextCatIndex(){
-  const n = state.mapUnlocked||0;
-  if(n<=0) return 0;
+  const n = state.mapUnlocked||0; if(n<=0) return 0;
   const cur = (typeof state.nameCursor==='number' ? state.nameCursor : -1);
   return (cur + 1) % n;
 }
-
 function spawnCats(count){
-  const layer = $('catLayer');
-  if(!layer) return;
-  layer.innerHTML = '';
-  cats = [];
+  const layer = $('catLayer'); if(!layer) return;
+  layer.innerHTML = ''; cats = [];
   const rect = layer.getBoundingClientRect();
   catAnim.bounds = { w: rect.width, h: rect.height, pad: 6 };
   for(let i=0;i<count;i++){
-    const el = document.createElement('div');
-    el.className = 'cat';
-    const inner = document.createElement('span');
-    inner.className = 'cat-emoji';
-    inner.textContent = CAT_EMOJIS[i % CAT_EMOJIS.length];
-    el.appendChild(inner);
-
-    const label = document.createElement('div');
-    label.className = 'cat-name';
-    label.textContent = getCatName(i);
-    el.appendChild(label);
-
-    el.title = getCatName(i);
-    $('catLayer').appendChild(el);
-
-    const speed = 30 + Math.random()*50;
-    const angle = Math.random()*Math.PI*2;
-    const vx = Math.cos(angle)*speed;
-    const vy = Math.sin(angle)*speed;
-    const x = Math.random()*(catAnim.bounds.w-40);
-    const y = Math.random()*(catAnim.bounds.h-40);
-
+    const el = document.createElement('div'); el.className = 'cat';
+    const inner = document.createElement('span'); inner.className = 'cat-emoji'; inner.textContent = CAT_EMOJIS[i % CAT_EMOJIS.length]; el.appendChild(inner);
+    const label = document.createElement('div'); label.className = 'cat-name'; label.textContent = getCatName(i); el.appendChild(label);
+    el.title = getCatName(i); $('catLayer').appendChild(el);
+    const speed = 30 + Math.random()*50; const angle = Math.random()*Math.PI*2;
+    const vx = Math.cos(angle)*speed, vy = Math.sin(angle)*speed;
+    const x = Math.random()*(catAnim.bounds.w-40), y = Math.random()*(catAnim.bounds.h-40);
     const c = { el, label, x, y, vx, vy, speed, idx:i, nextTurn: performance.now()+800+Math.random()*1600, turnMult:1 };
-    cats.push(c);
-
-    el.style.left = x + 'px';
-    el.style.top = y + 'px';
-    if(vx<0) el.classList.add('flip');
-
+    cats.push(c); el.style.left = x + 'px'; el.style.top = y + 'px'; if(vx<0) el.classList.add('flip');
     if(catnipActive){ applyCatnipToCat(c); }
   }
   updateNamesVisibility();
 }
-
 function stepCats(ts){
   if(!catAnim.running) return;
-  const dt = Math.min(0.04, (ts - catAnim.lastTs)/1000);
-  catAnim.lastTs = ts;
-  const B = catAnim.bounds;
+  const dt = Math.min(0.04, (ts - catAnim.lastTs)/1000); catAnim.lastTs = ts; const B = catAnim.bounds;
   for(const c of cats){
     if(ts > c.nextTurn){
       const dTheta = (Math.random()-0.5) * (Math.PI/3);
       const angle = Math.atan2(c.vy, c.vx) + dTheta;
       const sp = Math.max(20, Math.min(90, c.speed + (Math.random()-0.5)*20));
-      c.speed = sp;
-      c.vx = Math.cos(angle)*c.speed;
-      c.vy = Math.sin(angle)*c.speed;
-      const base = 800 + Math.random()*1600;
-      c.nextTurn = ts + base * (c.turnMult || 1);
+      c.speed = sp; c.vx = Math.cos(angle)*c.speed; c.vy = Math.sin(angle)*c.speed;
+      const base = 800 + Math.random()*1600; c.nextTurn = ts + base * (c.turnMult || 1);
     }
-    c.x += c.vx * dt;
-    c.y += c.vy * dt;
-
+    c.x += c.vx * dt; c.y += c.vy * dt;
     const r = 6;
     if(c.x < r){ c.x=r; c.vx = Math.abs(c.vx); }
     if(c.y < r){ c.y=r; c.vy = Math.abs(c.vy); }
     if(c.x > B.w-40-r){ c.x=B.w-40-r; c.vx = -Math.abs(c.vx); }
     if(c.y > B.h-40-r){ c.y=B.h-40-r; c.vy = -Math.abs(c.vy); }
-
     if(c.vx < 0) c.el.classList.add('flip'); else c.el.classList.remove('flip');
-
-    c.el.style.left = c.x + 'px';
-    c.el.style.top = c.y + 'px';
+    c.el.style.left = c.x + 'px'; c.el.style.top = c.y + 'px';
   }
-  updateNamesVisibility();
-  requestAnimationFrame(stepCats);
+  updateNamesVisibility(); requestAnimationFrame(stepCats);
 }
-function startCats(){
-  const count = Math.max(0, state.mapUnlocked || 0);
-  if(count<=0){ stopCats(); return; }
-  spawnCats(count);
-  catAnim.running = true;
-  catAnim.lastTs = performance.now();
-  requestAnimationFrame(stepCats);
-  window.addEventListener('resize', onResizeCats);
-}
-function stopCats(){
-  catAnim.running = false;
-  const layer = $('catLayer');
-  if(layer) layer.innerHTML='';
-  cats = [];
-  window.removeEventListener('resize', onResizeCats);
-}
+function startCats(){ const count = Math.max(0, state.mapUnlocked || 0); if(count<=0){ stopCats(); return; } spawnCats(count); catAnim.running = true; catAnim.lastTs = performance.now(); requestAnimationFrame(stepCats); window.addEventListener('resize', onResizeCats); }
+function stopCats(){ catAnim.running = false; const layer = $('catLayer'); if(layer) layer.innerHTML=''; cats = []; window.removeEventListener('resize', onResizeCats); }
 function onResizeCats(){
-  if(!catAnim.running) return;
-  const layer = $('catLayer');
-  const rect = layer.getBoundingClientRect();
+  if(!catAnim.running) return; const layer = $('catLayer'); const rect = layer.getBoundingClientRect();
   catAnim.bounds = { w: rect.width, h: rect.height, pad: 6 };
-  for(const c of cats){
-    c.x = Math.max(6, Math.min(c.x, catAnim.bounds.w-40-6));
-    c.y = Math.max(6, Math.min(c.y, catAnim.bounds.h-40-6));
-  }
+  for(const c of cats){ c.x = Math.max(6, Math.min(c.x, catAnim.bounds.w-40-6)); c.y = Math.max(6, Math.min(c.y, catAnim.bounds.h-40-6)); }
 }
-
-/* Fish boost */
 function boostCatsFor(ms, factor=1.6){
-  for(const c of cats){
-    const angle = Math.atan2(c.vy, c.vx);
-    c.speed *= factor;
-    c.vx = Math.cos(angle)*c.speed;
-    c.vy = Math.sin(angle)*c.speed;
-  }
-  setTimeout(()=>{
-    for(const c of cats){
-      const angle = Math.atan2(c.vy, c.vx);
-      c.speed /= factor;
-      c.vx = Math.cos(angle)*c.speed;
-      c.vy = Math.sin(angle)*c.speed;
-    }
-  }, ms);
+  for(const c of cats){ const angle = Math.atan2(c.vy, c.vx); c.speed *= factor; c.vx = Math.cos(angle)*c.speed; c.vy = Math.sin(angle)*c.speed; }
+  setTimeout(()=>{ for(const c of cats){ const angle = Math.atan2(c.vy, c.vx); c.speed /= factor; c.vx = Math.cos(angle)*c.speed; c.vy = Math.sin(angle)*c.speed; } }, ms);
 }
-
-/* Hearts burst */
 function burstHearts(count=24){
   const layer = $('catLayer'); if(!layer) return;
-  const B = catAnim.bounds || layer.getBoundingClientRect();
-  const groups = cats.length ? cats : [{x:B.w/2, y:B.h-30}];
-  for(const c of groups){
-    const n = Math.ceil(count / groups.length);
-    for(let i=0;i<n;i++){
-      const span = document.createElement('span');
-      span.className = 'heart';
-      span.textContent = '❤️';
+  const B = catAnim.bounds || layer.getBoundingClientRect(); const groups = cats.length ? cats : [{x:B.w/2, y:B.h-30}];
+  for(const c of groups){ const n = Math.ceil(count / groups.length);
+    for(let i=0;i<n;i++){ const span = document.createElement('span'); span.className = 'heart'; span.textContent = '❤️';
       const jx = (Math.random()*40-20), jy = (Math.random()*20-10);
-      span.style.left = (c.x + 20 + jx) + 'px';
-      span.style.top = (c.y + jy) + 'px';
-      layer.appendChild(span);
-      setTimeout(()=>span.remove(), 1700);
+      span.style.left = (c.x + 20 + jx) + 'px'; span.style.top = (c.y + jy) + 'px'; layer.appendChild(span); setTimeout(()=>span.remove(), 1700);
     }
   }
 }
-
-/* Leaves burst for catnip */
 function burstLeaves(count=36){
   const layer = $('catLayer'); if(!layer) return;
-  const B = catAnim.bounds || layer.getBoundingClientRect();
-  const groups = cats.length ? cats : [{x:B.w/2, y:B.h-30}];
-  for(const c of groups){
-    const n = Math.ceil(count / groups.length);
-    for(let i=0;i<n;i++){
-      const span = document.createElement('span');
-      span.className = 'leaf';
-      span.textContent = '🌿';
+  const B = catAnim.bounds || layer.getBoundingClientRect(); const groups = cats.length ? cats : [{x:B.w/2, y:B.h-30}];
+  for(const c of groups){ const n = Math.ceil(count / groups.length);
+    for(let i=0;i<n;i++){ const span = document.createElement('span'); span.className = 'leaf'; span.textContent = '🌿';
       const jx = (Math.random()*60-30), jy = (Math.random()*30-15);
-      span.style.left = (c.x + 20 + jx) + 'px';
-      span.style.top = (c.y + jy) + 'px';
-      layer.appendChild(span);
-      setTimeout(()=>span.remove(), 2300);
+      span.style.left = (c.x + 20 + jx) + 'px'; span.style.top = (c.y + jy) + 'px'; layer.appendChild(span); setTimeout(()=>span.remove(), 2300);
     }
   }
 }
 
-/* ===================== SENTENCE PRACTICE ===================== */
+/* ===================== SENTENCE PRACTICE / MINI QUIZ / AUDIO QUIZ (unchanged) ===================== */
 let sentenceIdx = 0;
 function renderSentence(){
-  if(!SENTENCES.length){
-    $('sentFa').textContent='—';
-    $('sentTrans').textContent='';
-    $('sentEn').textContent='No sentences available yet.';
-    $('sentProgress').textContent='';
-    return;
-  }
+  if(!SENTENCES.length){ $('sentFa').textContent='—'; $('sentTrans').textContent=''; $('sentEn').textContent='No sentences available yet.'; $('sentProgress').textContent=''; return; }
   if(sentenceIdx < 0) sentenceIdx = SENTENCES.length - 1;
   if(sentenceIdx >= SENTENCES.length) sentenceIdx = 0;
   const s = SENTENCES[sentenceIdx];
-  $('sentFa').textContent = s.fa;
-  $('sentTrans').textContent = s.translit;
-  $('sentEn').textContent = s.en;
+  $('sentFa').textContent = s.fa; $('sentTrans').textContent = s.translit; $('sentEn').textContent = s.en;
   $('sentProgress').textContent = `${sentenceIdx+1} / ${SENTENCES.length}`;
 }
 function openSentences(){ sentenceIdx=0; renderSentence(); $('sentencesModal').style.display='grid'; }
 
-/* ===================== MINI QUIZ ===================== */
 let miniQ={queue:[],current:null,correct:0,total:0}, MINI_ACTIVE=false;
 function endMiniQuiz(){ MINI_ACTIVE=false; $('miniQuizModal').style.display='none'; $('mqInput').value=''; $('mqFeedback').textContent=''; $('mqBar').style.width='0%'; }
 $('startMiniQuiz').addEventListener('click', ()=>{
   $('settingsModal').style.display='none';
-  const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])];
-  shuffle(pool);
+  const pool=[...new Set([...quizPool(), ...masteredIndices(), ...unlockedIndices()])]; shuffle(pool);
   miniQ={queue:pool.slice(0,MINI_QUIZ_SIZE),current:null,correct:0,total:0};
-  MINI_ACTIVE=true;
-  $('miniQuizModal').style.display='grid';
-  nextMiniQuestion();
+  MINI_ACTIVE=true; $('miniQuizModal').style.display='grid'; nextMiniQuestion();
 });
 function nextMiniQuestion(){
   if(!MINI_ACTIVE) return;
@@ -1259,139 +1084,59 @@ function nextMiniQuestion(){
   miniQ.current = miniQ.queue.shift();
   const item=words[miniQ.current];
   setImageWithFallback($('mqPic'), $('mqEmoji'), item);
-  $('mqInput').value='';
-  $('mqFeedback').textContent='';
-  $('mqBar').style.width = `${(miniQ.total/MINI_QUIZ_SIZE)*100}%`;
-  $('mqInput').focus();
+  $('mqInput').value=''; $('mqFeedback').textContent=''; $('mqBar').style.width = `${(miniQ.total/MINI_QUIZ_SIZE)*100}%`; $('mqInput').focus();
 }
 $('mqCheck').addEventListener('click', ()=>{
   if(!MINI_ACTIVE) return;
   const item=words[miniQ.current];
   miniQ.total++;
   const ok = normalizeTranslit($('mqInput').value)===normalizeTranslit(item.translit);
-  if(ok){
-    miniQ.correct++;
-    $('mqFeedback').textContent='Nice!';
-    $('mqFeedback').className='feedback ok';
-    celebrateSimple();
-  } else {
-    $('mqFeedback').textContent='Answer: ' + item.translit;
-    $('mqFeedback').className='feedback warn';
-    state.streak=0;
-    persist();
-  }
+  if(ok){ miniQ.correct++; $('mqFeedback').textContent='Nice!'; $('mqFeedback').className='feedback ok'; celebrateSimple(); }
+  else{ $('mqFeedback').textContent='Answer: ' + item.translit; $('mqFeedback').className='feedback warn'; state.streak=0; persist(); }
   setTimeout(nextMiniQuestion, 350);
 });
 $('mqInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('mqCheck').click(); } });
 $('mqQuit').addEventListener('click', ()=> endMiniQuiz());
 
-/* ===================== AUDIO QUIZ (audio → 4 images) ===================== */
 let AQ = {queue:[], current:-1, answer:-1, total:0, correct:0, locked:false};
-function endAudioQuiz(){
-  $('audioQuizModal').style.display='none';
-  AQ={queue:[], current:-1, answer:-1, total:0, correct:0, locked:false};
-  $('aqFeedback').textContent='';
-  $('aqBar').style.width='0%';
-  $('aqOptions').innerHTML='';
-}
+function endAudioQuiz(){ $('audioQuizModal').style.display='none'; AQ={queue:[], current:-1, answer:-1, total:0, correct:0, locked:false}; $('aqFeedback').textContent=''; $('aqBar').style.width='0%'; $('aqOptions').innerHTML=''; }
 function openAudioQuiz(){
-  const pool = unlockedIndices();
-  if(pool.length < 4){
-    alert('Unlock at least 4 items to play Audio Quiz.');
-    return;
-  }
-  const qCount = Math.min(AUDIO_QUIZ_SIZE, pool.length);
-  const shuffled = shuffle(pool.slice());
-  AQ.queue = shuffled.slice(0, qCount);
-  AQ.total = 0; AQ.correct = 0; AQ.locked = false;
-
-  $('audioQuizModal').style.display='grid';
-  nextAQQuestion();
+  const pool = unlockedIndices(); if(pool.length < 4){ alert('Unlock at least 4 items to play Audio Quiz.'); return; }
+  const qCount = Math.min(AUDIO_QUIZ_SIZE, pool.length); const shuffled = shuffle(pool.slice());
+  AQ.queue = shuffled.slice(0, qCount); AQ.total = 0; AQ.correct = 0; AQ.locked = false;
+  $('audioQuizModal').style.display='grid'; nextAQQuestion();
 }
-function randomDistractors(correctIdx, pool, n=3){
-  const others = pool.filter(i=>i!==correctIdx);
-  shuffle(others);
-  return others.slice(0, Math.min(n, others.length));
-}
+function randomDistractors(correctIdx, pool, n=3){ const others = pool.filter(i=>i!==correctIdx); shuffle(others); return others.slice(0, Math.min(n, others.length)); }
 function nextAQQuestion(){
-  if(!AQ.queue.length){
-    $('aqFeedback').innerHTML = `Audio Quiz complete! Score: <b>${AQ.correct}</b> / ${AUDIO_QUIZ_SIZE}`;
-    $('aqBar').style.width = '100%';
-    setTimeout(()=> endAudioQuiz(), 1200);
-    return;
-  }
-  AQ.locked = false;
-  AQ.current = AQ.queue.shift();
-  const correctItem = words[AQ.current];
-  const pool = unlockedIndices();
-  const distractors = randomDistractors(AQ.current, pool, 3);
-  const choices = shuffle([AQ.current, ...distractors]);
-
+  if(!AQ.queue.length){ $('aqFeedback').innerHTML = `Audio Quiz complete! Score: <b>${AQ.correct}</b> / ${AUDIO_QUIZ_SIZE}`; $('aqBar').style.width = '100%'; setTimeout(()=> endAudioQuiz(), 1200); return; }
+  AQ.locked = false; AQ.current = AQ.queue.shift();
+  const correctItem = words[AQ.current]; const pool = unlockedIndices(); const distractors = randomDistractors(AQ.current, pool, 3); const choices = shuffle([AQ.current, ...distractors]);
   AQ.answer = choices.indexOf(AQ.current);
-
-  const box = $('aqOptions');
-  box.innerHTML='';
+  const box = $('aqOptions'); box.innerHTML='';
   choices.forEach(idx=>{
     const item = words[idx];
-    const btn = document.createElement('button');
-    btn.className = 'aq-option';
-    btn.type = 'button';
-    btn.dataset.idx = String(idx);
-    btn.setAttribute('aria-label', item.en||'');
-    const img = document.createElement('img');
-    const emoji = document.createElement('div');
-    emoji.className = 'aq-emoji';
-    emoji.style.display='none';
-    emoji.textContent = item.emoji || '❓';
-    btn.appendChild(img);
-    btn.appendChild(emoji);
-    setImageWithFallback(img, emoji, item);
-
-    btn.addEventListener('click', onAQOptionClick);
-    box.appendChild(btn);
+    const btn = document.createElement('button'); btn.className = 'aq-option'; btn.type = 'button'; btn.dataset.idx = String(idx); btn.setAttribute('aria-label', item.en||'');
+    const img = document.createElement('img'); const emoji = document.createElement('div'); emoji.className = 'aq-emoji'; emoji.style.display='none'; emoji.textContent = item.emoji || '❓';
+    btn.appendChild(img); btn.appendChild(emoji); setImageWithFallback(img, emoji, item);
+    btn.addEventListener('click', onAQOptionClick); box.appendChild(btn);
   });
-
-  $('aqFeedback').textContent='';
-  $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`;
-
+  $('aqFeedback').textContent=''; $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`;
   try{ const a=getAudio(correctItem); a.currentTime=0; a.play(); }catch{}
 }
 function onAQOptionClick(e){
-  if (AQ.locked) return;
-  AQ.locked = true;
-
-  const pickedIdx = parseInt(e.currentTarget.dataset.idx, 10);
-  const isCorrect = (pickedIdx === AQ.current);
-
+  if (AQ.locked) return; AQ.locked = true;
+  const pickedIdx = parseInt(e.currentTarget.dataset.idx, 10); const isCorrect = (pickedIdx === AQ.current);
   AQ.total++;
   if (isCorrect){
-    e.currentTarget.classList.add('correct');
-    $('aqFeedback').textContent = 'Nice! +10 points';
-    $('aqFeedback').className = 'feedback ok';
-    celebrateSimple();
-    AQ.correct++;
-    state.score += 10;
-    persist();
+    e.currentTarget.classList.add('correct'); $('aqFeedback').textContent = 'Nice! +10 points'; $('aqFeedback').className = 'feedback ok'; celebrateSimple(); AQ.correct++; state.score += 10; persist();
   }else{
-    e.currentTarget.classList.add('wrong');
-    $('aqFeedback').textContent = `Answer: ${words[AQ.current].en}`;
-    $('aqFeedback').className = 'feedback warn';
-    Array.from($('aqOptions').children).forEach(btn=>{
-      const idx = parseInt(btn.dataset.idx,10);
-      if(idx === AQ.current) btn.classList.add('correct');
-    });
-    state.streak = 0;
-    persist();
+    e.currentTarget.classList.add('wrong'); $('aqFeedback').textContent = `Answer: ${words[AQ.current].en}`; $('aqFeedback').className = 'feedback warn';
+    Array.from($('aqOptions').children).forEach(btn=>{ const idx = parseInt(btn.dataset.idx,10); if(idx === AQ.current) btn.classList.add('correct'); });
+    state.streak = 0; persist();
   }
-
-  $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`;
-  setTimeout(nextAQQuestion, 600);
+  $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`; setTimeout(nextAQQuestion, 600);
 }
-$('aqPlay').addEventListener('click', ()=>{
-  if(AQ.current<0) return;
-  const item = words[AQ.current];
-  try{ const a=getAudio(item); a.currentTime=0; a.play(); }catch{}
-});
+$('aqPlay').addEventListener('click', ()=>{ if(AQ.current<0) return; const item = words[AQ.current]; try{ const a=getAudio(item); a.currentTime=0; a.play(); }catch{} });
 $('aqQuit').addEventListener('click', ()=> endAudioQuiz());
 
 /* ===================== CELEBRATIONS & BADGE HELPERS ===================== */
@@ -1417,33 +1162,13 @@ function celebrateSimple(){
 }
 function ensureAchFx(){ if(!state.achFx) state.achFx = {}; return state.achFx; }
 function sparkleBadgeOnce(key){
-  const fx = ensureAchFx();
-  if(fx[key]) return;
-  fx[key] = true;
-  const el = bySel(`.badge-tile[data-key="${key}"]`);
-  if(el){
-    el.classList.add('sparkle');
-    if(window.confetti) confetti({particleCount:60, spread:65, startVelocity:45, scalar:0.9});
-    setTimeout(()=>el && el.classList.remove('sparkle'), 1200);
-  }
+  const fx = ensureAchFx(); if(fx[key]) return; fx[key] = true;
+  const el = bySel(`.badge-tile[data-key="${key}"]`); if(el){ el.classList.add('sparkle'); if(window.confetti) confetti({particleCount:60, spread:65, startVelocity:45, scalar:0.9}); setTimeout(()=>el && el.classList.remove('sparkle'), 1200); }
 }
-function awardAchievement(key){
-  if(!state.achievements[key]){
-    state.achievements[key] = true;
-    persist();
-    sparkleBadgeOnce(key);
-  }else{
-    persist();
-  }
-}
-function celebrateStreak7(){
-  fireworks(); awardAchievement('streak7');
-  const c=$('celebration'); c.textContent="7-day streak! 🏅"; c.style.display='block';
-  setTimeout(()=>c.classList.add('fade-out'),1200);
-  setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},2200);
-}
+function awardAchievement(key){ if(!state.achievements[key]){ state.achievements[key] = true; persist(); sparkleBadgeOnce(key); } else { persist(); } }
+function celebrateStreak7(){ fireworks(); awardAchievement('streak7'); const c=$('celebration'); c.textContent="7-day streak! 🏅"; c.style.display='block'; setTimeout(()=>c.classList.add('fade-out'),1200); setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},2200); }
 
-/* ===================== AUDIO ===================== */
+/* ===================== AUDIO (word audio cache) ===================== */
 const audioCache=new Map();
 function getAudio(item){
   const url=item.audio||`audio/${(item.translit||'').toLowerCase()}.mp3`;
@@ -1461,26 +1186,20 @@ function normalizeSRTranslit(s){return (s||'').toLowerCase().replace(/[^a-z0-9]+
 function initSpeech(){
   const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
   const btn = $('sayBtn');
-  if(!SRClass){
-    btn.disabled=true; btn.title='Speech not supported (try Chrome).'; return;
-  }
-  SR = new SRClass();
-  SR.lang = 'fa-IR'; SR.interimResults = false; SR.maxAlternatives = 4;
+  if(!SRClass){ btn.disabled=true; btn.title='Speech not supported (try Chrome).'; return; }
+  SR = new SRClass(); SR.lang = 'fa-IR'; SR.interimResults = false; SR.maxAlternatives = 4;
   btn.disabled=false; btn.title='Say the word in Persian (e.g., «خانه»). Speaking the transliteration also works.';
   SR.onstart = ()=>{ $('speechFeedback').textContent='🎙️ Listening…'; $('speechFeedback').className='feedback tiny'; };
   SR.onerror = ()=>{ $('speechFeedback').textContent='Mic error. Try again.'; $('speechFeedback').className='feedback err'; };
   SR.onend = ()=>{ if($('speechFeedback').textContent.includes('Listening')){ $('speechFeedback').textContent='Didn’t catch that—try again.'; $('speechFeedback').className='feedback warn'; } };
   SR.onresult = (event)=>{
     const gi=order[idx], item=words[gi];
-    const targetFa = normalizeFa(item.fa);
-    const targetTr = normalizeTranslit(item.translit);
-    const heard = [];
-    for(let i=0;i<event.results[0].length;i++){ heard.push(event.results[0][i].transcript); }
+    const targetFa = normalizeFa(item.fa); const targetTr = normalizeTranslit(item.translit);
+    const heard = []; for(let i=0;i<event.results[0].length;i++){ heard.push(event.results[0][i].transcript); }
     let ok=false, picked='';
     for(const h of heard){ if(hasPersian(h) && closeEnough(normalizeFa(h), targetFa)){ ok=true; picked=h.trim(); break; } }
     if(!ok){ for(const h of heard){ if(closeEnough(normalizeSRTranslit(h), targetTr)){ ok=true; picked=h.trim(); break; } } }
-    $('speechFeedback').innerHTML = ok
-      ? `Heard: "<b>${picked}</b>" ✓`
+    $('speechFeedback').innerHTML = ok ? `Heard: "<b>${picked}</b>" ✓`
       : `Heard: "<b>${(heard[0]||'(nothing)').trim()}</b>" ✗ — target is "<b>${item.fa}</b>" (${item.translit})`;
     $('speechFeedback').className = 'feedback ' + (ok?'ok':'warn');
     handleAnswer(ok, gi, 'speech', picked);
@@ -1498,105 +1217,64 @@ function handleAnswer(correct, gi, source='typing'){
     if(source!=='speech'){ $('typeFeedback').textContent='Great! +10 points'; $('typeFeedback').className='feedback ok'; }
     celebrateSimple();
     if(state.streak===7) celebrateStreak7();
-    checkDailyGoalAndMap();
-    populateThemeDropdown();
-    updateAchievementProgress();
+    checkDailyGoalAndMap(); populateThemeDropdown(); updateAchievementProgress();
   }else{
     r.wrong++; r.stage=Math.max(0,r.stage-1); scheduleAfter(gi,2);
-    state.streak=0;
-    if(source!=='speech'){ $('typeFeedback').textContent='Not quite.'; $('typeFeedback').className='feedback warn'; }
+    state.streak=0; if(source!=='speech'){ $('typeFeedback').textContent='Not quite.'; $('typeFeedback').className='feedback warn'; }
   }
-  persist();
-  setTimeout(next, 450);
+  persist(); setTimeout(next, 450);
 }
 function updateAchievementProgress(){ if(masteredIndices().length >= 10) awardAchievement('first10'); if(masteredIndices().length >= 50) awardAchievement('mastered50'); }
 function checkDailyGoalAndMap(){
-  const today=todayISO();
-  let days = state.mapDays||[];
-  let todayRec = days.find(d=>d.date===today);
+  const today=todayISO(); let days = state.mapDays||[]; let todayRec = days.find(d=>d.date===today);
   if(!todayRec){ todayRec={date:today, correct:0, goalMet:false}; days=[...days,todayRec]; }
-  todayRec.correct++;
-  if(!todayRec.goalMet && todayRec.correct>=DAILY_WORDS){
-    todayRec.goalMet=true;
-    if(window.confetti){ confetti({origin:{y:1,x:Math.random()},particleCount:60,spread:70,startVelocity:45,scalar:1.1}); }
+  todayRec.correct++; if(!todayRec.goalMet && todayRec.correct>=DAILY_WORDS){
+    todayRec.goalMet=true; if(window.confetti){ confetti({origin:{y:1,x:Math.random()},particleCount:60,spread:70,startVelocity:45,scalar:1.1}); }
   }
-  state.mapDays = days;
-  persist();
+  state.mapDays = days; persist();
 }
 
 /* ===================== MAP & FURNITURE RENDER ===================== */
 function renderMap(){
-  const wrap = $('mapGrid'), layer=$('catLayer'), container=$('mapWrap');
-  if(!wrap || !layer || !container) return;
+  const wrap = $('mapGrid'), layer=$('catLayer'), container=$('mapWrap'); if(!wrap || !layer || !container) return;
   const catsUnlocked = state.mapUnlocked||0;
   if(catsUnlocked<=0){
-    container.classList.remove('arena');
-    wrap.style.display='grid'; layer.style.display='none';
-    wrap.innerHTML='';
-    const tiles=12;
-    for(let i=0;i<tiles;i++){ const t=document.createElement('div'); t.className='tile'; t.textContent='?'; wrap.appendChild(t); }
-  }else{
-    wrap.style.display='none'; wrap.innerHTML='';
-    container.classList.add('arena'); layer.style.display='block';
-  }
+    container.classList.remove('arena'); wrap.style.display='grid'; layer.style.display='none'; wrap.innerHTML='';
+    const tiles=12; for(let i=0;i<tiles;i++){ const t=document.createElement('div'); t.className='tile'; t.textContent='?'; wrap.appendChild(t); }
+  }else{ wrap.style.display='none'; wrap.innerHTML=''; container.classList.add('arena'); layer.style.display='block'; }
   renderFurniture();
 }
 function renderFurniture(){
   const container = $('mapWrap'); if(!container) return;
-  let el = $('furnCatTree');
-  const owned = !!(state.furniture?.catTree);
-  if(owned && !el){
-    el = document.createElement('img');
-    el.id = 'furnCatTree';
-    el.className = 'furniture';
-    el.src = CAT_TREE_IMG;
-    el.alt = 'Cat Tree';
-    container.appendChild(el);
-  }else if(!owned && el){
-    el.remove();
-  }
+  let el = $('furnCatTree'); const owned = !!(state.furniture?.catTree);
+  if(owned && !el){ el = document.createElement('img'); el.id = 'furnCatTree'; el.className = 'furniture'; el.src = CAT_TREE_IMG; el.alt = 'Cat Tree'; container.appendChild(el); }
+  else if(!owned && el){ el.remove(); }
 }
 
 /* ===================== CATNIP PARTY ===================== */
 let catnipActive=false, catnipTimer=null, catnipTicker=null, catnipEndsAt=0;
 function fmtCatnip(ms){ const s=Math.max(0, Math.ceil(ms/1000)); const m=Math.floor(s/60), sec=s%60; return m+':'+String(sec).padStart(2,'0'); }
 function applyCatnipToCat(c){
-  if(c.__catnip) return;
-  c.__catnip = true;
-  c.origSpeed = c.origSpeed || c.speed;
-  const ang = Math.atan2(c.vy, c.vx);
-  c.speed = c.speed * CATNIP_SPEED_FACTOR;
-  c.vx = Math.cos(ang)*c.speed;
-  c.vy = Math.sin(ang)*c.speed;
-  c.turnMult = (c.turnMult||1) * CATNIP_TURN_FACTOR;
-  c.el.classList.add('catnip');
+  if(c.__catnip) return; c.__catnip = true; c.origSpeed = c.origSpeed || c.speed;
+  const ang = Math.atan2(c.vy, c.vx); c.speed = c.speed * CATNIP_SPEED_FACTOR; c.vx = Math.cos(ang)*c.speed; c.vy = Math.sin(ang)*c.speed; c.turnMult = (c.turnMult||1) * CATNIP_TURN_FACTOR; c.el.classList.add('catnip');
 }
 function removeCatnipFromCat(c){
-  if(!c.__catnip) return;
-  const ang = Math.atan2(c.vy, c.vx);
-  c.speed = c.origSpeed || (c.speed / CATNIP_SPEED_FACTOR);
-  c.vx = Math.cos(ang)*c.speed;
-  c.vy = Math.sin(ang)*c.speed;
-  c.turnMult = 1;
-  c.el.classList.remove('catnip');
-  c.__catnip = false;
+  if(!c.__catnip) return; const ang = Math.atan2(c.vy, c.vx); c.speed = c.origSpeed || (c.speed / CATNIP_SPEED_FACTOR);
+  c.vx = Math.cos(ang)*c.speed; c.vy = Math.sin(ang)*c.speed; c.turnMult = 1; c.el.classList.remove('catnip'); c.__catnip = false;
 }
 function updateCatnipCountdownUI(){
   const btn = $('useCatnipBtn'); if(!btn) return;
   if(catnipActive){
     const remaining = Math.max(0, catnipEndsAt - Date.now());
     btn.textContent = `🌿 Catnip Party (${fmtCatnip(remaining)})`;
-    btn.disabled = true;
-    if(remaining <= 0){ stopCatnipParty(); }
+    btn.disabled = true; if(remaining <= 0){ stopCatnipParty(); }
   }else{
     btn.textContent = '🌿 Use Catnip';
     btn.disabled = (state.inventory?.catnip||0) <= 0 || (state.mapUnlocked||0) === 0;
   }
 }
 function startCatnipParty(ms = CATNIP_DURATION_MS){
-  if(catnipActive) return;
-  catnipActive = true;
-  catnipEndsAt = Date.now() + ms;
+  if(catnipActive) return; catnipActive = true; catnipEndsAt = Date.now() + ms;
   for(const c of cats){ applyCatnipToCat(c); }
   burstLeaves(42);
   if(window.confetti){
@@ -1604,26 +1282,16 @@ function startCatnipParty(ms = CATNIP_DURATION_MS){
     confetti({origin:{x:0.75,y:1},particleCount:80,spread:80,startVelocity:55});
   }
   clearTimeout(catnipTimer); clearInterval(catnipTicker);
-  catnipTimer = setTimeout(stopCatnipParty, ms);
-  catnipTicker = setInterval(updateCatnipCountdownUI, 1000);
-  updateCatnipCountdownUI();
-  updateShopUI();
-  flashCatNames(4000);
+  catnipTimer = setTimeout(stopCatnipParty, ms); catnipTicker = setInterval(updateCatnipCountdownUI, 1000);
+  updateCatnipCountdownUI(); updateShopUI(); flashCatNames(4000);
 }
-function stopCatnipParty(){
-  clearTimeout(catnipTimer); clearInterval(catnipTicker);
-  catnipActive=false; catnipTimer=null; catnipTicker=null;
-  for(const c of cats){ removeCatnipFromCat(c); }
-  updateCatnipCountdownUI();
-  updateShopUI();
-}
+function stopCatnipParty(){ clearTimeout(catnipTimer); clearInterval(catnipTicker); catnipActive=false; catnipTimer=null; catnipTicker=null; for(const c of cats){ removeCatnipFromCat(c); } updateCatnipCountdownUI(); updateShopUI(); }
 
-/* ===================== EVENTS ===================== */
+/* ===================== EVENTS & UI ===================== */
 $('listenBtn').addEventListener('click', playYourAudio);
 $('typeInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('checkBtn').click(); } });
 $('checkBtn').addEventListener('click', ()=>{
-  const gi=order[idx], item=words[gi];
-  const guess=normalizeTranslit($('typeInput').value);
+  const gi=order[idx], item=words[gi]; const guess=normalizeTranslit($('typeInput').value);
   if(!guess){ $('typeFeedback').textContent='Type your guess first!'; $('typeFeedback').className='feedback warn'; return; }
   $('typeFeedback').textContent=''; $('typeInput').value=''; maybeFocusInput();
   handleAnswer(guess===normalizeTranslit(item.translit), gi, 'typing');
@@ -1640,211 +1308,90 @@ $('revealBtn').addEventListener('click', ()=>{ const gi=order[idx], item=words[g
 
 $('openAchievements').addEventListener('click', ()=>{ reflectBadges(); $('achModal').style.display='grid'; });
 $('closeAch').addEventListener('click', ()=> $('achModal').style.display='none');
-
 $('openMap').addEventListener('click', ()=>{ renderMap(); $('mapModal').style.display='grid'; requestAnimationFrame(startCats); updateShopUI(); updateNamesToggleUI(); updateNamesVisibility(); });
 $('closeMap').addEventListener('click', ()=>{ $('mapModal').style.display='none'; stopCats(); });
 
-/* Shop UI */
 function updateShopUI(){
   const scoreEl=$('shopScore'), fishEl=$('shopFish'), nipEl=$('shopCatnip');
-  if(scoreEl) scoreEl.textContent = state.score;
-  if(fishEl) fishEl.textContent = state.inventory?.fish || 0;
-  if(nipEl) nipEl.textContent = state.inventory?.catnip || 0;
-
+  if(scoreEl) scoreEl.textContent = state.score; if(fishEl) fishEl.textContent = state.inventory?.fish || 0; if(nipEl) nipEl.textContent = state.inventory?.catnip || 0;
   const buyBtn=$('buyFishBtn'), feedBtn=$('feedFishBtn'), nameBtn=$('toggleNameArea'), furnBtn=$('buyFurnitureBtn');
   if(buyBtn){ buyBtn.textContent = `🐟 Buy Fish (${FISH_COST})`; buyBtn.disabled = state.score < FISH_COST; }
   if(feedBtn) feedBtn.disabled = (state.inventory?.fish||0) <= 0;
-
-  const buyN=$('buyCatnipBtn');
-  if(buyN){ buyN.textContent = `🌿 Buy Catnip (${CATNIP_COST})`; buyN.disabled = state.score < CATNIP_COST; }
+  const buyN=$('buyCatnipBtn'); if(buyN){ buyN.textContent = `🌿 Buy Catnip (${CATNIP_COST})`; buyN.disabled = state.score < CATNIP_COST; }
   updateCatnipCountdownUI();
-
   const hasToken = (state.inventory?.nameTokens||0) > 0;
-  if(nameBtn){
-    nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`;
-    nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0);
-  }
+  if(nameBtn){ nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`; nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0); }
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
-
   if(furnBtn){
     const owned = !!(state.furniture?.catTree);
     furnBtn.textContent = owned ? '🪑 Cat Tree — Owned' : `🪑 Buy Furniture (${FURNITURE_COST})`;
     furnBtn.disabled = owned || state.score < FURNITURE_COST;
   }
-
   const sel=$('catSelect');
   if(sel){
-    const n = state.mapUnlocked||0;
-    sel.innerHTML='';
-    for(let i=0;i<n;i++){
-      const opt=document.createElement('option');
-      opt.value=String(i);
-      opt.textContent = `${i+1}: ${getCatName(i)}`;
-      sel.appendChild(opt);
-    }
-    if(n>0 && $('nameArea').style.display!=='none'){
-      sel.value = String(Math.min(getNextCatIndex(), n-1));
-    }
+    const n = state.mapUnlocked||0; sel.innerHTML='';
+    for(let i=0;i<n;i++){ const opt=document.createElement('option'); opt.value=String(i); opt.textContent = `${i+1}: ${getCatName(i)}`; sel.appendChild(opt); }
+    if(n>0 && $('nameArea').style.display!=='none'){ sel.value = String(Math.min(getNextCatIndex(), n-1)); }
   }
   if(cats && cats.length){ cats.forEach(c => { const nm=getCatName(c.idx); c.el.title = nm; if(c.label) c.label.textContent = nm; }); }
 }
-
 $('openShop').addEventListener('click', ()=>{
-  const panel = $('shopPanel');
-  panel.style.display = panel.style.display==='none' ? 'block' : 'none';
-  updateShopUI();
+  const panel = $('shopPanel'); panel.style.display = panel.style.display==='none' ? 'block' : 'none'; updateShopUI();
 });
-
 $('feedFishBtn').addEventListener('click', ()=>{
-  if((state.inventory.fish||0) <= 0) return;
-  state.inventory.fish -= 1;
-  $('shopMsg').textContent = 'Fed the cats! They’re zooming 😺💨';
-  $('shopMsg').className='feedback ok';
-  burstHearts(28);
-  if(window.confetti){
-    confetti({origin:{x:0.2,y:1},particleCount:70,spread:75,startVelocity:50});
-    confetti({origin:{x:0.8,y:1},particleCount:70,spread:75,startVelocity:50});
-  }
-  boostCatsFor(8000,2.3);
-  flashCatNames(4000);
-  persist();
+  if((state.inventory.fish||0) <= 0) return; state.inventory.fish -= 1;
+  $('shopMsg').textContent = 'Fed the cats! They’re zooming 😺💨'; $('shopMsg').className='feedback ok';
+  burstHearts(28); if(window.confetti){ confetti({origin:{x:0.2,y:1},particleCount:70,spread:75,startVelocity:50}); confetti({origin:{x:0.8,y:1},particleCount:70,spread:75,startVelocity:50}); }
+  boostCatsFor(8000,2.3); flashCatNames(4000); persist();
 });
-
-$('buyFishBtn').addEventListener('click', ()=>{
-  if(state.score < FISH_COST) return;
-  state.score -= FISH_COST;
-  state.inventory.fish = (state.inventory.fish||0) + 1;
-  $('shopMsg').textContent = 'Bought 1 fish! 🐟';
-  $('shopMsg').className='feedback ok';
-  persist();
-});
-
-$('buyCatnipBtn').addEventListener('click', ()=>{
-  if(state.score < CATNIP_COST) return;
-  state.score -= CATNIP_COST;
-  state.inventory.catnip = (state.inventory.catnip||0) + 1;
-  $('shopMsg').textContent = 'Picked up fresh catnip! 🌿';
-  $('shopMsg').className='feedback ok';
-  persist();
-});
-$('useCatnipBtn').addEventListener('click', ()=>{
-  if((state.inventory.catnip||0) <= 0 || catnipActive) return;
-  state.inventory.catnip -= 1;
-  $('shopMsg').textContent = '🌿 Catnip party! Rolling, bouncing cats for a few minutes…';
-  $('shopMsg').className='feedback ok';
-  burstLeaves(40);
-  startCatnipParty(CATNIP_DURATION_MS);
-  persist();
-});
-
-/* Name a cat */
+$('buyFishBtn').addEventListener('click', ()=>{ if(state.score < FISH_COST) return; state.score -= FISH_COST; state.inventory.fish = (state.inventory.fish||0) + 1; $('shopMsg').textContent = 'Bought 1 fish! 🐟'; $('shopMsg').className='feedback ok'; persist(); });
+$('buyCatnipBtn').addEventListener('click', ()=>{ if(state.score < CATNIP_COST) return; state.score -= CATNIP_COST; state.inventory.catnip = (state.inventory.catnip||0) + 1; $('shopMsg').textContent = 'Picked up fresh catnip! 🌿'; $('shopMsg').className='feedback ok'; persist(); });
+$('useCatnipBtn').addEventListener('click', ()=>{ if((state.inventory.catnip||0) <= 0 || catnipActive) return; state.inventory.catnip -= 1; $('shopMsg').textContent = '🌿 Catnip party! Rolling, bouncing cats for a few minutes…'; $('shopMsg').className='feedback ok'; burstLeaves(40); startCatnipParty(CATNIP_DURATION_MS); persist(); });
 $('toggleNameArea').addEventListener('click', ()=>{
   const nCats = state.mapUnlocked||0;
   if(nCats===0){ $('shopMsg').textContent='Unlock a cat first!'; $('shopMsg').className='feedback warn'; return; }
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(!hasToken){
     if(state.score < NAME_COST){ $('shopMsg').textContent='Not enough points to buy a name.'; $('shopMsg').className='feedback warn'; return; }
-    state.score -= NAME_COST;
-    state.inventory.nameTokens = (state.inventory.nameTokens||0) + 1;
-    $('shopMsg').textContent='Name token purchased. Pick a cat below! 🏷️';
-    $('shopMsg').className='feedback ok';
-    persist();
+    state.score -= NAME_COST; state.inventory.nameTokens = (state.inventory.nameTokens||0) + 1;
+    $('shopMsg').textContent='Name token purchased. Pick a cat below! 🏷️'; $('shopMsg').className='feedback ok'; persist();
   }
   $('nameArea').style.display='block';
-  const sel = $('catSelect');
-  if(sel){
-    const nextIdx = Math.min(getNextCatIndex(), (state.mapUnlocked||1)-1);
-    sel.value = String(nextIdx);
-  }
+  const sel = $('catSelect'); if(sel){ const nextIdx = Math.min(getNextCatIndex(), (state.mapUnlocked||1)-1); sel.value = String(nextIdx); }
   updateShopUI();
 });
 $('confirmNameBtn').addEventListener('click', ()=>{
-  const selEl = $('catSelect');
-  const idx = parseInt((selEl && selEl.value ? selEl.value : String(getNextCatIndex())),10);
+  const selEl = $('catSelect'); const idx = parseInt((selEl && selEl.value ? selEl.value : String(getNextCatIndex())),10);
   const name = String(($('catNameInput').value||'').trim());
   if(!name){ $('shopMsg').textContent='Enter a name first.'; $('shopMsg').className='feedback warn'; return; }
   if((state.inventory.nameTokens||0) <= 0){ $('shopMsg').textContent='You need to buy a new name token first.'; $('shopMsg').className='feedback warn'; return; }
-  if(!state.catNames) state.catNames = {};
-  state.catNames[idx] = name;
-  state.nameCursor = idx;
-  state.inventory.nameTokens = Math.max(0, (state.inventory.nameTokens||0)-1);
-  $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`;
-  $('shopMsg').className='feedback ok';
-  $('catNameInput').value='';
-  $('nameArea').style.display='none';
-  flashCatNames(4000);
-  persist();
+  if(!state.catNames) state.catNames = {}; state.catNames[idx] = name; state.nameCursor = idx; state.inventory.nameTokens = Math.max(0, (state.inventory.nameTokens||0)-1);
+  $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`; $('shopMsg').className='feedback ok'; $('catNameInput').value=''; $('nameArea').style.display='none'; flashCatNames(4000); persist();
 });
-
-/* Furniture */
 $('buyFurnitureBtn').addEventListener('click', ()=>{
-  if(state.furniture?.catTree){
-    $('shopMsg').textContent='Cat Tree already owned.'; $('shopMsg').className='feedback tiny'; return;
-  }
-  if(state.score < FURNITURE_COST){
-    $('shopMsg').textContent='Not enough points for the Cat Tree.'; $('shopMsg').className='feedback warn'; return;
-  }
-  state.score -= FURNITURE_COST;
-  state.furniture = state.furniture || {};
-  state.furniture.catTree = true;
-  $('shopMsg').textContent='Cat Tree placed! The cats are thrilled. 🐈🌳';
-  $('shopMsg').className='feedback ok';
-  if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); }
-  persist();
+  if(state.furniture?.catTree){ $('shopMsg').textContent='Cat Tree already owned.'; $('shopMsg').className='feedback tiny'; return; }
+  if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for the Cat Tree.'; $('shopMsg').className='feedback warn'; return; }
+  state.score -= FURNITURE_COST; state.furniture = state.furniture || {}; state.furniture.catTree = true;
+  $('shopMsg').textContent='Cat Tree placed! The cats are thrilled. 🐈🌳'; $('shopMsg').className='feedback ok';
+  if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); } persist();
 });
+function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Show Names'; }
+function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = getCatName(c.idx); } c.el.title = getCatName(c.idx); }); } }
+function flashCatNames(ms=3000){ flashNamesUntil = Date.now() + ms; updateNamesVisibility(); setTimeout(()=>updateNamesVisibility(), ms+50); }
+$('toggleNamesBtn').addEventListener('click', ()=>{ state.showCatNames = !state.showCatNames; persist(); });
 
-/* Names toggle / flash */
-function updateNamesToggleUI(){
-  const btn = $('toggleNamesBtn'); if(!btn) return;
-  btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Show Names';
-}
-function updateNamesVisibility(){
-  const show = state.showCatNames || (Date.now() < flashNamesUntil);
-  if(cats && cats.length){
-    cats.forEach(c=>{
-      if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = getCatName(c.idx); }
-      c.el.title = getCatName(c.idx);
-    });
-  }
-}
-function flashCatNames(ms=3000){
-  flashNamesUntil = Date.now() + ms;
-  updateNamesVisibility();
-  setTimeout(()=>updateNamesVisibility(), ms+50);
-}
-$('toggleNamesBtn').addEventListener('click', ()=>{
-  state.showCatNames = !state.showCatNames;
-  persist();
-});
-
-/* Settings & sentences */
-$('openSettings').addEventListener('click', ()=>{
-  $('settingsModal').style.display='grid';
-  $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`;
-  populateThemeDropdown();
-});
+$('openSettings').addEventListener('click', ()=>{ $('settingsModal').style.display='grid'; $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`; populateThemeDropdown(); });
 $('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
 $('settingsModal').addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
-$('reviewToggle').addEventListener('click', ()=>{
-  state.settings.reviewAll = !state.settings.reviewAll;
-  persist();
-  $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`;
-});
+$('reviewToggle').addEventListener('click', ()=>{ state.settings.reviewAll = !state.settings.reviewAll; persist(); $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`; });
 $('openSentences').addEventListener('click', ()=>{ $('settingsModal').style.display='none'; openSentences(); });
 $('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.display='none');
 $('sentPrev').addEventListener('click', ()=>{ sentenceIdx--; renderSentence(); });
 $('sentNext').addEventListener('click', ()=>{ sentenceIdx++; renderSentence(); });
 
-/* Reset Cat Names only */
-$('resetNamesBtn').addEventListener('click', ()=>{
-  if(!confirm('Reset ALL cat names for this profile? This cannot be undone.')) return;
-  state.catNames = {}; state.nameCursor = -1;
-  persist(); updateShopUI(); updateNamesVisibility();
-  if (cats && cats.length) {
-    cats.forEach(c => {
-      const nm = getCatName(c.idx); c.el.title = nm; if (c.label) c.label.textContent = nm;
-    });
-  }
+$('resetNamesBtn').addEventListener('click', ()=>{ if(!confirm('Reset ALL cat names for this profile? This cannot be undone.')) return;
+  state.catNames = {}; state.nameCursor = -1; persist(); updateShopUI(); updateNamesVisibility();
+  if (cats && cats.length) { cats.forEach(c => { const nm = getCatName(c.idx); c.el.title = nm; if (c.label) c.label.textContent = nm; }); }
   const msg = $('shopMsg'); if (msg) { msg.textContent = 'All cat names cleared for this profile.'; msg.className = 'feedback ok'; }
 });
 
@@ -1858,44 +1405,24 @@ $('midnightBtn0').addEventListener('click', showMidnight);
 /* Profile flow */
 function useProfile(name){
   ACTIVE_PROFILE = String(name||'').trim() || 'Guest';
-  loadState();
-  $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
-  $('profileOverlay').style.display='none';
-  $('startOverlay').style.display='grid';
+  loadState(); $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
+  $('profileOverlay').style.display='none'; $('startOverlay').style.display='grid';
   if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
 }
 $('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
-$('quickSia').addEventListener('click', ()=>{
-  const pin = prompt('Enter developer PIN:');
-  if(pin === '3232'){ useProfile('Sia'); } else{ alert('Incorrect PIN.'); }
-});
+$('quickSia').addEventListener('click', ()=>{ const pin = prompt('Enter developer PIN:'); if(pin === '3232'){ useProfile('Sia'); } else{ alert('Incorrect PIN.'); } });
 
-/* Dev PIN reveal on profile overlay */
-(function(){
-  const overlay = $('profileOverlay'); const devBtn = $('quickSia');
-  let seq = '', timer=null, revealed=false;
-  window.addEventListener('keydown', (e)=>{
-    if(!overlay || overlay.style.display!=='grid' || revealed) return;
-    if(!/^[0-9]$/.test(e.key)) return;
+(function(){ const overlay = $('profileOverlay'); const devBtn = $('quickSia'); let seq = '', timer=null, revealed=false;
+  window.addEventListener('keydown', (e)=>{ if(!overlay || overlay.style.display!=='grid' || revealed) return; if(!/^[0-9]$/.test(e.key)) return;
     seq+=e.key; clearTimeout(timer); timer=setTimeout(()=>{seq='';},1500);
-    if(seq.endsWith('3232')){
-      revealed=true; devBtn.style.display='inline-block';
-      const note=document.createElement('div'); note.className='tiny'; note.textContent='Developer button unlocked'; note.style.marginTop='10px';
-      overlay.querySelector('.overlay-card').appendChild(note);
-    }
+    if(seq.endsWith('3232')){ revealed=true; devBtn.style.display='inline-block'; const note=document.createElement('div'); note.className='tiny'; note.textContent='Developer button unlocked'; note.style.marginTop='10px'; overlay.querySelector('.overlay-card').appendChild(note); }
   });
 })();
 
 /* Start overlay: choose mode */
-function startAs(m){
-  if(m==='audio'){ $('startOverlay').style.display='none'; openAudioQuiz(); return; }
-  mode=m; resetSessionProgress(); ensureOrder(); $('startOverlay').style.display='none'; showItem();
-}
+function startAs(m){ if(m==='audio'){ $('startOverlay').style.display='none'; openAudioQuiz(); return; } mode=m; resetSessionProgress(); ensureOrder(); $('startOverlay').style.display='none'; showItem(); }
 ['startLearn','startQuiz','startAudio'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
-$('startOverlay').addEventListener('click',(e)=>{
-  if(e.target.id==='startLearn') startAs('learn');
-  if(e.target.id==='startQuiz')  startAs('quiz');
-});
+$('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz')  startAs('quiz'); });
 
 /* Close modals on backdrop click */
 document.addEventListener('click', (e)=>{
@@ -1910,22 +1437,16 @@ document.addEventListener('click', (e)=>{
 
 /* Item order & display */
 function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=pool.slice(); shuffle(order); idx=0; }
-function showImageOrEmoji(item){
-  const pic=$('pic'), emo=$('emoji');
-  setImageWithFallback(pic, emo, item);
-}
+function showImageOrEmoji(item){ const pic=$('pic'), emo=$('emoji'); setImageWithFallback(pic, emo, item); }
 function showItem(){
   const pool = (mode==='quiz')? quizPool(): learnPool();
   if(order.length===0 || order.some(i=>!pool.includes(i))) ensureOrder();
-  const gi = order[idx % order.length];
-  const item = words[gi];
-  showImageOrEmoji(item);
+  const gi = order[idx % order.length]; const item = words[gi]; showImageOrEmoji(item);
   if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
   else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
   $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
-  $('hintBtn').style.display = 'none';
-  $('typeInput').value=''; maybeFocusInput();
+  $('hintBtn').style.display = 'none'; $('typeInput').value=''; maybeFocusInput();
 }
 function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
@@ -1937,10 +1458,8 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
     const SHOW_MS = 10000, COOLDOWN_MS = 60000;
     function inWindow(){ const h=new Date().getHours(); return (h>=22 || h<2); }
     function createSky(){
-      if(sky) return;
-      sky = document.createElement('div'); sky.id='nightSky'; sky.className='night-sky'; document.body.appendChild(sky);
-      const area = Math.max(1, window.innerWidth * window.innerHeight);
-      const count = Math.max(90, Math.min(240, Math.round(area / 8000)));
+      if(sky) return; sky = document.createElement('div'); sky.id='nightSky'; sky.className='night-sky'; document.body.appendChild(sky);
+      const area = Math.max(1, window.innerWidth * window.innerHeight); const count = Math.max(90, Math.min(240, Math.round(area / 8000)));
       for(let i=0;i<count;i++){
         const s=document.createElement('span'); s.className='night-star';
         s.style.left=(Math.random()*100).toFixed(2)+'vw'; s.style.top=(Math.random()*100).toFixed(2)+'vh';
@@ -1953,10 +1472,8 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
     }
     function destroySky(){ stopSparkEngine(); if(!sky) return; sky.remove(); sky=null; }
     function startSparkEngine(){
-      stopSparkEngine();
-      const stars = ()=> sky ? Array.from(sky.querySelectorAll('.night-star')) : [];
-      sparkTimer=setInterval(()=>{
-        const arr=stars(); if(!arr.length) return;
+      stopSparkEngine(); const stars = ()=> sky ? Array.from(sky.querySelectorAll('.night-star')) : [];
+      sparkTimer=setInterval(()=>{ const arr=stars(); if(!arr.length) return;
         const picks=Math.max(1, Math.floor(Math.random()*3)+1);
         for(let i=0;i<picks;i++){
           const s=arr[Math.floor(Math.random()*arr.length)]; if(!s) continue;
@@ -1973,124 +1490,87 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
   }catch{}
 })();
 
-/* ===================== POSTCARDS UI (unlock every 15 learned) ===================== */
+/* ===================== POSTCARDS UI (no audio/nav; hide locked) ===================== */
 let pcIndex = 0;
-const pcAudioCache = new Map();
-
 function postcardsLearned(){ return learnedCount(); }
-function unlockThresholdForIndex(i){ return (i + 1) * POSTCARD_UNLOCK_EVERY; } // 0→15, 1→30, 2→45...
-function isPostcardUnlockedIndex(i){ return postcardsLearned() >= unlockThresholdForIndex(i); }
+function unlockThresholdForIndex(i){ return (i + 1) * POSTCARD_UNLOCK_EVERY; }
+function postcardsUnlockedCount(){ const learned = postcardsLearned(); return Math.min(POSTCARDS.length, Math.floor(learned / POSTCARD_UNLOCK_EVERY)); }
 function remainingToUnlockIndex(i){ return Math.max(0, unlockThresholdForIndex(i) - postcardsLearned()); }
 
-function pcGetAudio(p){
-  if(!p.audio) return null;
-  if(!pcAudioCache.has(p.audio)){
-    const a = new Audio(); a.preload='auto'; a.src = p.audio; pcAudioCache.set(p.audio, a);
-  }
-  return pcAudioCache.get(p.audio);
-}
-function ttsSpeak(text, lang='fa-IR'){
-  try{
-    const s = window.speechSynthesis; if(!s) return;
-    const u = new SpeechSynthesisUtterance(text); u.lang = lang;
-    s.cancel(); s.speak(u);
-  }catch{}
-}
 function renderPostcardView(i){
-  if(i<0 || i>=POSTCARDS.length) i = 0;
-  pcIndex = i;
+  if(i < 0){
+    $('pcViewFa').textContent = '';
+    $('pcViewTrans').textContent = '';
+    $('pcViewEn').textContent = 'Learn a few more words to unlock your first postcard!';
+    $('pcUnlockNote').innerHTML = `Locked — learn <b>${remainingToUnlockIndex(0)}</b> more to unlock the first one.`;
+    setImageWithFallback($('pcViewImg'), $('pcViewEmoji'), { image:'', emoji:'❓', en:'Locked' });
+    return;
+  }
+  if(i >= POSTCARDS.length) i = POSTCARDS.length - 1; pcIndex = i;
   const p = POSTCARDS[i];
-
   setImageWithFallback($('pcViewImg'), $('pcViewEmoji'), { image:p.image, emoji:p.emoji||'🏛️', en:p.title });
-
-  $('pcViewFa').textContent   = p.fa || '';
-  $('pcViewTrans').textContent= p.translit || '';
-  $('pcViewEn').textContent   = p.en || '';
-
-  const need = remainingToUnlockIndex(i);
-  const unlocked = isPostcardUnlockedIndex(i);
+  $('pcViewFa').textContent    = p.fa || '';
+  $('pcViewTrans').textContent = p.translit || '';
+  $('pcViewEn').textContent    = p.en || '';
   const learned = postcardsLearned();
-  $('pcUnlockNote').innerHTML = unlocked
-    ? `Unlocked ✓ (You’ve learned ${learned})`
-    : `Locked — learn <b>${need}</b> more to unlock (You: ${learned})`;
-
-  $('pcPlay').disabled = !unlocked;
+  $('pcUnlockNote').innerHTML = `Unlocked ✓ (You’ve learned ${learned})`;
 }
 function renderPostcardsGrid(){
-  const box = $('pcGrid'); if(!box) return;
-  box.innerHTML = '';
-  POSTCARDS.forEach((p, i)=>{
-    const tile = document.createElement('button');
-    tile.type = 'button';
-    tile.className = 'pc-tile';
-    tile.setAttribute('aria-label', p.title);
-
-    const img = document.createElement('img');
-    img.className = 'pc-thumb';
-    img.alt = p.title || '';
-    const emoji = document.createElement('div');
-    emoji.className = 'pc-emoji';
-    emoji.textContent = p.emoji || '🏛️';
-    tile.appendChild(img);
-    tile.appendChild(emoji);
-    setImageWithFallback(img, emoji, { image:p.image, emoji:p.emoji||'🏛️', en:p.title });
-
-    const cap = document.createElement('div');
-    cap.className = 'pc-cap';
-    cap.textContent = p.title || '';
-    tile.appendChild(cap);
-
-    const unlocked = isPostcardUnlockedIndex(i);
-    if(!unlocked){
-      const lock = document.createElement('div');
-      lock.className = 'pc-lock';
-      lock.innerHTML = `🔒 Locked<br><span class="tiny">Need ${remainingToUnlockIndex(i)} more</span>`;
-      tile.appendChild(lock);
-    }
-
-    tile.addEventListener('click', ()=>{
-      if(!isPostcardUnlockedIndex(i)){
-        $('pcUnlockNote').innerHTML = `Locked — learn <b>${remainingToUnlockIndex(i)}</b> more to unlock.`;
-        return;
-      }
-      renderPostcardView(i);
-      $('pcView').style.boxShadow='0 0 0 0 rgba(56,189,248,0)';
-      requestAnimationFrame(()=>{$('pcView').style.boxShadow='0 0 0 3px rgba(56,189,248,.25)';});
-      setTimeout(()=>{$('pcView').style.boxShadow='';},380);
-    });
-
-    box.appendChild(tile);
+  const box = $('pcGrid'); if(!box) return; box.innerHTML = '';
+  const unlocked = postcardsUnlockedCount();
+  POSTCARDS.slice(0, unlocked).forEach((p, i)=>{
+    const tile = document.createElement('button'); tile.type = 'button'; tile.className = 'pc-tile'; tile.setAttribute('aria-label', p.title);
+    const img = document.createElement('img'); img.className = 'pc-thumb'; img.alt = p.title || '';
+    const emoji = document.createElement('div'); emoji.className = 'pc-emoji'; emoji.textContent = p.emoji || '🏛️';
+    tile.appendChild(img); tile.appendChild(emoji); setImageWithFallback(img, emoji, { image:p.image, emoji:p.emoji||'🏛️', en:p.title });
+    const cap = document.createElement('div'); cap.className = 'pc-cap'; cap.textContent = p.title || ''; tile.appendChild(cap);
+    tile.addEventListener('click', ()=> renderPostcardView(i)); box.appendChild(tile);
   });
+  if(unlocked < POSTCARDS.length){
+    const more = document.createElement('div'); more.className = 'pc-more';
+    const need = remainingToUnlockIndex(unlocked);
+    more.innerHTML = `<div class="pc-q">?</div><div class="pc-note">Learn ${need} more<br>to unlock the next postcard</div>`;
+    box.appendChild(more);
+  }
 }
 function openPostcards(){
   $('postcardsModal').style.display='grid';
-  let firstUnlocked = POSTCARDS.findIndex((_, i)=> isPostcardUnlockedIndex(i));
-  if(firstUnlocked === -1) firstUnlocked = 0;
-  renderPostcardView(firstUnlocked);
+  const unlocked = postcardsUnlockedCount();
+  renderPostcardView(unlocked ? unlocked - 1 : -1);
   renderPostcardsGrid();
 }
 function closePostcards(){ $('postcardsModal').style.display='none'; }
-
 $('openPostcards').addEventListener('click', openPostcards);
 $('closePostcards').addEventListener('click', closePostcards);
-$('pcPrev').addEventListener('click', ()=>{
-  const i = (pcIndex - 1 + POSTCARDS.length) % POSTCARDS.length;
-  renderPostcardView(i);
-});
-$('pcNext').addEventListener('click', ()=>{
-  const i = (pcIndex + 1) % POSTCARDS.length;
-  renderPostcardView(i);
-});
-$('pcPlay').addEventListener('click', ()=>{
-  if(!isPostcardUnlockedIndex(pcIndex)) return;
-  const p = POSTCARDS[pcIndex];
-  const a = pcGetAudio(p);
-  if(a){ try{ a.currentTime=0; a.play(); }catch{} }
-  else{
-    ttsSpeak(p.fa || p.title || '', 'fa-IR');
-    setTimeout(()=> ttsSpeak(p.en || p.title || '', 'en-US'), 1500);
+
+/* ===================== BACKGROUND MUSIC ===================== */
+const MUSIC_URL = 'audio/backgroundinstrumental.mp3';
+let musicAudio = null;
+function initMusic(){
+  if(musicAudio) return;
+  musicAudio = new Audio(MUSIC_URL);
+  musicAudio.loop = true; musicAudio.preload = 'auto';
+  musicAudio.volume = state.settings?.musicVol ?? 0.28;
+  musicAudio.setAttribute('playsinline','');
+}
+function updateMusicBtnUI(){
+  const b = $('musicToggle'); if(!b) return;
+  const playing = musicAudio && !musicAudio.paused && !musicAudio.ended;
+  b.textContent = playing ? '⏸️ Pause Music' : '🎵 Play Music';
+}
+$('musicToggle').addEventListener('click', async ()=>{
+  initMusic();
+  try{
+    if(musicAudio.paused){ await musicAudio.play(); state.settings.musicOn = true; }
+    else { musicAudio.pause(); state.settings.musicOn = false; }
+    persist();
+  }catch(e){
+    alert('Could not start audio. After interacting with the page, tap “Play Music” again.');
   }
+  updateMusicBtnUI();
 });
+document.addEventListener('visibilitychange', updateMusicBtnUI);
+updateMusicBtnUI();
 
 /* Init */
 initSpeech();
