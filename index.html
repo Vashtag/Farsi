@@ -526,7 +526,7 @@ const SENTENCES = [
   { fa:"سگ در پارک است.", translit:"sag dar pârk ast.", en:"The dog is in the park." }
 ];
 
-/* ===================== WORDS (truncated for brevity in this comment—full list kept) ===================== */
+/* ===================== WORDS (list retained) ===================== */
 const words = [
   {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.png"},
   {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.png"},
@@ -766,55 +766,15 @@ const POSTCARDS = [
     image: 'images/postcards/mount-damavand.jpg',
     emoji: '⛰️'
   },
-  {
-    id: 'lut_desert',
-    title: 'Lut Desert (Dasht-e Lut)',
-    en: 'The Lut Desert: otherworldly sand dunes, salt plains, and the hottest recorded surface temperatures on Earth.',
-    image: 'images/postcards/lut_desert.jpg',
-    emoji: '🏜️'
-  },
-  {
-    id: 'kerman',
-    title: 'Kerman — Ganjali Khan Complex',
-    en: 'Kerman: home to the Ganjali Khan complex, bustling bazaars, and the gateway to Iran’s great deserts.',
-    image: 'images/postcards/kerman.jpg',
-    emoji: '🕌'
-  },
-  {
-    id: 'sana_hostel',
-    title: 'Sana Historical Hostel',
-    en: 'Sana Historical Hostel: a restored Persian house with courtyards and arches, offering timeless Yazd hospitality.',
-    image: 'images/postcards/sana_hostel.jpg',
-    emoji: '🏡'
-  },
-  {
-    id: 'kavir_national_park',
-    title: 'Kavir National Park',
-    en: 'Kavir National Park: the “Little Africa” of Iran, desert landscapes with wildlife from cheetahs to gazelles.',
-    image: 'images/postcards/kavir_national_park.jpg',
-    emoji: '🐆'
-  },
-  {
-    id: 'khaju_bridge',
-    title: 'Isfahan — Khaju Bridge',
-    en: 'Khaju Bridge: a masterpiece of Safavid engineering, where arches echo with music and poetry over the Zayanderud.',
-    image: 'images/postcards/khaju_bridge.jpg',
-    emoji: '🌉'
-  },
-  {
-    id: 'chahkooh_canyon',
-    title: 'Chahkooh Canyon — Qeshm Island',
-    en: 'Chahkooh Canyon: sculpted sandstone gorges and narrow passages carved by time on Qeshm Island.',
-    image: 'images/postcards/chahkooh_canyon.jpg',
-    emoji: '🪨'
-  },
-  {
-    id: 'hormuz_island',
-    title: 'Hormuz Island — Red Beach',
-    en: 'Hormuz Island: vivid red beaches and rainbow mountains—an island of surreal colours in the Persian Gulf.',
-    image: 'images/postcards/hormuz_island.jpg',
-    emoji: '🏖️'
-  }
+
+  /* You can keep or remove the extra postcards below; they will show emoji if images are missing. */
+  { id:'lut_desert', title:'Lut Desert (Dasht-e Lut)', en:'The Lut Desert: otherworldly sand dunes, salt plains, and the hottest recorded surface temperatures on Earth.', image:'images/postcards/lut_desert.jpg', emoji:'🏜️' },
+  { id:'kerman', title:'Kerman — Ganjali Khan Complex', en:'Kerman: home to the Ganjali Khan complex, bustling bazaars, and the gateway to Iran’s great deserts.', image:'images/postcards/kerman.jpg', emoji:'🕌' },
+  { id:'sana_hostel', title:'Sana Historical Hostel', en:'Sana Historical Hostel: a restored Persian house with courtyards and arches, offering timeless Yazd hospitality.', image:'images/postcards/sana_hostel.jpg', emoji:'🏡' },
+  { id:'kavir_national_park', title:'Kavir National Park', en:'Kavir National Park: the “Little Africa” of Iran, desert landscapes with wildlife from cheetahs to gazelles.', image:'images/postcards/kavir_national_park.jpg', emoji:'🐆' },
+  { id:'khaju_bridge', title:'Isfahan — Khaju Bridge', en:'Khaju Bridge: a masterpiece of Safavid engineering, where arches echo with music and poetry over the Zayanderud.', image:'images/postcards/khaju_bridge.jpg', emoji:'🌉' },
+  { id:'chahkooh_canyon', title:'Chahkooh Canyon — Qeshm Island', en:'Chahkooh Canyon: sculpted sandstone gorges and narrow passages carved by time on Qeshm Island.', image:'images/postcards/chahkooh_canyon.jpg', emoji:'🪨' },
+  { id:'hormuz_island', title:'Hormuz Island — Red Beach', en:'Hormuz Island: vivid red beaches and rainbow mountains—an island of surreal colours in the Persian Gulf.', image:'images/postcards/hormuz_island.jpg', emoji:'🏖️' }
 ];
 
 /* ===================== UTILITIES ===================== */
@@ -924,36 +884,76 @@ function loadState(){
   state.mapUnlocked = computeCatsUnlocked();
 }
 
-/* ======== SHARED NICOLE SYNC (optional) ======== */
+/* ======== SHARED NICOLE SYNC (with monotonic merge) ======== */
 const SYNC_ENDPOINT = "https://ff-sync.9rmcqs6hjc.workers.dev";
 const SYNC_DOC_ID = "nicole";
 const SYNC_WRITE_TOKEN = "Gravity123!!";
+
+/* >>> FIXED: monotonic merge for start_date/unlocked_count <<< */
 function mergeStates(local, remote){
   if(!remote || !remote.updated_at) return local;
-  const localIsNewer = (local.updated_at||0) >= (remote.updated_at||0);
-  const newer = localIsNewer ? local : remote;
-  const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]); newer.covered = [...cov];
-  newer.score = Math.max(local.score||0, remote.score||0);
-  newer.streak = (newer===local ? local.streak : remote.streak) || 0;
-  newer.inventory = {
-    fish: (local.inventory?.fish||0) + (remote.inventory?.fish||0),
-    catnip: (local.inventory?.catnip||0) + (remote.inventory?.catnip||0),
-    nameTokens: (local.inventory?.nameTokens||0) + (remote.inventory?.nameTokens||0)
+
+  const lts = local?.updated_at || 0;
+  const rts = remote?.updated_at || 0;
+  const base = (lts >= rts) ? {...local} : {...remote};
+
+  // Earliest start date wins
+  const ls = local?.start_date, rs = remote?.start_date;
+  const earliestStart = (ls && rs) ? (ls < rs ? ls : rs) : (ls || rs || todayISO());
+  base.start_date = earliestStart;
+
+  // Compute "should" unlock count from earliestStart
+  const dNow = new Date(); dNow.setHours(0,0,0,0);
+  const sDate = new Date(earliestStart + 'T00:00:00');
+  const diffDays = Math.floor((dNow - sDate)/86400000);
+  const shouldUnlock = Math.min(words.length, (diffDays + 1) * DAILY_WORDS);
+
+  // Never regress unlocked_count
+  const localUnlocked  = local?.unlocked_count  || 0;
+  const remoteUnlocked = remote?.unlocked_count || 0;
+  base.unlocked_count = Math.max(localUnlocked, remoteUnlocked, shouldUnlock);
+
+  // Covered words: union
+  const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]);
+  base.covered = [...cov];
+
+  // Score: max; streak: take newer side's value
+  base.score  = Math.max(local.score||0, remote.score||0);
+  base.streak = (lts >= rts ? local.streak : remote.streak) || 0;
+
+  // Inventory adds up
+  base.inventory = {
+    fish:      (local.inventory?.fish||0)      + (remote.inventory?.fish||0),
+    catnip:    (local.inventory?.catnip||0)    + (remote.inventory?.catnip||0),
+    nameTokens:(local.inventory?.nameTokens||0)+ (remote.inventory?.nameTokens||0)
   };
-  newer.furniture = {catTree: !!(local.furniture?.catTree || remote.furniture?.catTree)};
-  newer.catNames = localIsNewer ? {...(local.catNames||{})} : {...(remote.catNames||{})};
-  newer.nameCursor = localIsNewer ? (local.nameCursor??-1) : (remote.nameCursor??-1);
-  newer.achievements = {...local.achievements, ...remote.achievements};
-  newer.achFx = {...local.achFx, ...remote.achFx};
-  newer.showCatNames = localIsNewer ? !!local.showCatNames : !!remote.showCatNames;
-  return newer;
+
+  // Furniture: owned if either has it
+  base.furniture = { catTree: !!(local.furniture?.catTree || remote.furniture?.catTree) };
+
+  // Cat names: newer wins
+  base.catNames   = (lts >= rts ? {...(local.catNames||{})} : {...(remote.catNames||{})});
+  base.nameCursor = (lts >= rts ? (local.nameCursor??-1)    : (remote.nameCursor??-1));
+
+  // Achievements: union of flags; FX union
+  base.achievements = {...(local.achievements||{}), ...(remote.achievements||{})};
+  base.achFx        = {...(local.achFx||{}),        ...(remote.achFx||{})};
+
+  // Name toggle: newer wins
+  base.showCatNames = (lts >= rts ? !!local.showCatNames : !!remote.showCatNames);
+
+  return base;
 }
+
 async function syncPullNicole(){
   if(!SYNC_ENDPOINT || ACTIVE_PROFILE!=="Nicole") return;
   try{
     const res = await fetch(`${SYNC_ENDPOINT}/p/${SYNC_DOC_ID}`);
     const remote = await res.json().catch(()=>null);
-    if(remote && Object.keys(remote).length){ state = mergeStates(state, remote); _persist(); }
+    if(remote && Object.keys(remote).length){
+      state = mergeStates(state, remote);
+      _persist(); // use the original persist to render & store
+    }
   }catch{}
 }
 async function syncPushNicole(){
@@ -1003,7 +1003,7 @@ function reflectBadges(){
   });
 }
 
-/* ===================== ROAMING CATS (unchanged) ===================== */
+/* ===================== ROAMING CATS ===================== */
 const CAT_EMOJIS = ['🐈','🐈‍⬛','🐱'];
 let cats = []; let catAnim = { running:false, lastTs:0, bounds:null }; let flashNamesUntil = 0;
 function getCatName(i){ return state.catNames && state.catNames[i] ? state.catNames[i] : `Cat ${i+1}`; }
@@ -1085,7 +1085,7 @@ function burstLeaves(count=36){
   }
 }
 
-/* ===================== SENTENCE PRACTICE / MINI QUIZ / AUDIO QUIZ (unchanged) ===================== */
+/* ===================== SENTENCE PRACTICE / MINI QUIZ / AUDIO QUIZ ===================== */
 let sentenceIdx = 0;
 function renderSentence(){
   if(!SENTENCES.length){ $('sentFa').textContent='—'; $('sentTrans').textContent=''; $('sentEn').textContent='No sentences available yet.'; $('sentProgress').textContent=''; return; }
@@ -1422,10 +1422,20 @@ $('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.dis
 $('sentPrev').addEventListener('click', ()=>{ sentenceIdx--; renderSentence(); });
 $('sentNext').addEventListener('click', ()=>{ sentenceIdx++; renderSentence(); });
 
+/* Reset Cat Names only */
 $('resetNamesBtn').addEventListener('click', ()=>{ if(!confirm('Reset ALL cat names for this profile? This cannot be undone.')) return;
   state.catNames = {}; state.nameCursor = -1; persist(); updateShopUI(); updateNamesVisibility();
   if (cats && cats.length) { cats.forEach(c => { const nm = getCatName(c.idx); c.el.title = nm; if (c.label) c.label.textContent = nm; }); }
   const msg = $('shopMsg'); if (msg) { msg.textContent = 'All cat names cleared for this profile.'; msg.className = 'feedback ok'; }
+});
+
+/* >>> Added: Reset Progress (danger zone) <<< */
+$('resetBtn').addEventListener('click', ()=>{
+  if(!confirm('Reset ALL progress for this profile? (score, streak, SRS, unlocks, achievements)')) return;
+  state = defaultState();
+  state.start_date = todayISO();   // start fresh from today
+  persist();
+  alert('Progress cleared for ' + (ACTIVE_PROFILE || 'this profile') + '.');
 });
 
 /* Midnight countdown */
