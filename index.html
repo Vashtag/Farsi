@@ -763,37 +763,84 @@ function populateThemeDropdown(){
 }
 
 /* ===================== POSTCARDS DATA ===================== */
-/* Put your JPGs in images/postcards/ ; optional MP3s in audio/postcards/ */
+/* Place JPGs in /images/postcards/ with these exact names.
+   Optional narration MP3s can go in /audio/postcards/ with the same base name. */
 const POSTCARDS = [
   {
-    id:'persepolis',
-    title:'Persepolis (Takht‑e Jamshid)',
-    fa:'تخت‌جمشید، پایتخت باشکوه هخامنشیان، نماد تاریخ و هنر ایران است.',
-    translit:'takht‑e jamshid, pâytakhte bâshokuh‑e hakhamaneshiân, nemâd‑e târikh o honar‑e irân ast.',
-    en:'Persepolis—ceremonial capital of the Achaemenids—is a timeless symbol of Iranian art and history.',
-    image:'images/postcards/persepolis.jpg',
-    audio:'audio/postcards/persepolis.mp3',
-    emoji:'🏛️'
+    id: 'persepolis',
+    title: 'Persepolis (Takht‑e Jamshid)',
+    en: 'Persepolis—the ceremonial capital of the Achaemenids—is a symbol of the splendor of ancient Iranian art and history.',
+    image: 'images/postcards/persepolis.jpg',
+    audio: 'audio/postcards/persepolis.mp3',
+    emoji: '🏛️'
   },
   {
-    id:'naqsh_e_jahan',
-    title:'Naqsh‑e Jahan Square (Isfahan)',
-    fa:'میدان نقش‌جهان با گنبدهای فیروزه‌ای و بازار تاریخی، قلب تپنده اصفهان است.',
-    translit:'meydân‑e naqsh‑e jahân bâ gonbad‑hâ‑ye firuze’i va bazzâr‑e târikhî, qalbe tapande‑ye esfahân ast.',
-    en:'Naqsh‑e Jahan Square—turquoise domes and a living bazaar—the beating heart of Isfahan.',
-    image:'images/postcards/naqsh_e_jahan.jpg',
-    audio:'audio/postcards/naqsh_e_jahan.mp3',
-    emoji:'🕌'
+    id: 'azadi_tower',
+    title: 'Tehran — Azadi Tower',
+    en: 'Azadi Tower—an icon of Tehran—blends traditional Persian forms with modern lines.',
+    image: 'images/postcards/azadi_tower.jpg',
+    audio: 'audio/postcards/azadi_tower.mp3',
+    emoji: '🗼'
   },
   {
-    id:'azadi_tower',
-    title:'Azadi Tower (Tehran)',
-    fa:'برج آزادی با معماری منحصر به فرد، یکی از نمادهای تهران مدرن است.',
-    translit:'borj‑e âzâdi bâ me’mârî‑ye monhaser be fard, yeki az nemâdhâ‑ye tehrân‑e modarn ast.',
-    en:'Azadi Tower—an icon of modern Tehran with unique architecture.',
-    image:'images/postcards/azadi_tower.jpg',
-    audio:'audio/postcards/azadi_tower.mp3',
-    emoji:'🗼'
+    id: 'naqsh_e_jahan',
+    title: 'Isfahan — Naqsh‑e Jahan Square',
+    fa: 'میدان نقش‌جهان با گنبدهای فیروزه‌ای و بازار تاریخی، قلب تپنده اصفهان است.',
+    translit: 'meydân‑e naqsh‑e jahân bâ gonbad‑hâ‑ye firuze’i va bâzâr‑e târikhî, qalb‑e tapande‑ye esfahân ast.',
+    en: 'Naqsh‑e Jahan Square—turquoise domes and a living bazaar—the beating heart of Isfahan.',
+    image: 'images/postcards/naqsh_e_jahan.jpg',
+    audio: 'audio/postcards/naqsh_e_jahan.mp3',
+    emoji: '🕌'
+  },
+  {
+    id: 'yazd',
+    title: 'Yazd — Historic City & Windcatchers',
+    fa: 'شهر تاریخی یزد با بادگیرها و کوچه‌های خشتی، میراث جهانی یونسکو است.',
+    translit: 'shahr‑e târikhî‑ye yazd bâ bâdgirhâ va kuchehâ‑ye kheshti, mirâs‑e jahâni‑ye yunesko ast.',
+    en: 'The historic city of Yazd—windcatchers, adobe lanes, and desert skies—is a UNESCO World Heritage site.',
+    image: 'images/postcards/yazd.jpg',
+    audio: 'audio/postcards/yazd.mp3',
+    emoji: '🏜️'
+  },
+  {
+    id: 'shiraz',
+    title: 'Shiraz — City of Poetry & Gardens',
+    fa: 'شیراز، شهر شعر و باغ‌ها؛ حافظیه، سعدیه و عطر بهار‌نارنج.',
+    translit: 'shirâz, shahr‑e sher o bâgh‑hâ; hâfeziye, sa’diye va ’atr‑e bahâr‑e nâranj.',
+    en: 'Shiraz—the city of poetry and gardens—home to Hafez and Saadi, scented with spring orange blossoms.',
+    image: 'images/postcards/shiraz.jpg',
+    audio: 'audio/postcards/shiraz.mp3',
+    emoji: '🌸'
+  },
+  {
+    id: 'golestan_palace',
+    title: 'Tehran — Golestan Palace',
+    fa: 'کاخ گلستان، مجموعه‌ای قاجاری با تالار آینه و کاشی‌کاری‌های نفیس در قلب تهران.',
+    translit: 'kâkh‑e golestân, majmu’e‑i qâjâri bâ tâlâr‑e âyene va kâshi‑kâri‑hâ‑ye nafis dar qalb‑e tehrân.',
+    en: 'Golestan Palace—a Qajar‑era complex with mirror halls and exquisite tilework in the heart of Tehran.',
+    image: 'images/postcards/golestan_palace.jpg',
+    audio: 'audio/postcards/golestan_palace.mp3',
+    emoji: '🏛️'
+  },
+  {
+    id: 'babol',
+    title: 'Babol — City of Orange Blossoms',
+    fa: 'بابل، شهر بهارنارنج و رودخانه‌ها؛ دروازه جنگل‌های هیرکانی.',
+    translit: 'bâbol, shahr‑e bahâr‑e nâranj o rudkhânehâ; darvâze‑ye jangal‑hâ‑ye hirkanî.',
+    en: 'Babol—city of orange blossoms and rivers—the gateway to the lush Hyrcanian forests.',
+    image: 'images/postcards/babol.jpg',
+    audio: 'audio/postcards/babol.mp3',
+    emoji: '🍊'
+  },
+  {
+    id: 'mount-damavand',
+    title: 'Mount Damavand',
+    fa: 'کوه دماوند، بلندترین قله ایران و آتشفشانی خفته، نماد استواری در اسطوره‌های پارسی.',
+    translit: 'kuh‑e damâvand, bolandtarin qolle‑ye irân va âtashfeshâni khofte, nemâd‑e ostuvâri dar osturehâ‑ye pârsi.',
+    en: 'Mount Damavand—the highest peak in Iran, a dormant volcano and a powerful symbol in Persian mythology.',
+    image: 'images/postcards/mount-damavand.jpg',
+    audio: 'audio/postcards/mount-damavand.mp3',
+    emoji: '⛰️'
   }
 ];
 
