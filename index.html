@@ -889,7 +889,7 @@ const SYNC_ENDPOINT = "https://ff-sync.9rmcqs6hjc.workers.dev";
 const SYNC_DOC_ID = "nicole";
 const SYNC_WRITE_TOKEN = "Gravity123!!";
 
-/* >>> FIXED: monotonic merge for start_date/unlocked_count <<< */
+/* >>> Only change: score now takes the NEWER side (so spends persist) <<< */
 function mergeStates(local, remote){
   if(!remote || !remote.updated_at) return local;
 
@@ -917,11 +917,13 @@ function mergeStates(local, remote){
   const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]);
   base.covered = [...cov];
 
-  // Score: max; streak: take newer side's value
-  base.score  = Math.max(local.score||0, remote.score||0);
+  // SCORE: newer side wins (instead of Math.max)
+  base.score  = (lts >= rts ? (local.score||0) : (remote.score||0));
+
+  // Streak: newer side’s value
   base.streak = (lts >= rts ? local.streak : remote.streak) || 0;
 
-  // Inventory adds up
+  // Inventory adds up (unchanged)
   base.inventory = {
     fish:      (local.inventory?.fish||0)      + (remote.inventory?.fish||0),
     catnip:    (local.inventory?.catnip||0)    + (remote.inventory?.catnip||0),
@@ -935,7 +937,7 @@ function mergeStates(local, remote){
   base.catNames   = (lts >= rts ? {...(local.catNames||{})} : {...(remote.catNames||{})});
   base.nameCursor = (lts >= rts ? (local.nameCursor??-1)    : (remote.nameCursor??-1));
 
-  // Achievements: union of flags; FX union
+  // Achievements/FX: union
   base.achievements = {...(local.achievements||{}), ...(remote.achievements||{})};
   base.achFx        = {...(local.achFx||{}),        ...(remote.achFx||{})};
 
