@@ -34,7 +34,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .word{display:flex;flex-direction:column;gap:6px;align-items:flex-start;justify-content:center}
 .en{font-size:clamp(26px,3.4vw,34px);font-weight:700;color:#e2e8f0}
 .fa{font-size:clamp(18px,2.6vw,22px);color:#cbd5e1;direction:rtl;text-align:right}
-.trans{font-size:clamp(26px,3.4vw,34px);font-weight:600;color:#e2e8f0}
+.trans{font-size:clamp(26px,3.4vw,34px);font-weight:600;color:#e5e7eb}
 .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
 .input{background:#0b1229;border:1px solid #1f2937;padding:12px 14px;border-radius:12px;color:#e5e7eb;width:100%;font-size:16px}
 .feedback{margin-top:8px;min-height:24px;font-size:15px}
@@ -62,7 +62,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .map{display:grid;grid-template-columns:repeat(4, minmax(60px,1fr));gap:8px;position:relative;z-index:1}
 .tile{aspect-ratio:1/1;background:#0b1229;border:1px dashed #334155;border-radius:10px;display:grid;place-items:center;font-size:28px;color:#334155}
 
-/* Furniture (always-on visuals once purchased) */
+/* Furniture visuals */
 .furniture{
   position:absolute; top:8px; left:8px;
   width:92px; height:auto; z-index:1; pointer-events:none;
@@ -89,7 +89,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   filter: drop-shadow(0 4px 8px rgba(0,0,0,.35));
 }
 
-/* Catnip roll + bounce */
+/* Catnip animation */
 .cat.catnip .cat-emoji{animation:catnipRoll .7s linear infinite}
 @keyframes catnipRoll{
   0%{transform:translateY(0) rotate(0deg)}
@@ -97,45 +97,43 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   100%{transform:translateY(0) rotate(360deg)}
 }
 
-/* Arena when cats are unlocked (grid hidden) */
+/* Arena */
 .map-wrap.arena{
   background:#0b1229;border:1px solid #1f2937;border-radius:12px;
   height:clamp(260px, 45vh, 380px);
 }
 
-/* Rewards / shop row */
+/* Shop row */
 .shop-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .muted{color:#94a3b8}
 
-/* Hearts when feeding */
+/* Hearts & leaves FX */
 .heart{position:absolute;font-size:20px;pointer-events:none;opacity:0;animation:floatHeart 1.6s ease-out forwards}
 @keyframes floatHeart{
   0%{transform:translateY(0) scale(.8);opacity:.9}
   60%{opacity:1}
   100%{transform:translateY(-60px) scale(1.25);opacity:0}
 }
-
-/* Leaves burst when using catnip */
 .leaf{position:absolute;font-size:20px;pointer-events:none;opacity:0;animation:floatLeaf 2.2s ease-out forwards}
 @keyframes floatLeaf{
   0%{transform:translateY(0) rotate(0deg);opacity:.9}
   100%{transform:translateY(-90px) rotate(180deg);opacity:0}
 }
 
-/* Heavy blur for profile/start overlays */
+/* Overlays */
 #profileOverlay,#startOverlay{
   background: radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%), rgba(15,23,42,.60);
   backdrop-filter: blur(28px) saturate(120%);
   -webkit-backdrop-filter: blur(28px) saturate(120%);
 }
 
-/* ----- Mobile-only header/input behavior ----- */
+/* Mobile */
 @media (max-width: 700px){
   header{ position: static; top:auto; background:rgba(15,23,42,.9); backdrop-filter:none; }
   main{ padding:0 16px 120px; }
 }
 
-/* ========= Badge visuals ========= */
+/* Badges */
 .badges-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .badge-tile{
   position:relative; padding:10px 12px; border-radius:12px; font-size:14px;
@@ -144,47 +142,20 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 }
 .badge-tile .ico{width:22px; height:22px; display:grid; place-items:center}
 .badge-tile .label{flex:1}
-.badge-tile.earned{
-  filter:none; opacity:1; color:#e5e7eb; box-shadow:0 0 0 0 rgba(56,189,248,.0);
-  animation:badgeGlow 2.2s ease-in-out 1 forwards;
-}
-@keyframes badgeGlow{
-  0% { box-shadow:0 0 0px 0 rgba(56,189,248,.0); }
-  35% { box-shadow:0 0 18px 6px rgba(56,189,248,.35); }
-  100% { box-shadow:0 0 8px 2px rgba(34,197,94,.25); }
-}
-.badge-tile.sparkle::after{
-  content:"✨"; position:absolute; right:8px; top:-6px; font-size:18px; animation:sparklePop .9s ease-out 1 forwards;
-}
-@keyframes sparklePop{
-  0%{ transform:translateY(6px) scale(.6); opacity:0; }
-  40%{ transform:translateY(0) scale(1.2); opacity:1; }
-  100%{ transform:translateY(0) scale(1); opacity:0; }
-}
+.badge-tile.earned{ filter:none; opacity:1; color:#e5e7eb; animation:badgeGlow 2.2s ease-in-out 1 forwards; }
+@keyframes badgeGlow{ 0%{box-shadow:0 0 0 0 rgba(56,189,248,.0)} 35%{box-shadow:0 0 18px 6px rgba(56,189,248,.35)} 100%{box-shadow:0 0 8px 2px rgba(34,197,94,.25)} }
+.badge-tile.sparkle::after{ content:"✨"; position:absolute; right:8px; top:-6px; font-size:18px; animation:sparklePop .9s ease-out 1 forwards; }
+@keyframes sparklePop{ 0%{transform:translateY(6px) scale(.6); opacity:0;} 40%{transform:translateY(0) scale(1.2); opacity:1;} 100%{transform:translateY(0) scale(1); opacity:0; } }
 
-/* ====== Night Sky Twinkles (22:00–02:00) ====== */
+/* Night sky (brief) */
 .night-sky{ position:fixed; inset:0; pointer-events:none; z-index:-1; }
-.night-star{
-  position:absolute;
-  width:2px; height:2px; border-radius:50%;
-  background: radial-gradient(circle, rgba(255,255,255,.95), rgba(255,255,255,0) 60%);
-  opacity:0;
-  animation: starTwinkle var(--dur,2.2s) ease-in-out var(--delay,0s) infinite alternate;
-  filter: drop-shadow(0 0 6px rgba(255,255,255,.28));
-  will-change: opacity, transform;
-}
-.night-star.spark{
-  animation: starTwinkle var(--dur,2.2s) ease-in-out var(--delay,0s) infinite alternate,
-             starSpark var(--sparkDur,.9s) ease-out 1;
-}
+.night-star{ position:absolute; width:2px; height:2px; border-radius:50%; background: radial-gradient(circle, rgba(255,255,255,.95), rgba(255,255,255,0) 60%); opacity:0; animation: starTwinkle var(--dur,2.2s) ease-in-out var(--delay,0s) infinite alternate; filter: drop-shadow(0 0 6px rgba(255,255,255,.28)); will-change: opacity, transform;}
+.night-star.spark{ animation: starTwinkle var(--dur,2.2s) ease-in-out var(--delay,0s) infinite alternate, starSpark var(--sparkDur,.9s) ease-out 1; }
 @keyframes starTwinkle{ 0%{opacity:.07;transform:scale(.9)} 50%{opacity:.95;transform:scale(1.1)} 100%{opacity:.15;transform:scale(.92)} }
 @keyframes starSpark{ 0%{opacity:.25;transform:scale(1)} 40%{opacity:1;transform:scale(1.35)} 100%{opacity:.25;transform:scale(1)} }
-@media (prefers-reduced-motion: reduce){
-  .night-star{ animation: none; opacity:.22 }
-  .night-star.spark{ animation: none; }
-}
+@media (prefers-reduced-motion: reduce){ .night-star{animation:none;opacity:.22} .night-star.spark{animation:none;} }
 
-/* ======== Audio Quiz styles ======== */
+/* Audio quiz */
 .aq-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .aq-option{ position:relative; aspect-ratio:1/1; border:1px solid #1f2937; border-radius:12px; background:#0b1229; display:grid; place-items:center; overflow:hidden; }
 .aq-option img{ width:100%; height:100%; object-fit:contain; display:block; }
@@ -192,36 +163,14 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .aq-option.correct{ border-color: var(--accent); box-shadow:0 0 0 2px rgba(34,197,94,.25) inset }
 .aq-option.wrong{ border-color: var(--err); box-shadow:0 0 0 2px rgba(239,68,68,.22) inset }
 
-/* ======== Postcards ======== */
-.pc-grid{
-  display:grid; gap:10px;
-  grid-template-columns:repeat(auto-fill, minmax(140px,1fr));
-}
-.pc-tile{
-  position:relative; border:1px solid #1f2937; border-radius:12px;
-  background:#0b1229; overflow:hidden; cursor:pointer;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px;
-  transition:transform .08s ease, box-shadow .2s ease;
-}
+/* Postcards */
+.pc-grid{ display:grid; gap:10px; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); }
+.pc-tile{ position:relative; border:1px solid #1f2937; border-radius:12px; background:#0b1229; overflow:hidden; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; transition:transform .08s ease, box-shadow .2s ease; }
 .pc-tile:hover{ transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.22) }
-.pc-thumb{
-  width:100%; aspect-ratio:4/3; object-fit:cover; display:block;
-  border-radius:8px; border:1px solid #1f2937; background:#0b1229;
-}
+.pc-thumb{ width:100%; aspect-ratio:4/3; object-fit:cover; display:block; border-radius:8px; border:1px solid #1f2937; background:#0b1229; }
 .pc-emoji{ font-size:48px; line-height:1; display:none }
 .pc-cap{ font-size:13px; color:#cbd5e1; margin-top:8px; text-align:center }
-
-/* “More coming” placeholder tile */
-.pc-more{
-  border:1px dashed #334155;
-  background:#0b1229;
-  color:#94a3b8;
-  display:grid;
-  place-items:center;
-  aspect-ratio:4/3;
-  border-radius:12px;
-  cursor:default;
-}
+.pc-more{ border:1px dashed #334155; background:#0b1229; color:#94a3b8; display:grid; place-items:center; aspect-ratio:4/3; border-radius:12px; cursor:default;}
 .pc-more .pc-q{ font-size:42px; line-height:1; filter:drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
 .pc-more .pc-note{ font-size:12px; margin-top:6px; color:#9aa7b7; text-align:center; }
 </style>
@@ -379,7 +328,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="closePostcards" class="btn">Close</button>
     </div>
 
-    <!-- Viewer (no play/prev/next) -->
     <div id="pcView" class="stat" style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:12px">
       <div style="display:grid;place-items:center">
         <img id="pcViewImg" alt="" style="display:none;width:min(780px,100%);height:auto;border-radius:12px;border:1px solid #1f2937;background:#0b1229" loading="lazy"/>
@@ -393,7 +341,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <div class="tiny" id="pcUnlockNote"></div>
     </div>
 
-    <!-- Grid -->
     <div id="pcGrid" class="pc-grid"></div>
   </div>
 </div>
@@ -518,9 +465,8 @@ const CATNIP_SPEED_FACTOR = 3.0;
 const CATNIP_TURN_FACTOR = 0.45;
 const FURNITURE_COST = 1000;
 const CAT_TREE_IMG = 'images/cat_tree.png';
-const CAT_TOY_IMG  = 'images/cat_toy.png'; /* NEW */
+const CAT_TOY_IMG  = 'images/cat_toy.png';
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
-/* Postcards unlock cadence: every 15 learned */
 const POSTCARD_UNLOCK_EVERY = 15;
 
 /* Example sentences */
@@ -528,7 +474,7 @@ const SENTENCES = [
   { fa:"من آب می‌نوشم.", translit:"man âb minusham.", en:"I drink water." },
   { fa:"او یک گربه دارد.", translit:"u yek gorbe dârad.", en:"He/She has a cat." },
   { fa:"این خانه بزرگ است.", translit:"in khâne bozorg ast.", en:"This house is big." },
-  { fa:"من کتاب می‌خوانم.", translit:"man ketâب mikhânam.", en:"I am reading a book." },
+  { fa:"من کتاب می‌خوانم.", translit:"man ketâb mikhânam.", en:"I am reading a book." },
   { fa:"امروز هوا خوب است.", translit:"emruz havâ khub ast.", en:"The weather is good today." },
   { fa:"سگ در پارک است.", translit:"sag dar pârk ast.", en:"The dog is in the park." }
 ];
@@ -606,7 +552,7 @@ const words = [
   {fa:"کارت بانکی", en:"bank card", translit:"kârt bânki", emoji:"💳", audio:"audio/kart_banki.mp3", image:"images/kart_banki.png"},
   {fa:"هدیه", en:"gift", translit:"hedye", emoji:"🎁", audio:"audio/hedye.mp3", image:"images/hedye.png"},
   {fa:"عروسی", en:"wedding", translit:"arusi", emoji:"💒", audio:"audio/arusi.mp3", image:"images/arusi.png"},
-  {fa:"تولد", en:"birthday", translit:"tavallod", emoji:"🎉", audio:"audio/tavallod.mp3", image:"images/tavallod.png"},
+  {fa:"תولد", en:"birthday", translit:"tavallod", emoji:"🎉", audio:"audio/tavallod.mp3", image:"images/tavallod.png"},
   {fa:"عشق", en:"love", translit:"eshgh", emoji:"❤️", audio:"audio/eshgh.mp3", image:"images/eshgh.png"},
   {fa:"شنا", en:"swim", translit:"shenâ", emoji:"🏊", audio:"audio/shena.mp3", image:"images/shena.png"},
   {fa:"بازی", en:"play", translit:"bâzi", emoji:"🎮", audio:"audio/bazi.mp3", image:"images/bazi.png"},
@@ -771,7 +717,7 @@ const defaultState = ()=>({
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
-  furniture:{catTree:false, catToy:false}, /* NEW */
+  furniture:{catTree:false, catToy:false},
   catNames:{}, nameCursor:-1, showCatNames:false
 });
 let state = defaultState();
@@ -829,7 +775,7 @@ function loadState(){
   if(state.inventory.catnip===undefined) state.inventory.catnip=0;
   if(state.inventory.nameTokens===undefined) state.inventory.nameTokens=0;
   if(!state.furniture) state.furniture = {catTree:false, catToy:false};
-  if(state.furniture.catToy===undefined) state.furniture.catToy = !!state.furniture.catTree; /* backfill toy for prior owners */
+  if(state.furniture.catToy===undefined) state.furniture.catToy = false; /* no free toy backfill */
   if(!state.catNames) state.catNames = {};
   if(typeof state.nameCursor!=='number') state.nameCursor = -1;
   if(typeof state.showCatNames!=='boolean') state.showCatNames = false;
@@ -843,12 +789,12 @@ function loadState(){
   state.mapUnlocked = computeCatsUnlocked();
 }
 
-/* ======== SHARED NICOLE SYNC (with monotonic merge) ======== */
+/* ======== SHARED NICOLE SYNC ======== */
 const SYNC_ENDPOINT = "https://ff-sync.9rmcqs6hjc.workers.dev";
 const SYNC_DOC_ID = "nicole";
 const SYNC_WRITE_TOKEN = "Gravity123!!";
 
-/* ---- MERGE: stop inventory doubling; newer wins for fish/catnip ---- */
+/* ---- MERGE: inventory dedupe (newer wins for fish/catnip) ---- */
 function mergeStates(local, remote){
   if(!remote || !remote.updated_at) return local;
 
@@ -861,26 +807,21 @@ function mergeStates(local, remote){
   const earliestStart = (ls && rs) ? (ls < rs ? ls : rs) : (ls || rs || todayISO());
   base.start_date = earliestStart;
 
-  // Compute "should" unlock count from earliestStart
+  // Compute unlock from earliestStart
   const dNow = new Date(); dNow.setHours(0,0,0,0);
   const sDate = new Date(earliestStart + 'T00:00:00');
   const diffDays = Math.floor((dNow - sDate)/86400000);
   const shouldUnlock = Math.min(words.length, (diffDays + 1) * DAILY_WORDS);
+  base.unlocked_count = Math.max(local?.unlocked_count||0, remote?.unlocked_count||0, shouldUnlock);
 
-  // Never regress unlocked_count
-  const localUnlocked  = local?.unlocked_count  || 0;
-  const remoteUnlocked = remote?.unlocked_count || 0;
-  base.unlocked_count = Math.max(localUnlocked, remoteUnlocked, shouldUnlock);
+  // Covered union
+  base.covered = [...new Set([...(local.covered||[]), ...(remote.covered||[])])];
 
-  // Covered words: union
-  const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]); base.covered = [...cov];
-
-  // Score: max; streak: take newer side's value
+  // Score / streak
   base.score  = Math.max(local.score||0, remote.score||0);
   base.streak = (lts >= rts ? local.streak : remote.streak) || 0;
 
-  // Inventory: **newer side wins** for fish & catnip (no more addition / doubling).
-  // Keep nameTokens additive (it's a consumable purchased intentionally).
+  // Inventory: newer side for fish/catnip; tokens additive
   const newerInv = (lts >= rts ? (local.inventory||{}) : (remote.inventory||{}));
   base.inventory = {
     fish: newerInv.fish || 0,
@@ -888,27 +829,23 @@ function mergeStates(local, remote){
     nameTokens: (local.inventory?.nameTokens||0) + (remote.inventory?.nameTokens||0)
   };
 
-  // Furniture: owned if either has it; also preserve catToy
+  // Furniture union
   base.furniture = {
     catTree: !!(local.furniture?.catTree || remote.furniture?.catTree),
     catToy:  !!(local.furniture?.catToy  || remote.furniture?.catToy)
   };
 
-  // Cat names: newer wins
+  // Names, effects, toggle
   base.catNames   = (lts >= rts ? {...(local.catNames||{})} : {...(remote.catNames||{})});
   base.nameCursor = (lts >= rts ? (local.nameCursor??-1)    : (remote.nameCursor??-1));
-
-  // Achievements: union of flags; FX union
   base.achievements = {...(local.achievements||{}), ...(remote.achievements||{})};
   base.achFx        = {...(local.achFx||{}),        ...(remote.achFx||{})};
-
-  // Name toggle: newer wins
   base.showCatNames = (lts >= rts ? !!local.showCatNames : !!remote.showCatNames);
 
   return base;
 }
 
-/* One-time inventory cleanup (Nicole only) to zero inflated fish/catnip */
+/* One-time inventory cleanup (Nicole only) */
 function applyInventoryFixOnce(){
   if (ACTIVE_PROFILE !== "Nicole") return false;
   if (!state._invFix_dedupe_v1) {
@@ -1061,7 +998,7 @@ function burstLeaves(count=36){
   }
 }
 
-/* ===================== SENTENCE PRACTICE / MINI QUIZ / AUDIO QUIZ ===================== */
+/* ===================== SENTENCE PRACTICE / QUIZZES ===================== */
 let sentenceIdx = 0;
 function renderSentence(){
   if(!SENTENCES.length){ $('sentFa').textContent='—'; $('sentTrans').textContent=''; $('sentEn').textContent='No sentences available yet.'; $('sentProgress').textContent=''; return; }
@@ -1146,7 +1083,6 @@ function onAQOptionClick(e){
   $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`; setTimeout(nextAQQuestion, 600);
 }
 $('aqPlay').addEventListener('click', ()=>{ if(AQ.current<0) return; const item = words[AQ.current]; try{ const a=getAudio(item); a.currentTime=0; a.play(); }catch{} });
-$('aqQuit').addEventListener('click', ()=> endAudioQuiz());
 
 /* ===================== CELEBRATIONS & BADGE HELPERS ===================== */
 function happyDing(){ try{
@@ -1259,7 +1195,7 @@ function renderFurniture(){
   let el = $('furnCatTree'); const owned = !!(state.furniture?.catTree);
   if(owned && !el){ el = document.createElement('img'); el.id = 'furnCatTree'; el.className = 'furniture'; el.src = CAT_TREE_IMG; el.alt = 'Cat Tree'; container.appendChild(el); }
   else if(!owned && el){ el.remove(); }
-  // Cat Toy (bottom-right) NEW
+  // Cat Toy (bottom-right)
   let el2 = $('furnCatToy'); const owned2 = !!(state.furniture?.catToy);
   if(owned2 && !el2){ el2 = document.createElement('img'); el2.id = 'furnCatToy'; el2.className = 'furniture-br'; el2.src = CAT_TOY_IMG; el2.alt = 'Cat Toy'; container.appendChild(el2); }
   else if(!owned2 && el2){ el2.remove(); }
@@ -1301,6 +1237,17 @@ function startCatnipParty(ms = CATNIP_DURATION_MS){
 }
 function stopCatnipParty(){ clearTimeout(catnipTimer); clearInterval(catnipTicker); catnipActive=false; catnipTimer=null; catnipTicker=null; for(const c of cats){ removeCatnipFromCat(c); } updateCatnipCountdownUI(); updateShopUI(); }
 
+/* ===================== FURNITURE QUEUE ===================== */
+const FURNITURE_QUEUE = [
+  { key:'catTree', label:'Cat Tree', cost:FURNITURE_COST, place:()=>{ state.furniture.catTree = true; }, msg:'Cat Tree placed! The cats are thrilled. 🐈🌳' },
+  { key:'catToy',  label:'Cat Toy',  cost:FURNITURE_COST, place:()=>{ state.furniture.catToy  = true; }, msg:'Cat Toy placed! 🧸' },
+  // Add your next furniture item here later:
+  // { key:'catLamp', label:'Cat Lamp', cost:1200, place:()=>{ state.furniture.catLamp = true; }, msg:'Cat Lamp placed! 💡🐱' },
+];
+function nextFurnitureItem(){
+  return FURNITURE_QUEUE.find(it => !(state.furniture?.[it.key]));
+}
+
 /* ===================== EVENTS & UI ===================== */
 $('listenBtn').addEventListener('click', playYourAudio);
 $('typeInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('checkBtn').click(); } });
@@ -1328,25 +1275,23 @@ $('closeMap').addEventListener('click', ()=>{ $('mapModal').style.display='none'
 function updateShopUI(){
   const scoreEl=$('shopScore'), fishEl=$('shopFish'), nipEl=$('shopCatnip');
   if(scoreEl) scoreEl.textContent = state.score; if(fishEl) fishEl.textContent = state.inventory?.fish || 0; if(nipEl) nipEl.textContent = state.inventory?.catnip || 0;
+
   const buyBtn=$('buyFishBtn'), feedBtn=$('feedFishBtn'), nameBtn=$('toggleNameArea'), furnBtn=$('buyFurnitureBtn');
   if(buyBtn){ buyBtn.textContent = `🐟 Buy Fish (${FISH_COST})`; buyBtn.disabled = state.score < FISH_COST; }
   if(feedBtn) feedBtn.disabled = (state.inventory?.fish||0) <= 0;
   const buyN=$('buyCatnipBtn'); if(buyN){ buyN.textContent = `🌿 Buy Catnip (${CATNIP_COST})`; buyN.disabled = state.score < CATNIP_COST; }
   updateCatnipCountdownUI();
+
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){ nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`; nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0); }
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
+
   if(furnBtn){
-    const owned = !!(state.furniture?.catTree);
-    // If they already own the cat tree but don't have the toy yet, allow placing the toy.
-    if(owned && !state.furniture?.catToy){
-      furnBtn.textContent = '🧸 Place Cat Toy';
-      furnBtn.disabled = false;
-    }else{
-      furnBtn.textContent = owned ? '🪑 Cat Tree — Owned' : `🪑 Buy Furniture (${FURNITURE_COST})`;
-      furnBtn.disabled = owned || state.score < FURNITURE_COST;
-    }
+    furnBtn.textContent = `🪑 Buy Furniture (${FURNITURE_COST})`;
+    // Keep enabled if the user has enough points; if nothing left to buy, click handler will show a message.
+    furnBtn.disabled = state.score < FURNITURE_COST;
   }
+
   const sel=$('catSelect');
   if(sel){
     const n = state.mapUnlocked||0; sel.innerHTML='';
@@ -1388,24 +1333,26 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   if(!state.catNames) state.catNames = {}; state.catNames[idx] = name; state.nameCursor = idx; state.inventory.nameTokens = Math.max(0, (state.inventory.nameTokens||0)-1);
   $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`; $('shopMsg').className='feedback ok'; $('catNameInput').value=''; $('nameArea').style.display='none'; flashCatNames(4000); persist();
 });
+
+/* NEW: Furniture purchase flow (tree → toy → future) */
 $('buyFurnitureBtn').addEventListener('click', ()=>{
-  // If already own the tree but toy isn't placed, place toy for free.
-  if(state.furniture?.catTree && !state.furniture?.catToy){
-    state.furniture.catToy = true;
-    $('shopMsg').textContent='Placed Cat Toy! 🧸'; $('shopMsg').className='feedback ok';
-    if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:70,spread:80,startVelocity:50}); }
-    persist();
+  const next = nextFurnitureItem();
+  if(!next){
+    $('shopMsg').textContent='More furniture coming soon.'; $('shopMsg').className='feedback tiny';
     return;
   }
-  if(state.furniture?.catTree){ $('shopMsg').textContent='Cat Tree already owned.'; $('shopMsg').className='feedback tiny'; return; }
-  if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for the Cat Tree.'; $('shopMsg').className='feedback warn'; return; }
-  state.score -= FURNITURE_COST; state.furniture = state.furniture || {};
-  state.furniture.catTree = true;
-  state.furniture.catToy = true; /* NEW: place toy on purchase */
-  $('shopMsg').textContent='Cat Tree + Toy placed! The cats are thrilled. 🐈🌳🧸'; $('shopMsg').className='feedback ok';
+  if(state.score < next.cost){
+    $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn';
+    return;
+  }
+  state.score -= next.cost;
+  next.place();
+  $('shopMsg').textContent = next.msg;
+  $('shopMsg').className='feedback ok';
   if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); }
   persist();
 });
+
 function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Show Names'; }
 function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = getCatName(c.idx); } c.el.title = getCatName(c.idx); }); } }
 function flashCatNames(ms=3000){ flashNamesUntil = Date.now() + ms; updateNamesVisibility(); setTimeout(()=>updateNamesVisibility(), ms+50); }
@@ -1427,11 +1374,11 @@ $('resetNamesBtn').addEventListener('click', ()=>{ if(!confirm('Reset ALL cat na
   const msg = $('shopMsg'); if (msg) { msg.textContent = 'All cat names cleared for this profile.'; msg.className = 'feedback ok'; }
 });
 
-/* >>> Reset Progress (danger zone) <<< */
+/* Reset Progress (danger zone) */
 $('resetBtn').addEventListener('click', ()=>{
   if(!confirm('Reset ALL progress for this profile? (score, streak, SRS, unlocks, achievements)')) return;
   state = defaultState();
-  state.start_date = todayISO();   // start fresh from today
+  state.start_date = todayISO();
   persist();
   alert('Progress cleared for ' + (ACTIVE_PROFILE || 'this profile') + '.');
 });
@@ -1448,7 +1395,6 @@ function useProfile(name){
   ACTIVE_PROFILE = String(name||'').trim() || 'Guest';
   loadState(); $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
   $('profileOverlay').style.display='none'; $('startOverlay').style.display='grid';
-  // Run one-time inventory fix here too (after local load) so UI shows 0 immediately
   if (applyInventoryFixOnce()) persist();
   if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
 }
@@ -1478,7 +1424,7 @@ document.addEventListener('click', (e)=>{
   if(e.target.id==='audioQuizModal'){ endAudioQuiz(); }
 });
 
-/* Item order & display */
+/* Order & display */
 function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=pool.slice(); shuffle(order); idx=0; }
 function showImageOrEmoji(item){ const pic=$('pic'), emo=$('emoji'); setImageWithFallback(pic, emo, item); }
 function showItem(){
@@ -1493,7 +1439,7 @@ function showItem(){
 }
 function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
-/* Night Sky background (22:00–02:00) — brief for perf */
+/* Night sky (22:00–02:00) — brief) */
 (function nightSkyBackground(){
   try{
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1533,7 +1479,7 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
   }catch{}
 })();
 
-/* ===================== POSTCARDS UI (no audio/nav; hide locked) ===================== */
+/* ===================== POSTCARDS UI ===================== */
 let pcIndex = 0;
 function postcardsLearned(){ return learnedCount(); }
 function unlockThresholdForIndex(i){ return (i + 1) * POSTCARD_UNLOCK_EVERY; }
