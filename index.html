@@ -68,7 +68,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   width:92px; height:auto; z-index:1; pointer-events:none;
   filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
 }
-/* Bottom-right furniture (Cat Toy) */
+/* Bottom-right furniture (cat toy) */
 .furniture-br{
   position:absolute; right:8px; bottom:8px;
   width:92px; height:auto; z-index:1; pointer-events:none;
@@ -379,7 +379,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="closePostcards" class="btn">Close</button>
     </div>
 
-    <!-- Viewer (no play/prev/next) -->
+    <!-- Viewer -->
     <div id="pcView" class="stat" style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:12px">
       <div style="display:grid;place-items:center">
         <img id="pcViewImg" alt="" style="display:none;width:min(780px,100%);height:auto;border-radius:12px;border:1px solid #1f2937;background:#0b1229" loading="lazy"/>
@@ -533,7 +533,7 @@ const SENTENCES = [
   { fa:"سگ در پارک است.", translit:"sag dar pârk ast.", en:"The dog is in the park." }
 ];
 
-/* ===================== WORDS (list retained) ===================== */
+/* ===================== WORDS ===================== */
 const words = [
   {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.png"},
   {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.png"},
@@ -717,21 +717,21 @@ function populateThemeDropdown(){
 
 /* ===================== POSTCARDS DATA ===================== */
 const POSTCARDS = [
-  { id:'persepolis', title:'Persepolis (Takht-e Jamshid)', en:'Persepolis: the ceremonial capital of the Achaemenids is a symbol of the splendor of ancient Iranian art and history.', image:'images/postcards/persepolis.jpg', emoji:'🏛️' },
-  { id:'azadi_tower', title:'Tehran — Azadi Tower', en:'Azadi Tower: an icon of Tehran—blends traditional Persian forms with modern lines.', image:'images/postcards/azadi_tower.jpg', emoji:'🗼' },
-  { id:'naqsh_e_jahan', title:'Isfahan — Naqsh-e Jahan Square', en:'Naqsh-e Jahan: Square—turquoise domes and a living bazaar—the beating heart of Isfahan.', image:'images/postcards/naqsh_e_jahan.jpg', emoji:'🕌' },
-  { id:'yazd', title:'Yazd — Historic City & Windcatchers', en:'The historic city of Yazd—windcatchers, adobe lanes, and desert skies—is a UNESCO World Heritage site.', image:'images/postcards/yazd.jpg', emoji:'🏜️' },
-  { id:'shiraz', title:'Shiraz — City of Poetry & Gardens', en:'Shiraz: the city of poetry and gardens—home to Hafez and Saadi, scented with spring orange blossoms.', image:'images/postcards/shiraz.jpg', emoji:'🌸' },
-  { id:'golestan_palace', title:'Tehran — Golestan Palace', en:'Golestan Palace: a Qajar-era complex with mirror halls and exquisite tilework in the heart of Tehran.', image:'images/postcards/golestan_palace.jpg', emoji:'🏛️' },
-  { id:'babol', title:'Babol — City of Orange Blossoms', en:'Babol: city of orange blossoms and rivers—the gateway to the lush Hyrcanian forests.', image:'images/postcards/babol.jpg', emoji:'🍊' },
-  { id:'mount_damavand', title:'Mount Damavand', en:'Mount Damavand: the highest peak in Iran, a dormant volcano and a powerful symbol in Persian mythology.', image:'images/postcards/mount-damavand.jpg', emoji:'⛰️' },
-  { id:'lut_desert', title:'Lut Desert (Dasht-e Lut)', en:'The Lut Desert: otherworldly sand dunes, salt plains, and the hottest recorded surface temperatures on Earth.', image:'images/postcards/lut_desert.jpg', emoji:'🏜️' },
-  { id:'kerman', title:'Kerman — Ganjali Khan Complex', en:'Kerman: home to the Ganjali Khan complex, bustling bazaars, and the gateway to Iran’s great deserts.', image:'images/postcards/kerman.jpg', emoji:'🕌' },
-  { id:'sana_hostel', title:'Sana Historical Hostel', en:'Sana Historical Hostel: a restored Persian house with courtyards and arches, offering timeless Yazd hospitality.', image:'images/postcards/sana_hostel.jpg', emoji:'🏡' },
-  { id:'kavir_national_park', title:'Kavir National Park', en:'Kavir National Park: the “Little Africa” of Iran, desert landscapes with wildlife from cheetahs to gazelles.', image:'images/postcards/kavir_national_park.jpg', emoji:'🐆' },
-  { id:'khaju_bridge', title:'Isfahan — Khaju Bridge', en:'Khaju Bridge: a masterpiece of Safavid engineering, where arches echo with music and poetry over the Zayanderud.', image:'images/postcards/khaju_bridge.jpg', emoji:'🌉' },
-  { id:'chahkooh_canyon', title:'Chahkooh Canyon — Qeshm Island', en:'Chahkooh Canyon: sculpted sandstone gorges and narrow passages carved by time on Qeshm Island.', image:'images/postcards/chahkooh_canyon.jpg', emoji:'🪨' },
-  { id:'hormuz_island', title:'Hormuz Island — Red Beach', en:'Hormuz Island: vivid red beaches and rainbow mountains—an island of surreal colours in the Persian Gulf.', image:'images/postcards/hormuz_island.jpg', emoji:'🏖️' }
+  {id:'persepolis', title:'Persepolis (Takht-e Jamshid)', en:'Persepolis: the ceremonial capital of the Achaemenids is a symbol of the splendor of ancient Iranian art and history.', image:'images/postcards/persepolis.jpg', emoji:'🏛️'},
+  {id:'azadi_tower', title:'Tehran — Azadi Tower', en:'Azadi Tower: an icon of Tehran—blends traditional Persian forms with modern lines.', image:'images/postcards/azadi_tower.jpg', emoji:'🗼'},
+  {id:'naqsh_e_jahan', title:'Isfahan — Naqsh-e Jahan Square', en:'Naqsh-e Jahan: Square—turquoise domes and a living bazaar—the beating heart of Isfahan.', image:'images/postcards/naqsh_e_jahan.jpg', emoji:'🕌'},
+  {id:'yazd', title:'Yazd — Historic City & Windcatchers', en:'The historic city of Yazd—windcatchers, adobe lanes, and desert skies—is a UNESCO World Heritage site.', image:'images/postcards/yazd.jpg', emoji:'🏜️'},
+  {id:'shiraz', title:'Shiraz — City of Poetry & Gardens', en:'Shiraz: the city of poetry and gardens—home to Hafez and Saadi, scented with spring orange blossoms.', image:'images/postcards/shiraz.jpg', emoji:'🌸'},
+  {id:'golestan_palace', title:'Tehran — Golestan Palace', en:'Golestan Palace: a Qajar-era complex with mirror halls and exquisite tilework in the heart of Tehran.', image:'images/postcards/golestan_palace.jpg', emoji:'🏛️'},
+  {id:'babol', title:'Babol — City of Orange Blossoms', en:'Babol: city of orange blossoms and rivers—the gateway to the lush Hyrcanian forests.', image:'images/postcards/babol.jpg', emoji:'🍊'},
+  {id:'mount_damavand', title:'Mount Damavand', en:'Mount Damavand: the highest peak in Iran, a dormant volcano and a powerful symbol in Persian mythology.', image:'images/postcards/mount-damavand.jpg', emoji:'⛰️'},
+  {id:'lut_desert', title:'Lut Desert (Dasht-e Lut)', en:'The Lut Desert: otherworldly sand dunes, salt plains, and the hottest recorded surface temperatures on Earth.', image:'images/postcards/lut_desert.jpg', emoji:'🏜️'},
+  {id:'kerman', title:'Kerman — Ganjali Khan Complex', en:'Kerman: home to the Ganjali Khan complex, bustling bazaars, and the gateway to Iran’s great deserts.', image:'images/postcards/kerman.jpg', emoji:'🕌'},
+  {id:'sana_hostel', title:'Sana Historical Hostel', en:'Sana Historical Hostel: a restored Persian house with courtyards and arches, offering timeless Yazd hospitality.', image:'images/postcards/sana_hostel.jpg', emoji:'🏡'},
+  {id:'kavir_national_park', title:'Kavir National Park', en:'Kavir National Park: the “Little Africa” of Iran, desert landscapes with wildlife from cheetahs to gazelles.', image:'images/postcards/kavir_national_park.jpg', emoji:'🐆'},
+  {id:'khaju_bridge', title:'Isfahan — Khaju Bridge', en:'Khaju Bridge: a masterpiece of Safavid engineering, where arches echo with music and poetry over the Zayanderud.', image:'images/postcards/khaju_bridge.jpg', emoji:'🌉'},
+  {id:'chahkooh_canyon', title:'Chahkooh Canyon — Qeshm Island', en:'Chahkooh Canyon: sculpted sandstone gorges and narrow passages carved by time on Qeshm Island.', image:'images/postcards/chahkooh_canyon.jpg', emoji:'🪨'},
+  {id:'hormuz_island', title:'Hormuz Island — Red Beach', en:'Hormuz Island: vivid red beaches and rainbow mountains—an island of surreal colours in the Persian Gulf.', image:'images/postcards/hormuz_island.jpg', emoji:'🏖️'}
 ];
 
 /* ===================== UTILITIES ===================== */
@@ -741,7 +741,7 @@ function now(){return Date.now()}
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
 function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'').trim()}
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
-function shuffle(a){ for(let i=a.length-1;i>0;i++){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
 const isMobile = () => window.matchMedia('(max-width:700px)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 function maybeFocusInput(){ if(!isMobile()) $('typeInput').focus(); }
 function setImageWithFallback(imgEl, emojiEl, item){
@@ -770,9 +770,9 @@ const defaultState = ()=>({
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
-  furniture:{catTree:false, catToy:false},   /* <-- include catToy, default false */
+  furniture:{catTree:false, catToy:false},
   catNames:{}, nameCursor:-1, showCatNames:false,
-  __invFix20250827:false                    /* one-time migration flag */
+  migrations:{}             /* used for one-time fixes */
 });
 let state = defaultState();
 
@@ -822,6 +822,21 @@ function persist(){
   updateNamesVisibility();
   if($('postcardsModal')?.style.display==='grid'){ renderPostcardsGrid(); const u=postcardsUnlockedCount(); renderPostcardView(u?u-1:-1); }
 }
+function runMigrations(){
+  state.migrations = state.migrations || {};
+  /* Nicole-specific: zero inflated inventory; remove accidental cat toy once */
+  if (ACTIVE_PROFILE==='Nicole' && !state.migrations.invZeroedV1){
+    if(!state.inventory) state.inventory = {fish:0, catnip:0, nameTokens:0};
+    state.inventory.fish = 0;
+    state.inventory.catnip = 0;
+    state.migrations.invZeroedV1 = true;
+  }
+  if (ACTIVE_PROFILE==='Nicole' && !state.migrations.resetToyV1){
+    state.furniture = state.furniture || {};
+    state.furniture.catToy = false;
+    state.migrations.resetToyV1 = true;
+  }
+}
 function loadState(){
   state = store.get('state', defaultState());
   if(!state.inventory) state.inventory = {fish:0, catnip:0, nameTokens:0};
@@ -837,69 +852,85 @@ function loadState(){
   if(!state.settings) state.settings = {reviewAll:false, musicOn:false, musicVol:0.28};
   if(typeof state.settings.musicOn!=='boolean') state.settings.musicOn=false;
   if(typeof state.settings.musicVol!=='number') state.settings.musicVol=0.28;
-  if(state.__invFix20250827===undefined) state.__invFix20250827=false;
   state.achFx = state.achFx || {};
-  /* One-time migration: zero Fish & Catnip ONLY */
-  if(!state.__invFix20250827){
-    state.inventory.fish = 0;
-    state.inventory.catnip = 0;
-    state.__invFix20250827 = true;
-    store.set('state', state);
-  }
   initDailyUnlock();
   applyTheme(state.theme||'default');
   state.mapUnlocked = computeCatsUnlocked();
+  runMigrations();
 }
 
-/* ======== SHARED NICOLE SYNC (inventory no longer sums) ======== */
+/* ======== SHARED NICOLE SYNC (with monotonic merge) ======== */
 const SYNC_ENDPOINT = "https://ff-sync.9rmcqs6hjc.workers.dev";
 const SYNC_DOC_ID = "nicole";
 const SYNC_WRITE_TOKEN = "Gravity123!!";
 
+/* Merge that never inflates inventory and respects point spending */
 function mergeStates(local, remote){
   if(!remote || !remote.updated_at) return local;
+
   const lts = local?.updated_at || 0;
   const rts = remote?.updated_at || 0;
-  const localIsNewer = lts >= rts;
-  const newer = localIsNewer ? local : remote;
+  const newerIsLocal = (lts >= rts);
+  const base = newerIsLocal ? {...local} : {...remote};
 
-  // covered: union
-  const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]);
-  newer.covered = [...cov];
+  // Earliest start date wins
+  const ls = local?.start_date, rs = remote?.start_date;
+  const earliestStart = (ls && rs) ? (ls < rs ? ls : rs) : (ls || rs || todayISO());
+  base.start_date = earliestStart;
 
-  // score: max; streak: newer side
-  newer.score  = Math.max(local.score||0, remote.score||0);
-  newer.streak = (localIsNewer ? local.streak : remote.streak) || 0;
+  // Compute "should" unlock count from earliestStart
+  const dNow = new Date(); dNow.setHours(0,0,0,0);
+  const sDate = new Date(earliestStart + 'T00:00:00');
+  const diffDays = Math.floor((dNow - sDate)/86400000);
+  const shouldUnlock = Math.min(words.length, (diffDays + 1) * DAILY_WORDS);
 
-  // 🔒 Inventory: TAKE NEWER SIDE, DO NOT SUM (stops doubling)
-  const invSrc = localIsNewer ? (local.inventory||{}) : (remote.inventory||{});
-  newer.inventory = {
-    fish: invSrc.fish||0,
-    catnip: invSrc.catnip||0,
-    nameTokens: invSrc.nameTokens||0
-  };
+  // Never regress unlocked_count
+  const localUnlocked  = local?.unlocked_count  || 0;
+  const remoteUnlocked = remote?.unlocked_count || 0;
+  base.unlocked_count = Math.max(localUnlocked, remoteUnlocked, shouldUnlock);
 
-  // furniture: union (OR)
-  newer.furniture = {
+  // Covered words: union
+  const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]); base.covered = [...cov];
+
+  // Score & streak: take newer side (so deductions persist)
+  base.score  = newerIsLocal ? (local.score||0)  : (remote.score||0);
+  base.streak = newerIsLocal ? (local.streak||0) : (remote.streak||0);
+
+  // Inventory: take newer side (NO SUM)
+  base.inventory = newerIsLocal
+    ? {...(local.inventory||{fish:0,catnip:0,nameTokens:0})}
+    : {...(remote.inventory||{fish:0,catnip:0,nameTokens:0})};
+
+  // Furniture: owned if either has it (union). Nicole migration may clear catToy afterward.
+  base.furniture = {
     catTree: !!(local.furniture?.catTree || remote.furniture?.catTree),
-    catToy:  !!(local.furniture?.catToy  || remote.furniture?.catToy)
+    catToy:  !!(local.furniture?.catToy  || remote.furniture?.catToy )
   };
 
-  // names & misc: newer wins; achievements/FX union
-  newer.catNames   = localIsNewer ? {...(local.catNames||{})} : {...(remote.catNames||{})};
-  newer.nameCursor = localIsNewer ? (local.nameCursor??-1)    : (remote.nameCursor??-1);
-  newer.achievements = {...(local.achievements||{}), ...(remote.achievements||{})};
-  newer.achFx        = {...(local.achFx||{}),        ...(remote.achFx||{})};
-  newer.showCatNames = localIsNewer ? !!local.showCatNames : !!remote.showCatNames;
+  // Cat names: newer wins
+  base.catNames   = newerIsLocal ? {...(local.catNames||{})} : {...(remote.catNames||{})};
+  base.nameCursor = newerIsLocal ? (local.nameCursor??-1)    : (remote.nameCursor??-1);
 
-  return newer;
+  // Achievements: union of flags; FX union
+  base.achievements = {...(local.achievements||{}), ...(remote.achievements||{})};
+  base.achFx        = {...(local.achFx||{}),        ...(remote.achFx||{})};
+
+  // Name toggle: newer wins
+  base.showCatNames = newerIsLocal ? !!local.showCatNames : !!remote.showCatNames;
+
+  return base;
 }
+
 async function syncPullNicole(){
   if(!SYNC_ENDPOINT || ACTIVE_PROFILE!=="Nicole") return;
   try{
     const res = await fetch(`${SYNC_ENDPOINT}/p/${SYNC_DOC_ID}`);
     const remote = await res.json().catch(()=>null);
-    if(remote && Object.keys(remote).length){ state = mergeStates(state, remote); _persist(); }
+    if(remote && Object.keys(remote).length){
+      state = mergeStates(state, remote);
+      runMigrations();                 // enforce one-time fixes after merge
+      _persist();                      // render & store
+    }
   }catch{}
 }
 async function syncPushNicole(){
@@ -907,7 +938,9 @@ async function syncPushNicole(){
   try{
     const payload = JSON.stringify({...state, updated_at: Date.now(), profile: ACTIVE_PROFILE});
     await fetch(`${SYNC_ENDPOINT}/p/${SYNC_DOC_ID}`, {
-      method:"PUT", headers:{ "Content-Type":"application/json", ...(SYNC_WRITE_TOKEN?{"X-Token":SYNC_WRITE_TOKEN}:{}) }, body:payload
+      method:"PUT",
+      headers:{ "Content-Type":"application/json", ...(SYNC_WRITE_TOKEN?{"X-Token":SYNC_WRITE_TOKEN}:{}) },
+      body:payload
     });
   }catch{}
 }
@@ -1227,26 +1260,18 @@ function renderFurniture(){
   const container = $('mapWrap'); if(!container) return;
 
   // Cat Tree (top-left)
-  let el = $('furnCatTree'); const ownTree = !!(state.furniture?.catTree);
-  if(ownTree && !el){
-    el = document.createElement('img');
-    el.id = 'furnCatTree';
-    el.className = 'furniture';
-    el.src = CAT_TREE_IMG; el.alt = 'Cat Tree';
-    el.onerror = ()=> el.remove();
-    container.appendChild(el);
-  }else if(!ownTree && el){ el.remove(); }
+  let t = $('furnCatTree'); const ownTree = !!(state.furniture?.catTree);
+  if(ownTree && !t){
+    t = document.createElement('img'); t.id = 'furnCatTree'; t.className = 'furniture'; t.src = CAT_TREE_IMG; t.alt = 'Cat Tree';
+    t.onerror=()=>t.remove(); container.appendChild(t);
+  } else if(!ownTree && t){ t.remove(); }
 
   // Cat Toy (bottom-right)
-  let el2 = $('furnCatToy'); const ownToy = !!(state.furniture?.catToy);
-  if(ownToy && !el2){
-    el2 = document.createElement('img');
-    el2.id = 'furnCatToy';
-    el2.className = 'furniture-br';
-    el2.src = CAT_TOY_IMG; el2.alt = 'Cat Toy';
-    el2.onerror = ()=> el2.remove();
-    container.appendChild(el2);
-  }else if(!ownToy && el2){ el2.remove(); }
+  let y = $('furnCatToy'); const ownToy = !!(state.furniture?.catToy);
+  if(ownToy && !y){
+    y = document.createElement('img'); y.id = 'furnCatToy'; y.className = 'furniture-br'; y.src = CAT_TOY_IMG; y.alt = 'Cat Toy';
+    y.onerror=()=>y.remove(); container.appendChild(y);
+  } else if(!ownToy && y){ y.remove(); }
 }
 
 /* ===================== CATNIP PARTY ===================== */
@@ -1313,7 +1338,7 @@ function nextFurnitureKey(){
   const f = state.furniture || {};
   if(!f.catTree) return 'catTree';
   if(!f.catToy)  return 'catToy';
-  return null; // future items can be added later
+  return null; // future items next
 }
 function updateShopUI(){
   const scoreEl=$('shopScore'), fishEl=$('shopFish'), nipEl=$('shopCatnip');
@@ -1327,7 +1352,6 @@ function updateShopUI(){
   if(nameBtn){ nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`; nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0); }
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
 
-  // Furniture button: always shows Buy Furniture (1000); enable only if next item exists AND enough score
   if(furnBtn){
     furnBtn.textContent = `🪑 Buy Furniture (${FURNITURE_COST})`;
     const hasNext = !!nextFurnitureKey();
@@ -1375,19 +1399,18 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   if(!state.catNames) state.catNames = {}; state.catNames[idx] = name; state.nameCursor = idx; state.inventory.nameTokens = Math.max(0, (state.inventory.nameTokens||0)-1);
   $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`; $('shopMsg').className='feedback ok'; $('catNameInput').value=''; $('nameArea').style.display='none'; flashCatNames(4000); persist();
 });
-
-/* Furniture purchase: Tree → Toy → (future) */
 $('buyFurnitureBtn').addEventListener('click', ()=>{
   const key = nextFurnitureKey();
   if(!key){ $('shopMsg').textContent='All furniture items available today are already placed.'; $('shopMsg').className='feedback tiny'; updateShopUI(); return; }
   if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
-  state.score -= FURNITURE_COST; state.furniture = state.furniture || {}; state.furniture[key] = true;
-  const label = key==='catTree' ? 'Cat Tree' : (key==='catToy' ? 'Cat Toy' : 'Furniture');
-  $('shopMsg').textContent=`${label} placed!`; $('shopMsg').className='feedback ok';
+  state.score -= FURNITURE_COST;
+  state.furniture = state.furniture || {};
+  state.furniture[key] = true;
+  $('shopMsg').textContent = (key==='catTree' ? 'Cat Tree placed!' : 'Cat Toy placed!');
+  $('shopMsg').className='feedback ok';
   if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); }
   persist();
 });
-
 function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Show Names'; }
 function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = getCatName(c.idx); } c.el.title = getCatName(c.idx); }); } }
 function flashCatNames(ms=3000){ flashNamesUntil = Date.now() + ms; updateNamesVisibility(); setTimeout(()=>updateNamesVisibility(), ms+50); }
@@ -1409,11 +1432,11 @@ $('resetNamesBtn').addEventListener('click', ()=>{ if(!confirm('Reset ALL cat na
   const msg = $('shopMsg'); if (msg) { msg.textContent = 'All cat names cleared for this profile.'; msg.className = 'feedback ok'; }
 });
 
-/* Danger zone: reset progress */
+/* Reset Progress (danger zone) */
 $('resetBtn').addEventListener('click', ()=>{
   if(!confirm('Reset ALL progress for this profile? (score, streak, SRS, unlocks, achievements)')) return;
   state = defaultState();
-  state.start_date = todayISO();
+  state.start_date = todayISO();   // start fresh from today
   persist();
   alert('Progress cleared for ' + (ACTIVE_PROFILE || 'this profile') + '.');
 });
@@ -1435,6 +1458,7 @@ function useProfile(name){
 $('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
 $('quickSia').addEventListener('click', ()=>{ const pin = prompt('Enter developer PIN:'); if(pin === '3232'){ useProfile('Sia'); } else{ alert('Incorrect PIN.'); } });
 
+/* Developer button unlock on 3232 while on profile overlay */
 (function(){ const overlay = $('profileOverlay'); const devBtn = $('quickSia'); let seq = '', timer=null, revealed=false;
   window.addEventListener('keydown', (e)=>{ if(!overlay || overlay.style.display!=='grid' || revealed) return; if(!/^[0-9]$/.test(e.key)) return;
     seq+=e.key; clearTimeout(timer); timer=setTimeout(()=>{seq='';},1500);
@@ -1442,10 +1466,13 @@ $('quickSia').addEventListener('click', ()=>{ const pin = prompt('Enter develope
   });
 })();
 
-/* Start overlay: choose mode */
+/* Start overlay: choose mode — direct listeners (fix) */
 function startAs(m){ if(m==='audio'){ $('startOverlay').style.display='none'; openAudioQuiz(); return; } mode=m; resetSessionProgress(); ensureOrder(); $('startOverlay').style.display='none'; showItem(); }
-['startLearn','startQuiz','startAudio'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
-$('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz')  startAs('quiz'); });
+(function bindStartButtons(){
+  const bLearn = $('startLearn'); const bQuiz = $('startQuiz');
+  if(bLearn){ bLearn.type='button'; bLearn.addEventListener('click', (e)=>{ e.stopPropagation(); startAs('learn'); }); }
+  if(bQuiz){  bQuiz.type='button';  bQuiz.addEventListener('click',  (e)=>{ e.stopPropagation(); startAs('quiz');  }); }
+})();
 
 /* Close modals on backdrop click */
 document.addEventListener('click', (e)=>{
@@ -1513,7 +1540,7 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
   }catch{}
 })();
 
-/* ===================== POSTCARDS UI (no audio/nav; hide locked) ===================== */
+/* ===================== POSTCARDS UI ===================== */
 let pcIndex = 0;
 function postcardsLearned(){ return learnedCount(); }
 function unlockThresholdForIndex(i){ return (i + 1) * POSTCARD_UNLOCK_EVERY; }
