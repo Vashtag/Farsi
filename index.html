@@ -485,7 +485,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <h3 style="margin:0">⚡ Mini Quiz</h3>
       <button id="mqQuit" class="btn" title="Exit Mini Quiz">✖ Quit</button>
     </div>
-    <div class="qprogress" style="height:8px;background:#0a142e;border:1fpx solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:12px">
+    <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:12px">
       <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
     </div>
     <img id="mqPic" class="mq-pic" alt="" style="display:block;margin:auto" loading="lazy"/>
@@ -520,6 +520,12 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 const $ = id => document.getElementById(id);
 const bySel = s => document.querySelector(s);
 const on = (id, evt, fn) => { const el = $(id); if (el) el.addEventListener(evt, fn); };
+
+/* Force-close overlays if any unexpected runtime error happens */
+window.addEventListener('error', () => {
+  const so = $('startOverlay'); if (so) so.style.display = 'none';
+  const po = $('profileOverlay'); if (po) po.style.display = 'none';
+});
 
 /* ===================== PROFILED STORAGE ===================== */
 let ACTIVE_PROFILE = null;
@@ -879,7 +885,7 @@ function loadState(){
   state.mapUnlocked = computeCatsUnlocked();
 }
 
-/* ======== (Optional) Nicole cloud sync: intact from prior build ======== */
+/* ======== (Optional) Nicole cloud sync: intact ======== */
 const SYNC_ENDPOINT = "https://ff-sync.9rmcqs6hjc.workers.dev";
 const SYNC_DOC_ID = "nicole";
 const SYNC_WRITE_TOKEN = "Gravity123!!";
@@ -1480,7 +1486,7 @@ function fmt(ms){ const s=Math.floor(ms/1000); const h=Math.floor(s/3600), m=Mat
 function showMidnight(){ alert(`New words unlock at local midnight.\nTime remaining: ${fmt(msUntilNextMidnight())}`); }
 on('midnightBtn','click', showMidnight);
 
-/* ===================== STARTUP FLOW (fixed: explicit handlers) ===================== */
+/* ===================== STARTUP FLOW — FAIL‑SAFE ===================== */
 function useProfile(name){
   ACTIVE_PROFILE = String(name||'').trim() || 'Guest';
   loadState(); const pb=$('profileBadge'); if(pb) pb.textContent = `Profile: ${ACTIVE_PROFILE}`;
@@ -1488,9 +1494,8 @@ function useProfile(name){
   const so=$('startOverlay'); if(so) so.style.display='grid';
   if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
 }
-on('quickNicole','click', ()=> useProfile('Nicole'));
-on('quickSia','click', ()=>{ const pin = prompt('Enter developer PIN:'); if(pin === '3232'){ useProfile('Sia'); } else{ alert('Incorrect PIN.'); } });
 
+/* Developer PIN reveal for Sia */
 (function(){ const overlay = $('profileOverlay'); const devBtn = $('quickSia'); let seq = '', timer=null, revealed=false;
   window.addEventListener('keydown', (e)=>{ if(!overlay || overlay.style.display!=='grid' || revealed) return; if(!/^[0-9]$/.test(e.key)) return;
     seq+=e.key; clearTimeout(timer); timer=setTimeout(()=>{seq='';},1500);
@@ -1498,19 +1503,43 @@ on('quickSia','click', ()=>{ const pin = prompt('Enter developer PIN:'); if(pin 
   });
 })();
 
+/* Safer start: hide overlay first, then set up mode */
 function startAs(m){
-  if(m==='audio'){ const so=$('startOverlay'); if(so) so.style.display='none'; openAudioQuiz(); return; }
-  mode=m; resetSessionProgress(); ensureOrder(); const so=$('startOverlay'); if(so) so.style.display='none'; showItem();
+  const so=$('startOverlay'); if(so) so.style.display='none'; // hide immediately (prevents any "stuck" overlay)
+  try{
+    if(m==='audio'){ openAudioQuiz(); return; }
+    mode=m; resetSessionProgress(); ensureOrder(); showItem();
+  }catch(err){
+    console.error('startAs error:', err);
+    // Attempt a minimal recovery to show content anyway
+    try{ ensureOrder(); showItem(); }catch(_){}
+  }
 }
-/* ✅ Explicit handlers instead of brittle delegation */
-on('startLearn','click', ()=> startAs('learn'));
-on('startQuiz','click',  ()=> startAs('quiz'));
+
+/* Bind profile choices */
+on('quickNicole','click', ()=> useProfile('Nicole'));
+on('quickSia','click', ()=>{ const pin = prompt('Enter developer PIN:'); if(pin === '3232'){ useProfile('Sia'); } else{ alert('Incorrect PIN.'); } });
+
+/* Explicit, guarded start button handlers (no delegation) */
+function bindStartButtons(){
+  const l = $('startLearn'), q = $('startQuiz');
+  if(l && !l.__bound){
+    l.__bound = true;
+    l.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); startAs('learn'); }, {capture:true});
+  }
+  if(q && !q.__bound){
+    q.__bound = true;
+    q.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); startAs('quiz'); }, {capture:true});
+  }
+}
+document.addEventListener('DOMContentLoaded', bindStartButtons);
+
 /* Keyboard fallback while start overlay is open */
 document.addEventListener('keydown', (e)=>{
   const so = $('startOverlay');
   if(!so || so.style.display!=='grid') return;
-  if(e.key==='Enter'){ startAs('learn'); }
-  if(e.key==='Escape'){ startAs('quiz'); }
+  if(e.key==='Enter'){ e.preventDefault(); startAs('learn'); }
+  if(e.key==='Escape'){ e.preventDefault(); startAs('quiz'); }
 });
 
 /* Close modals on backdrop click (safe: ignores start overlay) */
@@ -1519,8 +1548,8 @@ document.addEventListener('click', (e)=>{
   if(e.target.id==='sentencesModal') e.target.style.display='none';
   if(e.target.id==='achModal') e.target.style.display='none';
   if(e.target.id==='mapModal'){ e.target.style.display='none'; stopCats(); }
-  if(e.target.id==='postcardsModal'){ e.target.style.display='none'; }
-  if(e.target.id==='dictModal'){ e.target.style.display='none'; }
+  if(e.target.id==='postcardsModal') e.target.style.display='none';
+  if(e.target.id==='dictModal') e.target.style.display='none';
   if(e.target.id==='miniQuizModal'){ endMiniQuiz(); }
   if(e.target.id==='audioQuizModal'){ endAudioQuiz(); }
 });
@@ -1736,7 +1765,17 @@ document.addEventListener('visibilitychange', updateMusicBtnUI);
 updateMusicBtnUI();
 
 /* ===================== INIT ===================== */
+function forceCloseStart(){ const so=$('startOverlay'); if(so) so.style.display='none'; }
+function forceCloseProfile(){ const po=$('profileOverlay'); if(po) po.style.display='none'; }
+
+function bindProfileButtons(){
+  on('quickNicole','click', ()=> useProfile('Nicole'));
+  on('quickSia','click', ()=>{ const pin = prompt('Enter developer PIN:'); if(pin === '3232'){ useProfile('Sia'); } else{ alert('Incorrect PIN.'); } });
+}
+
 initSpeech();
+bindStartButtons();
+bindProfileButtons();
 </script>
 </body>
 </html>
