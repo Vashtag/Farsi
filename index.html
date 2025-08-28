@@ -218,6 +218,9 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .dict-table th{color:#9aa7b7;font-weight:600;font-size:13px}
 .dict-empty{color:#94a3b8;font-size:14px;padding:6px 0}
 .dict-controls{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+/* Keep dictionary modal body a fixed height so it doesn't jump when paging */
+#dictPanel{display:flex;flex-direction:column}
+.dict-scroll{min-height:280px;max-height:280px;overflow:auto;margin-bottom:10px}
 .dict-play{background:transparent;border:none;color:#e5e7eb;cursor:pointer;padding:0;font:inherit;text-decoration:underline dotted #334155}
 .dict-play:hover{opacity:.9}
 </style>
@@ -233,7 +236,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div class="badge" id="unlockedBadge">0/0 unlocked</div>
     <button id="openMap" class="icon-btn" title="Bazaar Map">🗺️</button>
     <button id="openPostcards" class="icon-btn" title="Postcards">🏛️</button>
-    <!-- Dictionary button removed from header; now in the mode row -->
+    <!-- Dictionary button now lives in the mode row -->
     <button id="openAchievements" class="icon-btn" title="Badges">🏆</button>
     <button id="openSettings" class="icon-btn" title="Settings">⚙️</button>
   </div>
@@ -258,7 +261,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="startLearn" class="primary" type="button">📚 Learn Mode</button>
       <button id="startQuiz" class="accent" type="button">🎯 Quiz Mode</button>
     </div>
-    <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s. New words unlock at <button id="midnightBtn0" class="btn" style="padding:2px 6px">midnight</button>.</p>
+    <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s.</p>
   </div>
 </div>
 
@@ -269,7 +272,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="quizBtn" class="btn">Quiz Mode</button>
       <button id="audioQuizBtn" class="btn">Audio Quiz</button>
       <button id="musicToggle" class="btn">🎵 Play Music</button>
-      <span class="tiny">New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰</span>
     </div>
     <div class="mode-right">
       <button id="openDictionary" class="btn" title="Dictionary">📚 Dictionary</button>
@@ -311,7 +313,11 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   </div>
 </main>
 
-<footer style="padding:16px;text-align:center;color:#94a3b8"> Have fun! </footer>
+<footer style="padding:16px;text-align:center;color:#94a3b8">
+  Have fun! • New words unlock at
+  <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰
+</footer>
+
 <div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
 <div id="sadFace" class="cele-msg" style="display:none">😢</div>
 
@@ -406,8 +412,10 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="closeDict" class="btn">Close</button>
     </div>
     <div id="dictPanel" class="stat">
-      <table class="dict-table" id="dictTable"></table>
-      <div id="dictEmpty" class="dict-empty" style="display:none">No learned words yet. Practice to add some!</div>
+      <div class="dict-scroll">
+        <table class="dict-table" id="dictTable"></table>
+        <div id="dictEmpty" class="dict-empty" style="display:none">No learned words yet. Practice to add some!</div>
+      </div>
       <div class="dict-controls">
         <button id="dictPrev" class="btn">⬅ Prev</button>
         <span id="dictPageLabel" class="tiny">Page 1 / 1</span>
@@ -483,7 +491,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <h3 style="margin:0">⚡ Mini Quiz</h3>
       <button id="mqQuit" class="btn" title="Exit Mini Quiz">✖ Quit</button>
     </div>
-    <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:12px">
+    <div class="qprogress" style="height:8px;background:#0a142e;border:1fpx solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:12px">
       <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
     </div>
     <img id="mqPic" class="mq-pic" alt="" style="display:block;margin:auto" loading="lazy"/>
@@ -536,7 +544,19 @@ const CATNIP_DURATION_MS = 180000;
 const CATNIP_SPEED_FACTOR = 3.0;
 const CATNIP_TURN_FACTOR = 0.45;
 const FURNITURE_COST = 1000;
+
 const CAT_TREE_IMG = 'images/cat_tree.png';
+const CAT_TOY_IMG  = 'images/cat_toy.png';
+const CAT_BOWL_IMG = 'images/cat_bowl.png';
+
+/* Furniture purchase order + meta (bowl a little under tree) */
+const FURNITURE_ORDER = ['catTree','catToy','catBowl'];
+const FURNITURE_META = {
+  catTree:{ label:'Cat Tree', img:CAT_TREE_IMG, id:'furnCatTree', pos:{left:8,   top:8,   width:92} },
+  catToy: { label:'Cat Toy',  img:CAT_TOY_IMG,  id:'furnCatToy',  pos:{left:128, top:24,  width:70} },
+  catBowl:{ label:'Cat Bowl', img:CAT_BOWL_IMG, id:'furnCatBowl', pos:{left:16,  top:126, width:72} }
+};
+
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
 const POSTCARD_UNLOCK_EVERY = 15;
 
@@ -758,7 +778,7 @@ function now(){return Date.now()}
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
 function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'').trim()}
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
-function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+function shuffle(a){ for(let i=a.length-1;i>0;i++){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j]]} return a }
 const isMobile = () => window.matchMedia('(max-width:700px)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 function maybeFocusInput(){ if(!isMobile()) $('typeInput').focus(); }
 function setImageWithFallback(imgEl, emojiEl, item){
@@ -787,7 +807,7 @@ const defaultState = ()=>({
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
-  furniture:{catTree:false},
+  furniture:{ catTree:false, catToy:false, catBowl:false },
   catNames:{}, nameCursor:-1, showCatNames:false
 });
 let state = defaultState();
@@ -845,7 +865,10 @@ function loadState(){
   if(state.inventory.fish===undefined) state.inventory.fish=0;
   if(state.inventory.catnip===undefined) state.inventory.catnip=0;
   if(state.inventory.nameTokens===undefined) state.inventory.nameTokens=0;
-  if(!state.furniture) state.furniture = {catTree:false};
+  if(!state.furniture) state.furniture = { catTree:false, catToy:false, catBowl:false };
+  if(state.furniture.catTree===undefined) state.furniture.catTree=false;
+  if(state.furniture.catToy===undefined)  state.furniture.catToy=false;
+  if(state.furniture.catBowl===undefined) state.furniture.catBowl=false;
   if(!state.catNames) state.catNames = {};
   if(typeof state.nameCursor!=='number') state.nameCursor = -1;
   if(typeof state.showCatNames!=='boolean') state.showCatNames = false;
@@ -886,7 +909,11 @@ function mergeStates(local, remote){
     catnip:    Math.max(local.inventory?.catnip||0,    remote.inventory?.catnip||0),
     nameTokens:Math.max(local.inventory?.nameTokens||0,remote.inventory?.nameTokens||0)
   };
-  base.furniture = { catTree: !!(local.furniture?.catTree || remote.furniture?.catTree) };
+  base.furniture = {
+    catTree: !!(local.furniture?.catTree || remote.furniture?.catTree),
+    catToy:  !!(local.furniture?.catToy  || remote.furniture?.catToy),
+    catBowl: !!(local.furniture?.catBowl || remote.furniture?.catBowl),
+  };
   base.catNames   = (lts >= rts ? {...(local.catNames||{})} : {...(remote.catNames||{})});
   base.nameCursor = (lts >= rts ? (local.nameCursor??-1)    : (remote.nameCursor??-1));
   base.achievements = {...(local.achievements||{}), ...(remote.achievements||{})};
@@ -1110,7 +1137,7 @@ function onAQOptionClick(e){
   const pickedIdx = parseInt(e.currentTarget.dataset.idx, 10); const isCorrect = (pickedIdx === AQ.current);
   AQ.total++;
   if (isCorrect){
-    const pts = 10; // Audio quiz keeps the original 10 points
+    const pts = 10;
     e.currentTarget.classList.add('correct'); $('aqFeedback').textContent = `Nice! +${pts} points`; $('aqFeedback').className = 'feedback ok'; celebrateSimple();
     AQ.correct++; state.score += pts; persist();
   }else{
@@ -1229,11 +1256,34 @@ function renderMap(){
   }else{ wrap.style.display='none'; wrap.innerHTML=''; container.classList.add('arena'); layer.style.display='block'; }
   renderFurniture();
 }
+
+/* Furniture helpers and renderer */
+function furnitureOwned(key){ return !!(state.furniture && state.furniture[key]); }
+function nextFurnitureKey(){ for(const k of FURNITURE_ORDER){ if(!furnitureOwned(k)) return k; } return null; }
+function furnitureCountOwned(){ let n=0; for(const k of FURNITURE_ORDER){ if(furnitureOwned(k)) n++; } return n; }
+
 function renderFurniture(){
   const container = $('mapWrap'); if(!container) return;
-  let el = $('furnCatTree'); const owned = !!(state.furniture?.catTree);
-  if(owned && !el){ el = document.createElement('img'); el.id = 'furnCatTree'; el.className = 'furniture'; el.src = CAT_TREE_IMG; el.alt = 'Cat Tree'; container.appendChild(el); }
-  else if(!owned && el){ el.remove(); }
+  for(const key of FURNITURE_ORDER){
+    const meta = FURNITURE_META[key];
+    const owned = furnitureOwned(key);
+    let el = $(meta.id);
+    if(owned){
+      if(!el){
+        el = document.createElement('img');
+        el.id = meta.id;
+        el.className = 'furniture';
+        el.alt = meta.label;
+        el.src = meta.img;
+        container.appendChild(el);
+      }
+      el.style.left  = (meta.pos.left  ?? 8) + 'px';
+      el.style.top   = (meta.pos.top   ?? 8) + 'px';
+      el.style.width = (meta.pos.width ?? 92) + 'px';
+    }else if(el){
+      el.remove();
+    }
+  }
 }
 
 /* ===================== CATNIP PARTY ===================== */
@@ -1307,11 +1357,19 @@ function updateShopUI(){
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){ nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`; nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0); }
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
+
   if(furnBtn){
-    const owned = !!(state.furniture?.catTree);
-    furnBtn.textContent = `🪑 Buy Furniture (${FURNITURE_COST})`;
-    furnBtn.disabled = state.score < FURNITURE_COST;
+    const nextKey = nextFurnitureKey();
+    if(!nextKey){
+      furnBtn.textContent = '🪑 All Furniture Owned';
+      furnBtn.disabled = true;
+    }else{
+      const label = FURNITURE_META[nextKey].label;
+      furnBtn.textContent = `🪑 Buy ${label} (${FURNITURE_COST})`;
+      furnBtn.disabled = state.score < FURNITURE_COST;
+    }
   }
+
   const sel=$('catSelect');
   if(sel){
     const n = state.mapUnlocked||0; sel.innerHTML='';
@@ -1353,19 +1411,37 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   if(!state.catNames) state.catNames = {}; state.catNames[idx] = name; state.nameCursor = idx; state.inventory.nameTokens = Math.max(0, (state.inventory.nameTokens||0)-1);
   $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`; $('shopMsg').className='feedback ok'; $('catNameInput').value=''; $('nameArea').style.display='none'; flashCatNames(4000); persist();
 });
+
+/* Buy Furniture progression: Cat Tree → Cat Toy → Cat Bowl */
 $('buyFurnitureBtn').addEventListener('click', ()=>{
-  if(state.furniture?.catTree){
-    if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
-    state.score -= FURNITURE_COST;
-    $('shopMsg').textContent='Another lovely piece added! (More types coming soon)'; $('shopMsg').className='feedback ok';
-    persist();
+  const nextKey = nextFurnitureKey();
+  if(!nextKey){
+    $('shopMsg').textContent = 'All furniture already placed!';
+    $('shopMsg').className = 'feedback ok';
+    updateShopUI();
     return;
   }
-  if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
-  state.score -= FURNITURE_COST; state.furniture = state.furniture || {}; state.furniture.catTree = true;
-  $('shopMsg').textContent='Cat Tree placed! The cats are thrilled. 🐈🌳'; $('shopMsg').className='feedback ok';
-  if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); } persist();
+  if(state.score < FURNITURE_COST){
+    $('shopMsg').textContent='Not enough points for furniture.';
+    $('shopMsg').className='feedback warn';
+    return;
+  }
+
+  state.score -= FURNITURE_COST;
+  state.furniture = state.furniture || {};
+  state.furniture[nextKey] = true;
+
+  const label = FURNITURE_META[nextKey].label;
+  $('shopMsg').textContent = `${label} placed!`;
+  $('shopMsg').className = 'feedback ok';
+
+  if(window.confetti){
+    confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55});
+  }
+
+  persist();
 });
+
 function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Show Names'; }
 function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = getCatName(c.idx); } c.el.title = getCatName(c.idx); }); } }
 function flashCatNames(ms=3000){ flashNamesUntil = Date.now() + ms; updateNamesVisibility(); setTimeout(()=>updateNamesVisibility(), ms+50); }
@@ -1401,7 +1477,6 @@ function msUntilNextMidnight(){ const n=new Date(), t=new Date(n); t.setHours(24
 function fmt(ms){ const s=Math.floor(ms/1000); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
 function showMidnight(){ alert(`New words unlock at local midnight.\nTime remaining: ${fmt(msUntilNextMidnight())}`); }
 $('midnightBtn').addEventListener('click', showMidnight);
-$('midnightBtn0').addEventListener('click', showMidnight);
 
 /* Profile flow */
 function useProfile(name){
@@ -1549,7 +1624,6 @@ const DICT_PAGE_SIZE = 10;
 let dictPage = 0;
 
 function learnedIndicesInOrder(){
-  // Code order (ascending index), only items learned so far
   return [...getCoveredSet()]
     .filter(i => i < unlockedCount())
     .sort((a,b)=>a-b);
