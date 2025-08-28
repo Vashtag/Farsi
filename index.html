@@ -224,6 +224,11 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .dict-table th,.dict-table td{border-bottom:1px solid #1f2937; padding:8px 10px; text-align:left;}
 .dict-table th{color:#9aa7b7;font-weight:600;font-size:13px}
 .dict-empty{color:#94a3b8;font-size:14px;padding:6px 0}
+.dict-controls{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.dict-play{background:transparent;border:none;color:#e5e7eb;cursor:pointer;padding:0;font:inherit;text-decoration:underline dotted #334155}
+.dict-play:hover{opacity:.9}
+
+/* ====== Night Sky (short) ====== */
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
@@ -409,6 +414,11 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div id="dictPanel" class="stat">
       <table class="dict-table" id="dictTable"></table>
       <div id="dictEmpty" class="dict-empty" style="display:none">No learned words yet. Practice to add some!</div>
+      <div class="dict-controls">
+        <button id="dictPrev" class="btn">⬅ Prev</button>
+        <span id="dictPageLabel" class="tiny">Page 1 / 1</span>
+        <button id="dictNext" class="btn">Next ➡</button>
+      </div>
     </div>
   </div>
 </div>
@@ -860,61 +870,37 @@ function loadState(){
 const SYNC_ENDPOINT = "https://ff-sync.9rmcqs6hjc.workers.dev";
 const SYNC_DOC_ID = "nicole";
 const SYNC_WRITE_TOKEN = "Gravity123!!";
-
-/* Monotonic merge to avoid regressions & keep inventory sane */
 function mergeStates(local, remote){
   if(!remote || !remote.updated_at) return local;
-
   const lts = local?.updated_at || 0;
   const rts = remote?.updated_at || 0;
   const base = (lts >= rts) ? {...local} : {...remote};
-
-  // Earliest start date wins
   const ls = local?.start_date, rs = remote?.start_date;
   const earliestStart = (ls && rs) ? (ls < rs ? ls : rs) : (ls || rs || todayISO());
   base.start_date = earliestStart;
-
-  // Compute "should unlock"
   const dNow = new Date(); dNow.setHours(0,0,0,0);
   const sDate = new Date(earliestStart + 'T00:00:00');
   const diffDays = Math.floor((dNow - sDate)/86400000);
   const shouldUnlock = Math.min(words.length, (diffDays + 1) * DAILY_WORDS);
-
-  // Never regress unlocked_count
   const localUnlocked  = local?.unlocked_count  || 0;
   const remoteUnlocked = remote?.unlocked_count || 0;
   base.unlocked_count = Math.max(localUnlocked, remoteUnlocked, shouldUnlock);
-
-  // Covered: union
   const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]); base.covered = [...cov];
-
-  // Score max; streak newer side
   base.score  = Math.max(local.score||0, remote.score||0);
   base.streak = (lts >= rts ? local.streak : remote.streak) || 0;
-
-  // Inventory: (avoid duplication by taking max instead of sum)
   base.inventory = {
     fish:      Math.max(local.inventory?.fish||0,      remote.inventory?.fish||0),
     catnip:    Math.max(local.inventory?.catnip||0,    remote.inventory?.catnip||0),
     nameTokens:Math.max(local.inventory?.nameTokens||0,remote.inventory?.nameTokens||0)
   };
-
-  // Furniture: union
   base.furniture = { catTree: !!(local.furniture?.catTree || remote.furniture?.catTree) };
-
-  // Names: newer wins
   base.catNames   = (lts >= rts ? {...(local.catNames||{})} : {...(remote.catNames||{})});
   base.nameCursor = (lts >= rts ? (local.nameCursor??-1)    : (remote.nameCursor??-1));
-
-  // Achievements: union of flags & fx
   base.achievements = {...(local.achievements||{}), ...(remote.achievements||{})};
   base.achFx        = {...(local.achFx||{}),        ...(remote.achFx||{})};
-
   base.showCatNames = (lts >= rts ? !!local.showCatNames : !!remote.showCatNames);
-
   return base;
 }
-
 async function syncPullNicole(){
   if(!SYNC_ENDPOINT || ACTIVE_PROFILE!=="Nicole") return;
   try{
@@ -1126,7 +1112,7 @@ function nextAQQuestion(){
   $('aqFeedback').textContent=''; $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`;
   try{ const a=getAudio(correctItem); a.currentTime=0; a.play(); }catch{}
 }
-function pointsPerCorrect(){ return ACTIVE_PROFILE === 'Nicole' ? 2 : 10; } // <<— NEW: 2 points for Nicole
+function pointsPerCorrect(){ return ACTIVE_PROFILE === 'Nicole' ? 2 : 10; } // 2 points for Nicole
 function onAQOptionClick(e){
   if (AQ.locked) return; AQ.locked = true;
   const pickedIdx = parseInt(e.currentTarget.dataset.idx, 10); const isCorrect = (pickedIdx === AQ.current);
@@ -1218,10 +1204,10 @@ function handleAnswer(correct, gi, source='typing'){
   const r=ensureSRS(gi); r.seen++;
   if(correct){
     r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1); scheduleAfter(gi,SRS_INTERVALS_HOURS[r.stage]||24);
-    const pts = pointsPerCorrect();                      // <<— NEW
+    const pts = pointsPerCorrect();
     state.score+=pts; state.streak+=1; addCovered(gi);
     sessionAnswered.add(gi); updateSessionBar();
-    if(source!=='speech'){ $('typeFeedback').textContent=`Great! +${pts} points`; $('typeFeedback').className='feedback ok'; } // <<— reflect 2 vs 10
+    if(source!=='speech'){ $('typeFeedback').textContent=`Great! +${pts} points`; $('typeFeedback').className='feedback ok'; }
     celebrateSimple();
     if(state.streak===7) celebrateStreak7();
     checkDailyGoalAndMap(); populateThemeDropdown(); updateAchievementProgress();
@@ -1332,7 +1318,7 @@ function updateShopUI(){
   if(furnBtn){
     const owned = !!(state.furniture?.catTree);
     furnBtn.textContent = `🪑 Buy Furniture (${FURNITURE_COST})`;
-    furnBtn.disabled = state.score < FURNITURE_COST; // always purchasable if enough points
+    furnBtn.disabled = state.score < FURNITURE_COST;
   }
   const sel=$('catSelect');
   if(sel){
@@ -1376,19 +1362,17 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`; $('shopMsg').className='feedback ok'; $('catNameInput').value=''; $('nameArea').style.display='none'; flashCatNames(4000); persist();
 });
 $('buyFurnitureBtn').addEventListener('click', ()=>{
-  if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
-  // First purchase: Cat Tree. Next purchases can expand later.
-  if(!state.furniture?.catTree){
-    state.score -= FURNITURE_COST;
-    state.furniture = state.furniture || {};
-    state.furniture.catTree = true;
-    $('shopMsg').textContent='Cat Tree placed! The cats are thrilled. 🐈🌳'; $('shopMsg').className='feedback ok';
-    if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); }
-  }else{
+  if(state.furniture?.catTree){
+    if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
     state.score -= FURNITURE_COST;
     $('shopMsg').textContent='Another lovely piece added! (More types coming soon)'; $('shopMsg').className='feedback ok';
+    persist();
+    return;
   }
-  persist();
+  if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
+  state.score -= FURNITURE_COST; state.furniture = state.furniture || {}; state.furniture.catTree = true;
+  $('shopMsg').textContent='Cat Tree placed! The cats are thrilled. 🐈🌳'; $('shopMsg').className='feedback ok';
+  if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); } persist();
 });
 function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Show Names'; }
 function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = getCatName(c.idx); } c.el.title = getCatName(c.idx); }); } }
@@ -1569,32 +1553,79 @@ function closePostcards(){ $('postcardsModal').style.display='none'; }
 $('openPostcards').addEventListener('click', openPostcards);
 $('closePostcards').addEventListener('click', closePostcards);
 
-/* ===================== DICTIONARY ===================== */
+/* ===================== DICTIONARY (10 / page + click-to-play) ===================== */
+const DICT_PAGE_SIZE = 10;
+let dictPage = 0;
+
+function learnedIndicesInOrder(){
+  // Words the user has already learned, in insertion order
+  return (state.covered || []).filter(i => i < unlockedCount());
+}
 function renderDictionary(){
-  const tbl = $('dictTable'); const empty = $('dictEmpty'); if(!tbl || !empty) return;
-  const learnedInOrder = (state.covered || []).filter(i => i < unlockedCount());
+  const tbl = $('dictTable'); const empty = $('dictEmpty'); const pageLbl = $('dictPageLabel');
+  if(!tbl || !empty || !pageLbl) return;
+
+  const learned = learnedIndicesInOrder();
+  const total = learned.length;
+  const totalPages = Math.max(1, Math.ceil(total / DICT_PAGE_SIZE));
+  if (dictPage >= totalPages) dictPage = totalPages - 1;
+  if (dictPage < 0) dictPage = 0;
+
   tbl.innerHTML = '';
-  if(learnedInOrder.length === 0){
+  if(total === 0){
     empty.style.display = 'block';
+    pageLbl.textContent = 'Page 1 / 1';
+    $('dictPrev').disabled = true; $('dictNext').disabled = true;
     return;
   }
   empty.style.display = 'none';
+
   const thead = document.createElement('thead');
   thead.innerHTML = '<tr><th style="width:48px">#</th><th>English</th><th>Translit</th></tr>';
   tbl.appendChild(thead);
+
+  const start = dictPage * DICT_PAGE_SIZE;
+  const end = Math.min(start + DICT_PAGE_SIZE, total);
+  const slice = learned.slice(start, end);
+
   const tbody = document.createElement('tbody');
-  learnedInOrder.forEach((i, ix) => {
+  slice.forEach((i, ix) => {
     const w = words[i]; if(!w) return;
+    const rowNum = start + ix + 1;
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${ix+1}</td><td>${w.en||''}</td><td>${w.translit||''}</td>`;
+    tr.innerHTML = `
+      <td>${rowNum}</td>
+      <td>${w.en || ''}</td>
+      <td>
+        <button class="dict-play" data-idx="${i}" title="Play audio for ${w.en}" aria-label="Play ${w.en}">
+          ${w.translit || ''}
+        </button>
+      </td>`;
     tbody.appendChild(tr);
   });
   tbl.appendChild(tbody);
+
+  pageLbl.textContent = `Page ${dictPage+1} / ${totalPages}`;
+  $('dictPrev').disabled = (dictPage === 0);
+  $('dictNext').disabled = (dictPage >= totalPages - 1);
 }
-function openDictionary(){ renderDictionary(); $('dictModal').style.display='grid'; }
+
+// Click-to-play via delegation
+$('dictTable').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.dict-play');
+  if(!btn) return;
+  const idx = parseInt(btn.dataset.idx, 10);
+  const item = words[idx];
+  if(!item) return;
+  try{ const a = getAudio(item); a.currentTime = 0; a.play(); }catch{}
+});
+
+function openDictionary(){ dictPage = 0; renderDictionary(); $('dictModal').style.display='grid'; }
 function closeDictionary(){ $('dictModal').style.display='none'; }
 $('openDictionary').addEventListener('click', openDictionary);
 $('closeDict').addEventListener('click', closeDictionary);
+$('dictPrev').addEventListener('click', ()=>{ dictPage = Math.max(0, dictPage - 1); renderDictionary(); });
+$('dictNext').addEventListener('click', ()=>{ dictPage = dictPage + 1; renderDictionary(); });
 
 /* ===================== BACKGROUND MUSIC ===================== */
 const MUSIC_URL = 'audio/backgroundinstrumental.mp3';
