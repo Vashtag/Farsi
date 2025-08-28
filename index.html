@@ -220,6 +220,16 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .dict-controls{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
 .dict-play{background:transparent;border:none;color:#e5e7eb;cursor:pointer;padding:0;font:inherit;text-decoration:underline dotted #334155}
 .dict-play:hover{opacity:.9}
+
+/* === Dictionary: fixed-size experience === */
+#dictModal .modal-card{ min-height:460px }               /* keep modal height steady while paging */
+#dictPanel{ display:flex; flex-direction:column }
+#dictScroll{ flex:1 1 auto; max-height:340px; overflow:auto; margin-bottom:10px }
+
+/* ===== Furniture placements (specific) ===== */
+#furnCatTree{ top:8px; left:8px; width:92px }
+#furnCatToy{  top:18px; left:118px; width:72px }
+#furnCatBowl{ top:112px; left:22px; width:68px }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
@@ -269,7 +279,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="quizBtn" class="btn">Quiz Mode</button>
       <button id="audioQuizBtn" class="btn">Audio Quiz</button>
       <button id="musicToggle" class="btn">🎵 Play Music</button>
-      <span class="tiny">New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰</span>
     </div>
     <div class="mode-right">
       <button id="openDictionary" class="btn" title="Dictionary">📚 Dictionary</button>
@@ -311,7 +320,12 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   </div>
 </main>
 
-<footer style="padding:16px;text-align:center;color:#94a3b8"> Have fun! </footer>
+<footer style="padding:16px;text-align:center;color:#94a3b8">
+  Have fun!
+  <span class="tiny"> • New words unlock at
+    <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰
+  </span>
+</footer>
 <div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
 <div id="sadFace" class="cele-msg" style="display:none">😢</div>
 
@@ -483,7 +497,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <h3 style="margin:0">⚡ Mini Quiz</h3>
       <button id="mqQuit" class="btn" title="Exit Mini Quiz">✖ Quit</button>
     </div>
-    <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:12px">
+    <div class="qprogress" style="height:8px;background:#0a142e;border:1f2937;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:12px">
       <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
     </div>
     <img id="mqPic" class="mq-pic" alt="" style="display:block;margin:auto" loading="lazy"/>
@@ -537,6 +551,9 @@ const CATNIP_SPEED_FACTOR = 3.0;
 const CATNIP_TURN_FACTOR = 0.45;
 const FURNITURE_COST = 1000;
 const CAT_TREE_IMG = 'images/cat_tree.png';
+const CAT_TOY_IMG  = 'images/cat_toy.png';
+const CAT_BOWL_IMG = 'images/cat_bowl.png';
+const FURNITURE_ORDER = ['catTree','catToy','catBowl'];
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
 const POSTCARD_UNLOCK_EVERY = 15;
 
@@ -758,7 +775,7 @@ function now(){return Date.now()}
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
 function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'').trim()}
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
-function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+function shuffle(a){ for(let i=a.length-1;i>0;i++){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j]]} return a }
 const isMobile = () => window.matchMedia('(max-width:700px)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 function maybeFocusInput(){ if(!isMobile()) $('typeInput').focus(); }
 function setImageWithFallback(imgEl, emojiEl, item){
@@ -787,7 +804,7 @@ const defaultState = ()=>({
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
-  furniture:{catTree:false},
+  furniture:{catTree:false, catToy:false, catBowl:false},
   catNames:{}, nameCursor:-1, showCatNames:false
 });
 let state = defaultState();
@@ -837,7 +854,7 @@ function persist(){
   updateNamesToggleUI();
   updateNamesVisibility();
   if($('postcardsModal')?.style.display==='grid'){ renderPostcardsGrid(); const u=postcardsUnlockedCount(); renderPostcardView(u?u-1:-1); }
-  if($('dictModal')?.style.display==='grid'){ renderDictionary(); }
+  if($('dictModal')?.style.display==='grid'){ ensureDictScrollWrapper(); renderDictionary(); }
 }
 function loadState(){
   state = store.get('state', defaultState());
@@ -845,7 +862,10 @@ function loadState(){
   if(state.inventory.fish===undefined) state.inventory.fish=0;
   if(state.inventory.catnip===undefined) state.inventory.catnip=0;
   if(state.inventory.nameTokens===undefined) state.inventory.nameTokens=0;
-  if(!state.furniture) state.furniture = {catTree:false};
+  if(!state.furniture) state.furniture = {catTree:false, catToy:false, catBowl:false};
+  if(state.furniture.catTree===undefined) state.furniture.catTree=false;
+  if(state.furniture.catToy===undefined)  state.furniture.catToy=false;
+  if(state.furniture.catBowl===undefined) state.furniture.catBowl=false;
   if(!state.catNames) state.catNames = {};
   if(typeof state.nameCursor!=='number') state.nameCursor = -1;
   if(typeof state.showCatNames!=='boolean') state.showCatNames = false;
@@ -886,7 +906,11 @@ function mergeStates(local, remote){
     catnip:    Math.max(local.inventory?.catnip||0,    remote.inventory?.catnip||0),
     nameTokens:Math.max(local.inventory?.nameTokens||0,remote.inventory?.nameTokens||0)
   };
-  base.furniture = { catTree: !!(local.furniture?.catTree || remote.furniture?.catTree) };
+  base.furniture = {
+    catTree: !!(local.furniture?.catTree || remote.furniture?.catTree),
+    catToy:  !!(local.furniture?.catToy  || remote.furniture?.catToy),
+    catBowl: !!(local.furniture?.catBowl || remote.furniture?.catBowl)
+  };
   base.catNames   = (lts >= rts ? {...(local.catNames||{})} : {...(remote.catNames||{})});
   base.nameCursor = (lts >= rts ? (local.nameCursor??-1)    : (remote.nameCursor??-1));
   base.achievements = {...(local.achievements||{}), ...(remote.achievements||{})};
@@ -1229,11 +1253,35 @@ function renderMap(){
   }else{ wrap.style.display='none'; wrap.innerHTML=''; container.classList.add('arena'); layer.style.display='block'; }
   renderFurniture();
 }
+
+function nextFurnitureKey(){
+  for (const k of FURNITURE_ORDER){ if(!state.furniture?.[k]) return k; }
+  return null;
+}
+function furnitureLabel(k){
+  return k==='catTree' ? 'Cat Tree' : k==='catToy' ? 'Cat Toy' : 'Cat Bowl';
+}
 function renderFurniture(){
   const container = $('mapWrap'); if(!container) return;
-  let el = $('furnCatTree'); const owned = !!(state.furniture?.catTree);
-  if(owned && !el){ el = document.createElement('img'); el.id = 'furnCatTree'; el.className = 'furniture'; el.src = CAT_TREE_IMG; el.alt = 'Cat Tree'; container.appendChild(el); }
-  else if(!owned && el){ el.remove(); }
+  const f = state.furniture || {};
+
+  // Cat Tree
+  let tree = $('furnCatTree');
+  if(f.catTree){
+    if(!tree){ tree = document.createElement('img'); tree.id = 'furnCatTree'; tree.className = 'furniture'; tree.src = CAT_TREE_IMG; tree.alt = 'Cat Tree'; container.appendChild(tree); }
+  }else if(tree){ tree.remove(); }
+
+  // Cat Toy
+  let toy = $('furnCatToy');
+  if(f.catToy){
+    if(!toy){ toy = document.createElement('img'); toy.id = 'furnCatToy'; toy.className = 'furniture'; toy.src = CAT_TOY_IMG; toy.alt = 'Cat Toy'; container.appendChild(toy); }
+  }else if(toy){ toy.remove(); }
+
+  // Cat Bowl
+  let bowl = $('furnCatBowl');
+  if(f.catBowl){
+    if(!bowl){ bowl = document.createElement('img'); bowl.id = 'furnCatBowl'; bowl.className = 'furniture'; bowl.src = CAT_BOWL_IMG; bowl.alt = 'Cat Bowl'; container.appendChild(bowl); }
+  }else if(bowl){ bowl.remove(); }
 }
 
 /* ===================== CATNIP PARTY ===================== */
@@ -1307,11 +1355,18 @@ function updateShopUI(){
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){ nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`; nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0); }
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
+
   if(furnBtn){
-    const owned = !!(state.furniture?.catTree);
-    furnBtn.textContent = `🪑 Buy Furniture (${FURNITURE_COST})`;
-    furnBtn.disabled = state.score < FURNITURE_COST;
+    const nextKey = nextFurnitureKey();
+    if(!nextKey){
+      furnBtn.textContent = '🪑 All Furniture Purchased';
+      furnBtn.disabled = true;
+    }else{
+      furnBtn.textContent = `🪑 Buy Furniture (${FURNITURE_COST}) — Next: ${furnitureLabel(nextKey)}`;
+      furnBtn.disabled = state.score < FURNITURE_COST;
+    }
   }
+
   const sel=$('catSelect');
   if(sel){
     const n = state.mapUnlocked||0; sel.innerHTML='';
@@ -1353,19 +1408,30 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   if(!state.catNames) state.catNames = {}; state.catNames[idx] = name; state.nameCursor = idx; state.inventory.nameTokens = Math.max(0, (state.inventory.nameTokens||0)-1);
   $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`; $('shopMsg').className='feedback ok'; $('catNameInput').value=''; $('nameArea').style.display='none'; flashCatNames(4000); persist();
 });
+
+/* === Sequential furniture purchase: Tree → Toy → Bowl === */
 $('buyFurnitureBtn').addEventListener('click', ()=>{
-  if(state.furniture?.catTree){
-    if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
-    state.score -= FURNITURE_COST;
-    $('shopMsg').textContent='Another lovely piece added! (More types coming soon)'; $('shopMsg').className='feedback ok';
-    persist();
+  const key = nextFurnitureKey();
+  if(!key){
+    $('shopMsg').textContent = 'All furniture purchased!';
+    $('shopMsg').className = 'feedback ok';
     return;
   }
-  if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
-  state.score -= FURNITURE_COST; state.furniture = state.furniture || {}; state.furniture.catTree = true;
-  $('shopMsg').textContent='Cat Tree placed! The cats are thrilled. 🐈🌳'; $('shopMsg').className='feedback ok';
-  if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); } persist();
+  if(state.score < FURNITURE_COST){
+    $('shopMsg').textContent = 'Not enough points for furniture.';
+    $('shopMsg').className = 'feedback warn';
+    return;
+  }
+  state.score -= FURNITURE_COST;
+  state.furniture = state.furniture || {};
+  state.furniture[key] = true;
+
+  $('shopMsg').textContent = `${furnitureLabel(key)} placed! The cats approve. 🐾`;
+  $('shopMsg').className = 'feedback ok';
+  if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); }
+  persist();
 });
+
 function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Show Names'; }
 function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = getCatName(c.idx); } c.el.title = getCatName(c.idx); }); } }
 function flashCatNames(ms=3000){ flashNamesUntil = Date.now() + ms; updateNamesVisibility(); setTimeout(()=>updateNamesVisibility(), ms+50); }
@@ -1554,6 +1620,19 @@ function learnedIndicesInOrder(){
     .filter(i => i < unlockedCount())
     .sort((a,b)=>a-b);
 }
+
+/* Ensure scroll wrapper so modal height doesn't jump */
+function ensureDictScrollWrapper(){
+  const panel = $('dictPanel'); if(!panel) return;
+  if ($('dictScroll')) return;
+  const tbl = $('dictTable'); const empty = $('dictEmpty');
+  const controls = panel.querySelector('.dict-controls');
+  const sc = document.createElement('div'); sc.id='dictScroll';
+  panel.insertBefore(sc, controls);
+  if (tbl)   sc.appendChild(tbl);
+  if (empty) sc.appendChild(empty);
+}
+
 function renderDictionary(){
   const tbl = $('dictTable'); const empty = $('dictEmpty'); const pageLbl = $('dictPageLabel');
   if(!tbl || !empty || !pageLbl) return;
@@ -1610,7 +1689,7 @@ $('dictTable').addEventListener('click', (e)=>{
   if(!item) return;
   try{ const a = getAudio(item); a.currentTime = 0; a.play(); }catch{}
 });
-function openDictionary(){ dictPage = 0; renderDictionary(); $('dictModal').style.display='grid'; }
+function openDictionary(){ dictPage = 0; ensureDictScrollWrapper(); renderDictionary(); $('dictModal').style.display='grid'; }
 function closeDictionary(){ $('dictModal').style.display='none'; }
 $('openDictionary').addEventListener('click', openDictionary);
 $('closeDict').addEventListener('click', closeDictionary);
