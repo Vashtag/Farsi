@@ -43,7 +43,14 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .err{color:var(--err)}
 .progress{margin-top:12px;height:10px;background:#0b1229;border-radius:999px;border:1px solid #1f2937;overflow:hidden}
 .bar{height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#22c55e);transition:width .3s ease}
-.mode{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+
+/* ===== mode row: left & right areas so Dictionary sits right ===== */
+.mode{
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:10px
+}
+.mode-left{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mode-right{margin-left:auto}
+
 .tiny{font-size:12px;color:#94a3b8}
 .cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.92);border:1px solid #1f2937;padding:14px 18px;border-radius:14px;font-weight:800;z-index:20}
 .fade-out{animation:fadeOut .9s ease forwards}
@@ -62,7 +69,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .map{display:grid;grid-template-columns:repeat(4, minmax(60px,1fr));gap:8px;position:relative;z-index:1}
 .tile{aspect-ratio:1/1;background:#0b1229;border:1px dashed #334155;border-radius:10px;display:grid;place-items:center;font-size:28px;color:#334155}
 
-/* Furniture (always-on visuals once purchased) */
+/* Furniture */
 .furniture{
   position:absolute; top:8px; left:8px;
   width:92px; height:auto; z-index:1; pointer-events:none;
@@ -205,20 +212,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .pc-emoji{ font-size:48px; line-height:1; display:none }
 .pc-cap{ font-size:13px; color:#cbd5e1; margin-top:8px; text-align:center }
 
-/* “More coming” placeholder tile */
-.pc-more{
-  border:1px dashed #334155;
-  background:#0b1229;
-  color:#94a3b8;
-  display:grid;
-  place-items:center;
-  aspect-ratio:4/3;
-  border-radius:12px;
-  cursor:default;
-}
-.pc-more .pc-q{ font-size:42px; line-height:1; filter:drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
-.pc-more .pc-note{ font-size:12px; margin-top:6px; color:#9aa7b7; text-align:center; }
-
 /* ======== Dictionary ======== */
 .dict-table{width:100%; border-collapse:collapse;}
 .dict-table th,.dict-table td{border-bottom:1px solid #1f2937; padding:8px 10px; text-align:left;}
@@ -227,8 +220,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .dict-controls{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
 .dict-play{background:transparent;border:none;color:#e5e7eb;cursor:pointer;padding:0;font:inherit;text-decoration:underline dotted #334155}
 .dict-play:hover{opacity:.9}
-
-/* ====== Night Sky (short) ====== */
 </style>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
@@ -242,7 +233,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div class="badge" id="unlockedBadge">0/0 unlocked</div>
     <button id="openMap" class="icon-btn" title="Bazaar Map">🗺️</button>
     <button id="openPostcards" class="icon-btn" title="Postcards">🏛️</button>
-    <button id="openDictionary" class="icon-btn" title="Dictionary">📚</button>
+    <!-- Dictionary button removed from header; now in the mode row -->
     <button id="openAchievements" class="icon-btn" title="Badges">🏆</button>
     <button id="openSettings" class="icon-btn" title="Settings">⚙️</button>
   </div>
@@ -273,11 +264,16 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 
 <main>
   <div class="mode">
-    <button id="learnBtn" class="btn">Learn Mode</button>
-    <button id="quizBtn" class="btn">Quiz Mode</button>
-    <button id="audioQuizBtn" class="btn">Audio Quiz</button>
-    <button id="musicToggle" class="btn">🎵 Play Music</button>
-    <span class="tiny">New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰</span>
+    <div class="mode-left">
+      <button id="learnBtn" class="btn">Learn Mode</button>
+      <button id="quizBtn" class="btn">Quiz Mode</button>
+      <button id="audioQuizBtn" class="btn">Audio Quiz</button>
+      <button id="musicToggle" class="btn">🎵 Play Music</button>
+      <span class="tiny">New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰</span>
+    </div>
+    <div class="mode-right">
+      <button id="openDictionary" class="btn" title="Dictionary">📚 Dictionary</button>
+    </div>
   </div>
 
   <div class="card">
@@ -385,7 +381,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="closePostcards" class="btn">Close</button>
     </div>
 
-    <!-- Viewer (no play/prev/next) -->
     <div id="pcView" class="stat" style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:12px">
       <div style="display:grid;place-items:center">
         <img id="pcViewImg" alt="" style="display:none;width:min(780px,100%);height:auto;border-radius:12px;border:1px solid #1f2937;background:#0b1229" loading="lazy"/>
@@ -399,7 +394,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <div class="tiny" id="pcUnlockNote"></div>
     </div>
 
-    <!-- Grid -->
     <div id="pcGrid" class="pc-grid"></div>
   </div>
 </div>
@@ -544,7 +538,6 @@ const CATNIP_TURN_FACTOR = 0.45;
 const FURNITURE_COST = 1000;
 const CAT_TREE_IMG = 'images/cat_tree.png';
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
-/* Postcards unlock cadence: every 15 learned */
 const POSTCARD_UNLOCK_EVERY = 15;
 
 /* Example sentences */
@@ -557,7 +550,7 @@ const SENTENCES = [
   { fa:"سگ در پارک است.", translit:"sag dar pârk ast.", en:"The dog is in the park." }
 ];
 
-/* ===================== WORDS (list retained) ===================== */
+/* ===================== WORDS ===================== */
 const words = [
   {fa:"سیب", en:"apple", translit:"sib", emoji:"🍎", audio:"audio/sib.mp3", image:"images/sib.png"},
   {fa:"کتاب", en:"book", translit:"ketâb", emoji:"📖", audio:"audio/ketab.mp3", image:"images/ketab.png"},
@@ -866,7 +859,7 @@ function loadState(){
   state.mapUnlocked = computeCatsUnlocked();
 }
 
-/* ======== SHARED NICOLE SYNC (with monotonic merge) ======== */
+/* ======== NICOLE SYNC ======== */
 const SYNC_ENDPOINT = "https://ff-sync.9rmcqs6hjc.workers.dev";
 const SYNC_DOC_ID = "nicole";
 const SYNC_WRITE_TOKEN = "Gravity123!!";
@@ -1112,15 +1105,14 @@ function nextAQQuestion(){
   $('aqFeedback').textContent=''; $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`;
   try{ const a=getAudio(correctItem); a.currentTime=0; a.play(); }catch{}
 }
-function pointsPerCorrect(){ return ACTIVE_PROFILE === 'Nicole' ? 2 : 10; } // 2 points for Nicole
 function onAQOptionClick(e){
   if (AQ.locked) return; AQ.locked = true;
   const pickedIdx = parseInt(e.currentTarget.dataset.idx, 10); const isCorrect = (pickedIdx === AQ.current);
   AQ.total++;
   if (isCorrect){
-    const pts = pointsPerCorrect();
-    e.currentTarget.classList.add('correct'); $('aqFeedback').textContent = `Nice! +${pts} points`; $('aqFeedback').className = 'feedback ok';
-    celebrateSimple(); AQ.correct++; state.score += pts; persist();
+    const pts = 10; // Audio quiz keeps the original 10 points
+    e.currentTarget.classList.add('correct'); $('aqFeedback').textContent = `Nice! +${pts} points`; $('aqFeedback').className = 'feedback ok'; celebrateSimple();
+    AQ.correct++; state.score += pts; persist();
   }else{
     e.currentTarget.classList.add('wrong'); $('aqFeedback').textContent = `Answer: ${words[AQ.current].en}`; $('aqFeedback').className = 'feedback warn';
     Array.from($('aqOptions').children).forEach(btn=>{ const idx = parseInt(btn.dataset.idx,10); if(idx === AQ.current) btn.classList.add('correct'); });
@@ -1129,7 +1121,6 @@ function onAQOptionClick(e){
   $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`; setTimeout(nextAQQuestion, 600);
 }
 $('aqPlay').addEventListener('click', ()=>{ if(AQ.current<0) return; const item = words[AQ.current]; try{ const a=getAudio(item); a.currentTime=0; a.play(); }catch{} });
-$('aqQuit').addEventListener('click', ()=> endAudioQuiz());
 
 /* ===================== CELEBRATIONS & BADGE HELPERS ===================== */
 function happyDing(){ try{
@@ -1200,14 +1191,15 @@ function initSpeech(){
 }
 
 /* ===================== ANSWERING / MAP ===================== */
+const POINTS_PER_CORRECT_LQ = 2; // 2 points for Learn & Quiz modes
+
 function handleAnswer(correct, gi, source='typing'){
   const r=ensureSRS(gi); r.seen++;
   if(correct){
     r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1); scheduleAfter(gi,SRS_INTERVALS_HOURS[r.stage]||24);
-    const pts = pointsPerCorrect();
-    state.score+=pts; state.streak+=1; addCovered(gi);
+    state.score+=POINTS_PER_CORRECT_LQ; state.streak+=1; addCovered(gi);
     sessionAnswered.add(gi); updateSessionBar();
-    if(source!=='speech'){ $('typeFeedback').textContent=`Great! +${pts} points`; $('typeFeedback').className='feedback ok'; }
+    if(source!=='speech'){ $('typeFeedback').textContent=`Great! +${POINTS_PER_CORRECT_LQ} points`; $('typeFeedback').className='feedback ok'; }
     celebrateSimple();
     if(state.streak===7) celebrateStreak7();
     checkDailyGoalAndMap(); populateThemeDropdown(); updateAchievementProgress();
@@ -1460,7 +1452,7 @@ function showItem(){
 }
 function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
-/* Night Sky background (22:00–02:00) — brief for perf */
+/* Night Sky background (22:00–02:00) — brief) */
 (function nightSkyBackground(){
   try{
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1500,7 +1492,7 @@ function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
   }catch{}
 })();
 
-/* ===================== POSTCARDS UI (no audio/nav; hide locked) ===================== */
+/* ===================== POSTCARDS UI ===================== */
 let pcIndex = 0;
 function postcardsLearned(){ return learnedCount(); }
 function unlockThresholdForIndex(i){ return (i + 1) * POSTCARD_UNLOCK_EVERY; }
@@ -1549,17 +1541,18 @@ function openPostcards(){
   renderPostcardView(unlocked ? unlocked - 1 : -1);
   renderPostcardsGrid();
 }
-function closePostcards(){ $('postcardsModal').style.display='none'; }
 $('openPostcards').addEventListener('click', openPostcards);
-$('closePostcards').addEventListener('click', closePostcards);
+$('closePostcards').addEventListener('click', ()=> $('postcardsModal').style.display='none');
 
 /* ===================== DICTIONARY (10 / page + click-to-play) ===================== */
 const DICT_PAGE_SIZE = 10;
 let dictPage = 0;
 
 function learnedIndicesInOrder(){
-  // Words the user has already learned, in insertion order
-  return (state.covered || []).filter(i => i < unlockedCount());
+  // Code order (ascending index), only items learned so far
+  return [...getCoveredSet()]
+    .filter(i => i < unlockedCount())
+    .sort((a,b)=>a-b);
 }
 function renderDictionary(){
   const tbl = $('dictTable'); const empty = $('dictEmpty'); const pageLbl = $('dictPageLabel');
@@ -1609,8 +1602,6 @@ function renderDictionary(){
   $('dictPrev').disabled = (dictPage === 0);
   $('dictNext').disabled = (dictPage >= totalPages - 1);
 }
-
-// Click-to-play via delegation
 $('dictTable').addEventListener('click', (e)=>{
   const btn = e.target.closest('.dict-play');
   if(!btn) return;
@@ -1619,7 +1610,6 @@ $('dictTable').addEventListener('click', (e)=>{
   if(!item) return;
   try{ const a = getAudio(item); a.currentTime = 0; a.play(); }catch{}
 });
-
 function openDictionary(){ dictPage = 0; renderDictionary(); $('dictModal').style.display='grid'; }
 function closeDictionary(){ $('dictModal').style.display='none'; }
 $('openDictionary').addEventListener('click', openDictionary);
