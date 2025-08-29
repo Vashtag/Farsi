@@ -75,6 +75,15 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   width:92px; height:auto; z-index:1; pointer-events:none;
   filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
 }
+/* place the cat toy at the bottom-right of the bazaar */
+#furnCatToy{
+  position:absolute;
+  right:8px;
+  bottom:8px;
+  left:auto;
+  top:auto;
+  width:72px;
+}
 
 /* roaming cats overlay */
 .cat-layer{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
@@ -537,6 +546,7 @@ const CATNIP_SPEED_FACTOR = 3.0;
 const CATNIP_TURN_FACTOR = 0.45;
 const FURNITURE_COST = 1000;
 const CAT_TREE_IMG = 'images/cat_tree.png';
+const CAT_TOY_IMG  = 'images/cat_toy.png'; // NEW: toy asset
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
 const POSTCARD_UNLOCK_EVERY = 15;
 
@@ -787,7 +797,7 @@ const defaultState = ()=>({
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
-  furniture:{catTree:false},
+  furniture:{catTree:false, catToy:false}, /* NEW: catToy flag */
   catNames:{}, nameCursor:-1, showCatNames:false
 });
 let state = defaultState();
@@ -845,7 +855,8 @@ function loadState(){
   if(state.inventory.fish===undefined) state.inventory.fish=0;
   if(state.inventory.catnip===undefined) state.inventory.catnip=0;
   if(state.inventory.nameTokens===undefined) state.inventory.nameTokens=0;
-  if(!state.furniture) state.furniture = {catTree:false};
+  if(!state.furniture) state.furniture = {catTree:false, catToy:false}; /* NEW default */
+  if(typeof state.furniture.catToy!=='boolean') state.furniture.catToy=false; /* NEW ensure */
   if(!state.catNames) state.catNames = {};
   if(typeof state.nameCursor!=='number') state.nameCursor = -1;
   if(typeof state.showCatNames!=='boolean') state.showCatNames = false;
@@ -1231,9 +1242,43 @@ function renderMap(){
 }
 function renderFurniture(){
   const container = $('mapWrap'); if(!container) return;
-  let el = $('furnCatTree'); const owned = !!(state.furniture?.catTree);
-  if(owned && !el){ el = document.createElement('img'); el.id = 'furnCatTree'; el.className = 'furniture'; el.src = CAT_TREE_IMG; el.alt = 'Cat Tree'; container.appendChild(el); }
-  else if(!owned && el){ el.remove(); }
+
+  // Cat Tree (top-left by default .furniture)
+  let tree = $('furnCatTree');
+  const hasTree = !!(state.furniture?.catTree);
+  if(hasTree && !tree){
+    tree = document.createElement('img');
+    tree.id = 'furnCatTree';
+    tree.className = 'furniture';
+    tree.src = CAT_TREE_IMG;
+    tree.alt = 'Cat Tree';
+    container.appendChild(tree);
+  }else if(!hasTree && tree){
+    tree.remove();
+  }
+
+  // Cat Toy (bottom-right)
+  let toy = $('furnCatToy');
+  const hasToy = !!(state.furniture?.catToy);
+  if(hasToy && !toy){
+    toy = document.createElement('img');
+    toy.id = 'furnCatToy';
+    toy.className = 'furniture';
+    toy.src = CAT_TOY_IMG;
+    toy.alt = 'Cat Toy';
+    container.appendChild(toy);
+  }else if(!hasToy && toy){
+    toy.remove();
+  }
+
+  // Ensure bottom-right placement even if CSS hasn't applied yet
+  if(hasToy && toy){
+    toy.style.top = 'auto';
+    toy.style.left = 'auto';
+    toy.style.right = '8px';
+    toy.style.bottom = '8px';
+    toy.style.width = '72px';
+  }
 }
 
 /* ===================== CATNIP PARTY ===================== */
@@ -1307,11 +1352,23 @@ function updateShopUI(){
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){ nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`; nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0); }
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
+
+  // Furniture button: Cat Tree -> Cat Toy -> done
   if(furnBtn){
-    const owned = !!(state.furniture?.catTree);
-    furnBtn.textContent = `🪑 Buy Furniture (${FURNITURE_COST})`;
-    furnBtn.disabled = state.score < FURNITURE_COST;
+    const ownsTree = !!(state.furniture?.catTree);
+    const ownsToy  = !!(state.furniture?.catToy);
+    if(!ownsTree){
+      furnBtn.textContent = `🪑 Buy Cat Tree (${FURNITURE_COST})`;
+      furnBtn.disabled = state.score < FURNITURE_COST;
+    }else if(!ownsToy){
+      furnBtn.textContent = `🪑 Buy Cat Toy (${FURNITURE_COST})`;
+      furnBtn.disabled = state.score < FURNITURE_COST;
+    }else{
+      furnBtn.textContent = '🪑 All Furniture Owned';
+      furnBtn.disabled = true;
+    }
   }
+
   const sel=$('catSelect');
   if(sel){
     const n = state.mapUnlocked||0; sel.innerHTML='';
@@ -1354,17 +1411,28 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`; $('shopMsg').className='feedback ok'; $('catNameInput').value=''; $('nameArea').style.display='none'; flashCatNames(4000); persist();
 });
 $('buyFurnitureBtn').addEventListener('click', ()=>{
-  if(state.furniture?.catTree){
+  // Buy order: Cat Tree -> Cat Toy
+  if(!state.furniture?.catTree){
     if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
     state.score -= FURNITURE_COST;
-    $('shopMsg').textContent='Another lovely piece added! (More types coming soon)'; $('shopMsg').className='feedback ok';
+    state.furniture = state.furniture || {};
+    state.furniture.catTree = true;
+    $('shopMsg').textContent='Cat Tree placed! The cats are thrilled. 🐈🌳'; $('shopMsg').className='feedback ok';
+    if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); }
     persist();
     return;
   }
-  if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
-  state.score -= FURNITURE_COST; state.furniture = state.furniture || {}; state.furniture.catTree = true;
-  $('shopMsg').textContent='Cat Tree placed! The cats are thrilled. 🐈🌳'; $('shopMsg').className='feedback ok';
-  if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); } persist();
+  if(!state.furniture?.catToy){
+    if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
+    state.score -= FURNITURE_COST;
+    state.furniture = state.furniture || {};
+    state.furniture.catToy = true; // NEW
+    $('shopMsg').textContent='Cat Toy placed! Check the bottom-right of the bazaar. 🧸'; $('shopMsg').className='feedback ok';
+    if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); }
+    persist();
+    return;
+  }
+  $('shopMsg').textContent='All furniture already placed!'; $('shopMsg').className='feedback ok';
 });
 function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Show Names'; }
 function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = getCatName(c.idx); } c.el.title = getCatName(c.idx); }); } }
