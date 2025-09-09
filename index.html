@@ -1476,37 +1476,12 @@ function showMidnight(){ alert(`New words unlock at local midnight.\nTime remain
 $('midnightBtn').addEventListener('click', showMidnight);
 $('midnightBtn0').addEventListener('click', showMidnight);
 
-  function runDailyRolloverIfNeeded(){
-  // profile-scoped “last seen” stamp
-  const key = 'last_seen_date';
-  const prev = store.get(key, null);
-  const today = todayISO();
-  if (prev !== today) {
-    store.set(key, today);
-    initDailyUnlock();    // recompute based on start_date and DAILY_WORDS
-    updateBadges();       // refresh the header counter
-  }
-}
-
-function scheduleMidnightUnlock(){
-  // fire ~1s after midnight local time
-  clearTimeout(window.__midnightUnlockTimer);
-  window.__midnightUnlockTimer = setTimeout(()=>{
-    runDailyRolloverIfNeeded();
-    scheduleMidnightUnlock(); // schedule the next day
-  }, msUntilNextMidnight() + 1100);
-}
-
 /* Profile flow */
 function useProfile(name){
   ACTIVE_PROFILE = String(name||'').trim() || 'Guest';
   loadState(); $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
   $('profileOverlay').style.display='none'; $('startOverlay').style.display='grid';
   if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
-  runDailyRolloverIfNeeded();
-scheduleMidnightUnlock();
-window.addEventListener('focus', runDailyRolloverIfNeeded);
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') runDailyRolloverIfNeeded(); });
 }
 $('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
 $('quickSia').addEventListener('click', ()=>{ const pin = prompt('Enter developer PIN:'); if(pin === '3232'){ useProfile('Sia'); } else{ alert('Incorrect PIN.'); } });
