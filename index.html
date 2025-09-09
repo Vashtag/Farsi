@@ -765,7 +765,22 @@ const POSTCARDS = [
 const $=id=>document.getElementById(id);
 const bySel=s=>document.querySelector(s);
 function now(){return Date.now()}
-function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
+
+/* LOCAL date string (no UTC drift) */
+function todayISO(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+/* Safe parser for "YYYY-MM-DD" into local Date at 00:00 */
+function parseLocalDate(ymd){
+  if(!ymd || typeof ymd!=='string') return new Date();
+  const [y,m,d] = ymd.split('-').map(n=>parseInt(n,10));
+  return new Date(y, (m||1)-1, d||1);
+}
+
 function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'').trim()}
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
@@ -818,11 +833,13 @@ function addCovered(i){ const s=getCoveredSet(); s.add(i); state.covered=[...s];
 /* Cats unlocked from milestones */
 function computeCatsUnlocked(){ const learned = learnedCount(); return CAT_UNLOCK_THRESHOLDS.filter(t => learned >= t).length; }
 
+/* ===== DAILY UNLOCK (robust) ===== */
 function initDailyUnlock(){
   if(!state.start_date){ state.start_date=todayISO(); }
-  const startDate = new Date(state.start_date+'T00:00:00');
+  const startDate = parseLocalDate(state.start_date);
   const dNow = new Date(); dNow.setHours(0,0,0,0);
-  const diffDays = Math.floor((dNow - startDate)/86400000);
+  const rawDiff = Math.floor((dNow - startDate)/86400000);
+  const diffDays = Number.isFinite(rawDiff) ? Math.max(0, rawDiff) : 0;
   const shouldUnlock = Math.min(words.length, (diffDays+1)*DAILY_WORDS);
   state.unlocked_count = Math.max(state.unlocked_count||0, shouldUnlock);
   persist();
@@ -882,13 +899,17 @@ function mergeStates(local, remote){
   const ls = local?.start_date, rs = remote?.start_date;
   const earliestStart = (ls && rs) ? (ls < rs ? ls : rs) : (ls || rs || todayISO());
   base.start_date = earliestStart;
+
   const dNow = new Date(); dNow.setHours(0,0,0,0);
-  const sDate = new Date(earliestStart + 'T00:00:00');
-  const diffDays = Math.floor((dNow - sDate)/86400000);
+  const sDate = parseLocalDate(earliestStart);
+  const rawDiff = Math.floor((dNow - sDate)/86400000);
+  const diffDays = Number.isFinite(rawDiff) ? Math.max(0, rawDiff) : 0;
   const shouldUnlock = Math.min(words.length, (diffDays + 1) * DAILY_WORDS);
+
   const localUnlocked  = local?.unlocked_count  || 0;
   const remoteUnlocked = remote?.unlocked_count || 0;
   base.unlocked_count = Math.max(localUnlocked, remoteUnlocked, shouldUnlock);
+
   const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]); base.covered = [...cov];
   base.score  = Math.max(local.score||0, remote.score||0);
   base.streak = (lts >= rts ? local.streak : remote.streak) || 0;
@@ -897,7 +918,11 @@ function mergeStates(local, remote){
     catnip:    Math.max(local.inventory?.catnip||0,    remote.inventory?.catnip||0),
     nameTokens:Math.max(local.inventory?.nameTokens||0,remote.inventory?.nameTokens||0)
   };
-  base.furniture = { catTree: !!(local.furniture?.catTree || remote.furniture?.catTree) };
+  // keep both furniture flags
+  base.furniture = {
+    catTree: !!(local.furniture?.catTree || remote.furniture?.catTree),
+    catToy:  !!(local.furniture?.catToy  || remote.furniture?.catToy)
+  };
   base.catNames   = (lts >= rts ? {...(local.catNames||{})} : {...(remote.catNames||{})});
   base.nameCursor = (lts >= rts ? (local.nameCursor??-1)    : (remote.nameCursor??-1));
   base.achievements = {...(local.achievements||{}), ...(remote.achievements||{})};
@@ -1464,17 +1489,43 @@ $('resetBtn').addEventListener('click', ()=>{
   alert('Progress cleared for ' + (ACTIVE_PROFILE || 'this profile') + '.');
 });
 
-/* Midnight countdown */
+/* Midnight countdown + real rollover */
 function msUntilNextMidnight(){ const n=new Date(), t=new Date(n); t.setHours(24,0,0,0); return t-n; }
 function fmt(ms){ const s=Math.floor(ms/1000); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
 function showMidnight(){ alert(`New words unlock at local midnight.\nTime remaining: ${fmt(msUntilNextMidnight())}`); }
 $('midnightBtn').addEventListener('click', showMidnight);
 $('midnightBtn0').addEventListener('click', showMidnight);
 
+/* ===== Rollover engine to advance unlocks reliably ===== */
+function runDailyRolloverIfNeeded(){
+  const key = 'last_seen_date';
+  const prev = store.get(key, null);
+  const today = todayISO();
+  if (prev !== today) {
+    store.set(key, today);
+    initDailyUnlock();    // recompute and persist
+    updateBadges();       // refresh UI counts
+  }
+}
+function scheduleMidnightUnlock(){
+  clearTimeout(window.__midnightUnlockTimer);
+  window.__midnightUnlockTimer = setTimeout(()=>{
+    runDailyRolloverIfNeeded();
+    scheduleMidnightUnlock();
+  }, msUntilNextMidnight() + 1100);
+}
+
 /* Profile flow */
 function useProfile(name){
   ACTIVE_PROFILE = String(name||'').trim() || 'Guest';
-  loadState(); $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
+  loadState();
+  // Start rollover watchers for this profile
+  runDailyRolloverIfNeeded();
+  scheduleMidnightUnlock();
+  window.addEventListener('focus', runDailyRolloverIfNeeded);
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') runDailyRolloverIfNeeded(); });
+
+  $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
   $('profileOverlay').style.display='none'; $('startOverlay').style.display='grid';
   if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
 }
