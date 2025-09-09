@@ -75,7 +75,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   width:92px; height:auto; z-index:1; pointer-events:none;
   filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
 }
-/* place the cat toy at the bottom-right of the bazaar */
 #furnCatToy{
   position:absolute;
   right:8px;
@@ -765,10 +764,13 @@ const POSTCARDS = [
 const $=id=>document.getElementById(id);
 const bySel=s=>document.querySelector(s);
 function now(){return Date.now()}
+
+/* NOTE: this is used only for display/reset; daily unlocks are UTC-anchored below */
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
+
 function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'').trim()}
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
-function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j]]} return a }
 const isMobile = () => window.matchMedia('(max-width:700px)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 function maybeFocusInput(){ if(!isMobile()) $('typeInput').focus(); }
 function setImageWithFallback(imgEl, emojiEl, item){
@@ -789,15 +791,25 @@ function setImageWithFallback(imgEl, emojiEl, item){
   }
 }
 
+/* ======= DEVICE-AGNOSTIC DAILY UNLOCK HELPERS (UTC-anchored) ======= */
+const DAY_MS = 86400000;
+const utcDayNum = (t = Date.now()) => Math.floor(t / DAY_MS);                         // integer days since epoch (UTC)
+const isoToUtcDayNum = (iso) => {                                                     // "YYYY-MM-DD" -> daynum UTC
+  if (!iso) return utcDayNum();
+  const [y,m,d] = iso.split('-').map(Number);
+  return Math.floor(Date.UTC(y,(m||1)-1,(d||1)) / DAY_MS);
+};
+const utcMidnightMsUntilNext = () => ((utcDayNum()+1)*DAY_MS) - Date.now();
+
 /* ===================== STATE (per profile) ===================== */
 const defaultState = ()=>({
-  score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
+  score:0, streak:0, srs:{}, covered:[], start_date:null, start_daynum:undefined, unlocked_count:0,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false}, achFx:{},
   mapUnlocked:0, mapDays:[],
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
-  furniture:{catTree:false, catToy:false}, /* NEW: catToy flag */
+  furniture:{catTree:false, catToy:false},
   catNames:{}, nameCursor:-1, showCatNames:false
 });
 let state = defaultState();
@@ -818,14 +830,23 @@ function addCovered(i){ const s=getCoveredSet(); s.add(i); state.covered=[...s];
 /* Cats unlocked from milestones */
 function computeCatsUnlocked(){ const learned = learnedCount(); return CAT_UNLOCK_THRESHOLDS.filter(t => learned >= t).length; }
 
+/* ======= DAILY UNLOCK: UTC-anchored ======= */
 function initDailyUnlock(){
-  if(!state.start_date){ state.start_date=todayISO(); }
-  const startDate = new Date(state.start_date+'T00:00:00');
-  const dNow = new Date(); dNow.setHours(0,0,0,0);
-  const diffDays = Math.floor((dNow - startDate)/86400000);
-  const shouldUnlock = Math.min(words.length, (diffDays+1)*DAILY_WORDS);
-  state.unlocked_count = Math.max(state.unlocked_count||0, shouldUnlock);
-  persist();
+  if (typeof state.start_daynum !== 'number') {
+    // Migrate from start_date if present; else start today
+    state.start_daynum = state.start_date ? isoToUtcDayNum(state.start_date) : utcDayNum();
+    if (!state.start_date) state.start_date = new Date(state.start_daynum * DAY_MS).toISOString().slice(0,10);
+  }
+  const daysElapsed = Math.max(0, utcDayNum() - state.start_daynum); // 0 on first day
+  const shouldUnlock = Math.min(words.length, (daysElapsed + 1) * DAILY_WORDS); // 2 words on day 0
+  const prev = state.unlocked_count || 0;
+  if (shouldUnlock > prev) {
+    state.unlocked_count = shouldUnlock;
+    persist();
+  } else if (prev === 0) {
+    state.unlocked_count = Math.min(words.length, DAILY_WORDS);
+    persist();
+  }
 }
 function unlockedCount(){ return state.unlocked_count||Math.min(words.length, DAILY_WORDS); }
 function unlockedIndices(){ return [...Array(unlockedCount()).keys()]; }
@@ -851,12 +872,19 @@ function persist(){
 }
 function loadState(){
   state = store.get('state', defaultState());
+
+  // --- MIGRATION to UTC daynum (device-agnostic unlocks) ---
+  if (typeof state.start_daynum !== 'number') {
+    state.start_daynum = state.start_date ? isoToUtcDayNum(state.start_date) : utcDayNum();
+    if (!state.start_date) state.start_date = new Date(state.start_daynum * DAY_MS).toISOString().slice(0,10);
+  }
+
   if(!state.inventory) state.inventory = {fish:0, catnip:0, nameTokens:0};
   if(state.inventory.fish===undefined) state.inventory.fish=0;
   if(state.inventory.catnip===undefined) state.inventory.catnip=0;
   if(state.inventory.nameTokens===undefined) state.inventory.nameTokens=0;
-  if(!state.furniture) state.furniture = {catTree:false, catToy:false}; /* NEW default */
-  if(typeof state.furniture.catToy!=='boolean') state.furniture.catToy=false; /* NEW ensure */
+  if(!state.furniture) state.furniture = {catTree:false, catToy:false};
+  if(typeof state.furniture.catToy!=='boolean') state.furniture.catToy=false;
   if(!state.catNames) state.catNames = {};
   if(typeof state.nameCursor!=='number') state.nameCursor = -1;
   if(typeof state.showCatNames!=='boolean') state.showCatNames = false;
@@ -879,16 +907,21 @@ function mergeStates(local, remote){
   const lts = local?.updated_at || 0;
   const rts = remote?.updated_at || 0;
   const base = (lts >= rts) ? {...local} : {...remote};
-  const ls = local?.start_date, rs = remote?.start_date;
-  const earliestStart = (ls && rs) ? (ls < rs ? ls : rs) : (ls || rs || todayISO());
-  base.start_date = earliestStart;
-  const dNow = new Date(); dNow.setHours(0,0,0,0);
-  const sDate = new Date(earliestStart + 'T00:00:00');
-  const diffDays = Math.floor((dNow - sDate)/86400000);
-  const shouldUnlock = Math.min(words.length, (diffDays + 1) * DAILY_WORDS);
-  const localUnlocked  = local?.unlocked_count  || 0;
-  const remoteUnlocked = remote?.unlocked_count || 0;
-  base.unlocked_count = Math.max(localUnlocked, remoteUnlocked, shouldUnlock);
+
+  // ---- Start daynum (UTC) unified across devices ----
+  const l_dn = (typeof local.start_daynum === 'number')  ? local.start_daynum  : isoToUtcDayNum(local.start_date);
+  const r_dn = (typeof remote.start_daynum === 'number') ? remote.start_daynum : isoToUtcDayNum(remote.start_date);
+  const start_dn = Math.min(
+    Number.isFinite(l_dn) ? l_dn : utcDayNum(),
+    Number.isFinite(r_dn) ? r_dn : utcDayNum()
+  );
+  base.start_daynum = start_dn;
+  base.start_date   = new Date(start_dn * DAY_MS).toISOString().slice(0,10);
+
+  const today_dn = utcDayNum();
+  const shouldUnlock = Math.min(words.length, (today_dn - start_dn + 1) * DAILY_WORDS);
+
+  // covered/score/streak/inventory/furniture merge
   const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]); base.covered = [...cov];
   base.score  = Math.max(local.score||0, remote.score||0);
   base.streak = (lts >= rts ? local.streak : remote.streak) || 0;
@@ -897,12 +930,20 @@ function mergeStates(local, remote){
     catnip:    Math.max(local.inventory?.catnip||0,    remote.inventory?.catnip||0),
     nameTokens:Math.max(local.inventory?.nameTokens||0,remote.inventory?.nameTokens||0)
   };
-  base.furniture = { catTree: !!(local.furniture?.catTree || remote.furniture?.catTree) };
+  base.furniture = {
+    catTree: !!(local.furniture?.catTree || remote.furniture?.catTree),
+    catToy:  !!(local.furniture?.catToy  || remote.furniture?.catToy)
+  };
   base.catNames   = (lts >= rts ? {...(local.catNames||{})} : {...(remote.catNames||{})});
   base.nameCursor = (lts >= rts ? (local.nameCursor??-1)    : (remote.nameCursor??-1));
   base.achievements = {...(local.achievements||{}), ...(remote.achievements||{})};
   base.achFx        = {...(local.achFx||{}),        ...(remote.achFx||{})};
   base.showCatNames = (lts >= rts ? !!local.showCatNames : !!remote.showCatNames);
+
+  const localUnlocked  = local?.unlocked_count  || 0;
+  const remoteUnlocked = remote?.unlocked_count || 0;
+  base.unlocked_count  = Math.max(localUnlocked, remoteUnlocked, shouldUnlock);
+
   return base;
 }
 async function syncPullNicole(){
@@ -1121,7 +1162,7 @@ function onAQOptionClick(e){
   const pickedIdx = parseInt(e.currentTarget.dataset.idx, 10); const isCorrect = (pickedIdx === AQ.current);
   AQ.total++;
   if (isCorrect){
-    const pts = 10; // Audio quiz keeps the original 10 points
+    const pts = 10;
     e.currentTarget.classList.add('correct'); $('aqFeedback').textContent = `Nice! +${pts} points`; $('aqFeedback').className = 'feedback ok'; celebrateSimple();
     AQ.correct++; state.score += pts; persist();
   }else{
@@ -1202,7 +1243,7 @@ function initSpeech(){
 }
 
 /* ===================== ANSWERING / MAP ===================== */
-const POINTS_PER_CORRECT_LQ = 2; // 2 points for Learn & Quiz modes
+const POINTS_PER_CORRECT_LQ = 2;
 
 function handleAnswer(correct, gi, source='typing'){
   const r=ensureSRS(gi); r.seen++;
@@ -1243,7 +1284,7 @@ function renderMap(){
 function renderFurniture(){
   const container = $('mapWrap'); if(!container) return;
 
-  // Cat Tree (top-left by default .furniture)
+  // Cat Tree
   let tree = $('furnCatTree');
   const hasTree = !!(state.furniture?.catTree);
   if(hasTree && !tree){
@@ -1271,7 +1312,6 @@ function renderFurniture(){
     toy.remove();
   }
 
-  // Ensure bottom-right placement even if CSS hasn't applied yet
   if(hasToy && toy){
     toy.style.top = 'auto';
     toy.style.left = 'auto';
@@ -1426,7 +1466,7 @@ $('buyFurnitureBtn').addEventListener('click', ()=>{
     if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
     state.score -= FURNITURE_COST;
     state.furniture = state.furniture || {};
-    state.furniture.catToy = true; // NEW
+    state.furniture.catToy = true;
     $('shopMsg').textContent='Cat Toy placed! Check the bottom-right of the bazaar. 🧸'; $('shopMsg').className='feedback ok';
     if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); }
     persist();
@@ -1459,17 +1499,35 @@ $('resetNamesBtn').addEventListener('click', ()=>{ if(!confirm('Reset ALL cat na
 $('resetBtn').addEventListener('click', ()=>{
   if(!confirm('Reset ALL progress for this profile? (score, streak, SRS, unlocks, achievements)')) return;
   state = defaultState();
-  state.start_date = todayISO();
+  state.start_date  = todayISO();        // for display/back-compat
+  state.start_daynum = utcDayNum();      // unlock anchor (UTC)
   persist();
   alert('Progress cleared for ' + (ACTIVE_PROFILE || 'this profile') + '.');
 });
 
-/* Midnight countdown */
-function msUntilNextMidnight(){ const n=new Date(), t=new Date(n); t.setHours(24,0,0,0); return t-n; }
-function fmt(ms){ const s=Math.floor(ms/1000); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
-function showMidnight(){ alert(`New words unlock at local midnight.\nTime remaining: ${fmt(msUntilNextMidnight())}`); }
+/* Midnight countdown (device-agnostic: 00:00 UTC) */
+function fmt(ms){ const s=Math.floor(Math.max(0,ms)/1000); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
+function showMidnight(){
+  const ms = utcMidnightMsUntilNext();
+  alert(`New words unlock daily at 00:00 UTC.\nTime remaining: ${fmt(ms)}`);
+}
 $('midnightBtn').addEventListener('click', showMidnight);
 $('midnightBtn0').addEventListener('click', showMidnight);
+
+// Auto-roll at 00:00 UTC even if tab stays open
+function scheduleDailyUnlockUTC(){
+  clearTimeout(window.__ffDailyUTC);
+  window.__ffDailyUTC = setTimeout(()=>{
+    if (ACTIVE_PROFILE){ initDailyUnlock(); updateBadges(); ensureOrder(); showItem(); }
+    scheduleDailyUnlockUTC();
+  }, utcMidnightMsUntilNext() + 1200);
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && ACTIVE_PROFILE){
+    initDailyUnlock();
+    updateBadges();
+  }
+});
 
 /* Profile flow */
 function useProfile(name){
@@ -1477,6 +1535,8 @@ function useProfile(name){
   loadState(); $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
   $('profileOverlay').style.display='none'; $('startOverlay').style.display='grid';
   if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
+  // start UTC-based daily scheduler after a profile is active
+  scheduleDailyUnlockUTC();
 }
 $('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
 $('quickSia').addEventListener('click', ()=>{ const pin = prompt('Enter developer PIN:'); if(pin === '3232'){ useProfile('Sia'); } else{ alert('Incorrect PIN.'); } });
@@ -1617,7 +1677,6 @@ const DICT_PAGE_SIZE = 10;
 let dictPage = 0;
 
 function learnedIndicesInOrder(){
-  // Code order (ascending index), only items learned so far
   return [...getCoveredSet()]
     .filter(i => i < unlockedCount())
     .sort((a,b)=>a-b);
