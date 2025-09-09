@@ -43,14 +43,9 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .err{color:var(--err)}
 .progress{margin-top:12px;height:10px;background:#0b1229;border-radius:999px;border:1px solid #1f2937;overflow:hidden}
 .bar{height:100%;width:0%;background:linear-gradient(90deg,#38bdf8,#22c55e);transition:width .3s ease}
-
-/* ===== mode row: left & right areas so Dictionary sits right ===== */
-.mode{
-  display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:10px
-}
+.mode{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:10px}
 .mode-left{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .mode-right{margin-left:auto}
-
 .tiny{font-size:12px;color:#94a3b8}
 .cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.92);border:1px solid #1f2937;padding:14px 18px;border-radius:14px;font-weight:800;z-index:20}
 .fade-out{animation:fadeOut .9s ease forwards}
@@ -75,7 +70,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   width:92px; height:auto; z-index:1; pointer-events:none;
   filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
 }
-/* place the cat toy at the bottom-right of the bazaar */
 #furnCatToy{
   position:absolute;
   right:8px;
@@ -117,7 +111,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .shop-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .muted{color:#94a3b8}
 
-/* Hearts when feeding */
+/* Hearts */
 .heart{position:absolute;font-size:20px;pointer-events:none;opacity:0;animation:floatHeart 1.6s ease-out forwards}
 @keyframes floatHeart{
   0%{transform:translateY(0) scale(.8);opacity:.9}
@@ -125,27 +119,27 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   100%{transform:translateY(-60px) scale(1.25);opacity:0}
 }
 
-/* Leaves burst when using catnip */
+/* Leaves */
 .leaf{position:absolute;font-size:20px;pointer-events:none;opacity:0;animation:floatLeaf 2.2s ease-out forwards}
 @keyframes floatLeaf{
   0%{transform:translateY(0) rotate(0deg);opacity:.9}
   100%{transform:translateY(-90px) rotate(180deg);opacity:0}
 }
 
-/* Heavy blur for profile/start overlays */
+/* Overlays */
 #profileOverlay,#startOverlay{
   background: radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%), rgba(15,23,42,.60);
   backdrop-filter: blur(28px) saturate(120%);
   -webkit-backdrop-filter: blur(28px) saturate(120%);
 }
 
-/* ----- Mobile-only header/input behavior ----- */
+/* Mobile */
 @media (max-width: 700px){
   header{ position: static; top:auto; background:rgba(15,23,42,.9); backdrop-filter:none; }
   main{ padding:0 16px 120px; }
 }
 
-/* ========= Badge visuals ========= */
+/* Achievements */
 .badges-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .badge-tile{
   position:relative; padding:10px 12px; border-radius:12px; font-size:14px;
@@ -172,7 +166,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   100%{ transform:translateY(0) scale(1); opacity:0; }
 }
 
-/* ====== Night Sky Twinkles (22:00–02:00) ====== */
+/* Night sky */
 .night-sky{ position:fixed; inset:0; pointer-events:none; z-index:-1; }
 .night-star{
   position:absolute;
@@ -194,7 +188,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   .night-star.spark{ animation: none; }
 }
 
-/* ======== Audio Quiz styles ======== */
+/* Audio Quiz */
 .aq-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .aq-option{ position:relative; aspect-ratio:1/1; border:1px solid #1f2937; border-radius:12px; background:#0b1229; display:grid; place-items:center; overflow:hidden; }
 .aq-option img{ width:100%; height:100%; object-fit:contain; display:block; }
@@ -202,26 +196,18 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .aq-option.correct{ border-color: var(--accent); box-shadow:0 0 0 2px rgba(34,197,94,.25) inset }
 .aq-option.wrong{ border-color: var(--err); box-shadow:0 0 0 2px rgba(239,68,68,.22) inset }
 
-/* ======== Postcards ======== */
-.pc-grid{
-  display:grid; gap:10px;
-  grid-template-columns:repeat(auto-fill, minmax(140px,1fr));
-}
-.pc-tile{
-  position:relative; border:1px solid #1f2937; border-radius:12px;
-  background:#0b1229; overflow:hidden; cursor:pointer;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px;
-  transition:transform .08s ease, box-shadow .2s ease;
-}
+/* Postcards */
+.pc-grid{ display:grid; gap:10px; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); }
+.pc-tile{ position:relative; border:1px solid #1f2937; border-radius:12px; background:#0b1229; overflow:hidden; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; transition:transform .08s ease, box-shadow .2s ease; }
 .pc-tile:hover{ transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.22) }
-.pc-thumb{
-  width:100%; aspect-ratio:4/3; object-fit:cover; display:block;
-  border-radius:8px; border:1px solid #1f2937; background:#0b1229;
-}
+.pc-thumb{ width:100%; aspect-ratio:4/3; object-fit:cover; display:block; border-radius:8px; border:1px solid #1f2937; background:#0b1229; }
 .pc-emoji{ font-size:48px; line-height:1; display:none }
 .pc-cap{ font-size:13px; color:#cbd5e1; margin-top:8px; text-align:center }
+.pc-more{ display:grid; place-items:center; gap:6px; padding:10px; border:1px dashed #334155; border-radius:12px; color:#9aa7b7; }
+.pc-more .pc-q{ font-size:28px; }
+.pc-more .pc-note{ font-size:12px; text-align:center; }
 
-/* ======== Dictionary ======== */
+/* Dictionary */
 .dict-table{width:100%; border-collapse:collapse;}
 .dict-table th,.dict-table td{border-bottom:1px solid #1f2937; padding:8px 10px; text-align:left;}
 .dict-table th{color:#9aa7b7;font-weight:600;font-size:13px}
@@ -230,6 +216,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .dict-play{background:transparent;border:none;color:#e5e7eb;cursor:pointer;padding:0;font:inherit;text-decoration:underline dotted #334155}
 .dict-play:hover{opacity:.9}
 </style>
+<!-- Confetti -->
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
 <body>
@@ -242,7 +229,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div class="badge" id="unlockedBadge">0/0 unlocked</div>
     <button id="openMap" class="icon-btn" title="Bazaar Map">🗺️</button>
     <button id="openPostcards" class="icon-btn" title="Postcards">🏛️</button>
-    <!-- Dictionary button removed from header; now in the mode row -->
     <button id="openAchievements" class="icon-btn" title="Badges">🏆</button>
     <button id="openSettings" class="icon-btn" title="Settings">⚙️</button>
   </div>
@@ -546,7 +532,7 @@ const CATNIP_SPEED_FACTOR = 3.0;
 const CATNIP_TURN_FACTOR = 0.45;
 const FURNITURE_COST = 1000;
 const CAT_TREE_IMG = 'images/cat_tree.png';
-const CAT_TOY_IMG  = 'images/cat_toy.png'; // NEW: toy asset
+const CAT_TOY_IMG  = 'images/cat_toy.png';
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
 const POSTCARD_UNLOCK_EVERY = 20;
 
@@ -742,7 +728,7 @@ function populateThemeDropdown(){
   const note = $('themeNote'); if(note) note.innerHTML = nextUnlockNote();
 }
 
-/* ===================== POSTCARDS DATA ===================== */
+/* ===================== POSTCARDS ===================== */
 const POSTCARDS = [
   { id:'persepolis', title:'Persepolis (Takht-e Jamshid)', en:'Persepolis: the ceremonial capital of the Achaemenids is a symbol of the splendor of ancient Iranian art and history.', image:'images/postcards/persepolis.jpg', emoji:'🏛️' },
   { id:'azadi_tower', title:'Tehran — Azadi Tower', en:'Azadi Tower: an icon of Tehran—blends traditional Persian forms with modern lines.', image:'images/postcards/azadi_tower.jpg', emoji:'🗼' },
@@ -768,7 +754,7 @@ function now(){return Date.now()}
 function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
 function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'').trim()}
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
-function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j]]} return a }
 const isMobile = () => window.matchMedia('(max-width:700px)').matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 function maybeFocusInput(){ if(!isMobile()) $('typeInput').focus(); }
 function setImageWithFallback(imgEl, emojiEl, item){
@@ -788,16 +774,34 @@ function setImageWithFallback(imgEl, emojiEl, item){
     useEmoji();
   }
 }
+/* Safe loader for decorative images (cat furniture) */
+function safeSetImg(el, src){
+  if(!el) return;
+  el.style.display = 'none';
+  el.onerror = ()=>{ el.style.display='none'; };
+  el.onload  = ()=>{ el.style.display='block'; };
+  el.src = src;
+}
+
+/* ======= DEVICE-AGNOSTIC DAILY UNLOCK HELPERS (UTC-anchored) ======= */
+const DAY_MS = 86400000;
+const utcDayNum = (t = Date.now()) => Math.floor(t / DAY_MS);                         // integer days since epoch (UTC)
+const isoToUtcDayNum = (iso) => {                                                     // "YYYY-MM-DD" -> daynum UTC
+  if (!iso) return utcDayNum();
+  const [y,m,d] = iso.split('-').map(Number);
+  return Math.floor(Date.UTC(y,(m||1)-1,(d||1)) / DAY_MS);
+};
+const utcMidnightMsUntilNext = () => ((utcDayNum()+1)*DAY_MS) - Date.now();
 
 /* ===================== STATE (per profile) ===================== */
 const defaultState = ()=>({
-  score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
+  score:0, streak:0, srs:{}, covered:[], start_date:null, start_daynum:undefined, unlocked_count:0,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false}, achFx:{},
   mapUnlocked:0, mapDays:[],
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
-  furniture:{catTree:false, catToy:false}, /* NEW: catToy flag */
+  furniture:{catTree:false, catToy:false},
   catNames:{}, nameCursor:-1, showCatNames:false
 });
 let state = defaultState();
@@ -818,14 +822,22 @@ function addCovered(i){ const s=getCoveredSet(); s.add(i); state.covered=[...s];
 /* Cats unlocked from milestones */
 function computeCatsUnlocked(){ const learned = learnedCount(); return CAT_UNLOCK_THRESHOLDS.filter(t => learned >= t).length; }
 
+/* ======= DAILY UNLOCK: UTC-anchored ======= */
 function initDailyUnlock(){
-  if(!state.start_date){ state.start_date=todayISO(); }
-  const startDate = new Date(state.start_date+'T00:00:00');
-  const dNow = new Date(); dNow.setHours(0,0,0,0);
-  const diffDays = Math.floor((dNow - startDate)/86400000);
-  const shouldUnlock = Math.min(words.length, (diffDays+1)*DAILY_WORDS);
-  state.unlocked_count = Math.max(state.unlocked_count||0, shouldUnlock);
-  persist();
+  if (typeof state.start_daynum !== 'number') {
+    state.start_daynum = state.start_date ? isoToUtcDayNum(state.start_date) : utcDayNum();
+    if (!state.start_date) state.start_date = new Date(state.start_daynum * DAY_MS).toISOString().slice(0,10);
+  }
+  const daysElapsed = Math.max(0, utcDayNum() - state.start_daynum); // 0 on first day
+  const shouldUnlock = Math.min(words.length, (daysElapsed + 1) * DAILY_WORDS); // 2 words on day 0
+  const prev = state.unlocked_count || 0;
+  if (shouldUnlock > prev) {
+    state.unlocked_count = shouldUnlock;
+    persist();
+  } else if (prev === 0) {
+    state.unlocked_count = Math.min(words.length, DAILY_WORDS);
+    persist();
+  }
 }
 function unlockedCount(){ return state.unlocked_count||Math.min(words.length, DAILY_WORDS); }
 function unlockedIndices(){ return [...Array(unlockedCount()).keys()]; }
@@ -846,17 +858,23 @@ function persist(){
   updateShopUI();
   updateNamesToggleUI();
   updateNamesVisibility();
-  if($('postcardsModal')?.style.display==='grid'){ renderPostcardsGrid(); const u=postcardsUnlockedCount(); renderPostcardView(u?u-1:-1); }
-  if($('dictModal')?.style.display==='grid'){ renderDictionary(); }
+  var pm = $('postcardsModal'); if(pm && pm.style.display==='grid'){ renderPostcardsGrid(); const u=postcardsUnlockedCount(); renderPostcardView(u?u-1:-1); }
+  var dm = $('dictModal'); if(dm && dm.style.display==='grid'){ renderDictionary(); }
 }
 function loadState(){
   state = store.get('state', defaultState());
+
+  if (typeof state.start_daynum !== 'number') {
+    state.start_daynum = state.start_date ? isoToUtcDayNum(state.start_date) : utcDayNum();
+    if (!state.start_date) state.start_date = new Date(state.start_daynum * DAY_MS).toISOString().slice(0,10);
+  }
+
   if(!state.inventory) state.inventory = {fish:0, catnip:0, nameTokens:0};
   if(state.inventory.fish===undefined) state.inventory.fish=0;
   if(state.inventory.catnip===undefined) state.inventory.catnip=0;
   if(state.inventory.nameTokens===undefined) state.inventory.nameTokens=0;
-  if(!state.furniture) state.furniture = {catTree:false, catToy:false}; /* NEW default */
-  if(typeof state.furniture.catToy!=='boolean') state.furniture.catToy=false; /* NEW ensure */
+  if(!state.furniture) state.furniture = {catTree:false, catToy:false};
+  if(typeof state.furniture.catToy!=='boolean') state.furniture.catToy=false;
   if(!state.catNames) state.catNames = {};
   if(typeof state.nameCursor!=='number') state.nameCursor = -1;
   if(typeof state.showCatNames!=='boolean') state.showCatNames = false;
@@ -870,7 +888,7 @@ function loadState(){
   state.mapUnlocked = computeCatsUnlocked();
 }
 
-/* ======== NICOLE SYNC ======== */
+/* ======== NICOLE SYNC (optional; errors are ignored) ======== */
 const SYNC_ENDPOINT = "https://ff-sync.9rmcqs6hjc.workers.dev";
 const SYNC_DOC_ID = "nicole";
 const SYNC_WRITE_TOKEN = "Gravity123!!";
@@ -879,16 +897,19 @@ function mergeStates(local, remote){
   const lts = local?.updated_at || 0;
   const rts = remote?.updated_at || 0;
   const base = (lts >= rts) ? {...local} : {...remote};
-  const ls = local?.start_date, rs = remote?.start_date;
-  const earliestStart = (ls && rs) ? (ls < rs ? ls : rs) : (ls || rs || todayISO());
-  base.start_date = earliestStart;
-  const dNow = new Date(); dNow.setHours(0,0,0,0);
-  const sDate = new Date(earliestStart + 'T00:00:00');
-  const diffDays = Math.floor((dNow - sDate)/86400000);
-  const shouldUnlock = Math.min(words.length, (diffDays + 1) * DAILY_WORDS);
-  const localUnlocked  = local?.unlocked_count  || 0;
-  const remoteUnlocked = remote?.unlocked_count || 0;
-  base.unlocked_count = Math.max(localUnlocked, remoteUnlocked, shouldUnlock);
+
+  const l_dn = (typeof local.start_daynum === 'number')  ? local.start_daynum  : isoToUtcDayNum(local.start_date);
+  const r_dn = (typeof remote.start_daynum === 'number') ? remote.start_daynum : isoToUtcDayNum(remote.start_date);
+  const start_dn = Math.min(
+    Number.isFinite(l_dn) ? l_dn : utcDayNum(),
+    Number.isFinite(r_dn) ? r_dn : utcDayNum()
+  );
+  base.start_daynum = start_dn;
+  base.start_date   = new Date(start_dn * DAY_MS).toISOString().slice(0,10);
+
+  const today_dn = utcDayNum();
+  const shouldUnlock = Math.min(words.length, (today_dn - start_dn + 1) * DAILY_WORDS);
+
   const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]); base.covered = [...cov];
   base.score  = Math.max(local.score||0, remote.score||0);
   base.streak = (lts >= rts ? local.streak : remote.streak) || 0;
@@ -897,12 +918,20 @@ function mergeStates(local, remote){
     catnip:    Math.max(local.inventory?.catnip||0,    remote.inventory?.catnip||0),
     nameTokens:Math.max(local.inventory?.nameTokens||0,remote.inventory?.nameTokens||0)
   };
-  base.furniture = { catTree: !!(local.furniture?.catTree || remote.furniture?.catTree) };
+  base.furniture = {
+    catTree: !!(local.furniture?.catTree || remote.furniture?.catTree),
+    catToy:  !!(local.furniture?.catToy  || remote.furniture?.catToy)
+  };
   base.catNames   = (lts >= rts ? {...(local.catNames||{})} : {...(remote.catNames||{})});
   base.nameCursor = (lts >= rts ? (local.nameCursor??-1)    : (remote.nameCursor??-1));
   base.achievements = {...(local.achievements||{}), ...(remote.achievements||{})};
   base.achFx        = {...(local.achFx||{}),        ...(remote.achFx||{})};
   base.showCatNames = (lts >= rts ? !!local.showCatNames : !!remote.showCatNames);
+
+  const localUnlocked  = local?.unlocked_count  || 0;
+  const remoteUnlocked = remote?.unlocked_count || 0;
+  base.unlocked_count  = Math.max(localUnlocked, remoteUnlocked, shouldUnlock);
+
   return base;
 }
 async function syncPullNicole(){
@@ -1121,7 +1150,7 @@ function onAQOptionClick(e){
   const pickedIdx = parseInt(e.currentTarget.dataset.idx, 10); const isCorrect = (pickedIdx === AQ.current);
   AQ.total++;
   if (isCorrect){
-    const pts = 10; // Audio quiz keeps the original 10 points
+    const pts = 10;
     e.currentTarget.classList.add('correct'); $('aqFeedback').textContent = `Nice! +${pts} points`; $('aqFeedback').className = 'feedback ok'; celebrateSimple();
     AQ.correct++; state.score += pts; persist();
   }else{
@@ -1202,7 +1231,7 @@ function initSpeech(){
 }
 
 /* ===================== ANSWERING / MAP ===================== */
-const POINTS_PER_CORRECT_LQ = 2; // 2 points for Learn & Quiz modes
+const POINTS_PER_CORRECT_LQ = 2;
 
 function handleAnswer(correct, gi, source='typing'){
   const r=ensureSRS(gi); r.seen++;
@@ -1243,35 +1272,38 @@ function renderMap(){
 function renderFurniture(){
   const container = $('mapWrap'); if(!container) return;
 
-  // Cat Tree (top-left by default .furniture)
+  // Cat Tree
   let tree = $('furnCatTree');
   const hasTree = !!(state.furniture?.catTree);
   if(hasTree && !tree){
     tree = document.createElement('img');
     tree.id = 'furnCatTree';
     tree.className = 'furniture';
-    tree.src = CAT_TREE_IMG;
     tree.alt = 'Cat Tree';
     container.appendChild(tree);
+    safeSetImg(tree, CAT_TREE_IMG);
   }else if(!hasTree && tree){
     tree.remove();
+  }else if(hasTree && tree){
+    safeSetImg(tree, CAT_TREE_IMG);
   }
 
-  // Cat Toy (bottom-right)
+  // Cat Toy
   let toy = $('furnCatToy');
   const hasToy = !!(state.furniture?.catToy);
   if(hasToy && !toy){
     toy = document.createElement('img');
     toy.id = 'furnCatToy';
     toy.className = 'furniture';
-    toy.src = CAT_TOY_IMG;
     toy.alt = 'Cat Toy';
     container.appendChild(toy);
+    safeSetImg(toy, CAT_TOY_IMG);
   }else if(!hasToy && toy){
     toy.remove();
+  }else if(hasToy && toy){
+    safeSetImg(toy, CAT_TOY_IMG);
   }
 
-  // Ensure bottom-right placement even if CSS hasn't applied yet
   if(hasToy && toy){
     toy.style.top = 'auto';
     toy.style.left = 'auto';
@@ -1411,7 +1443,6 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`; $('shopMsg').className='feedback ok'; $('catNameInput').value=''; $('nameArea').style.display='none'; flashCatNames(4000); persist();
 });
 $('buyFurnitureBtn').addEventListener('click', ()=>{
-  // Buy order: Cat Tree -> Cat Toy
   if(!state.furniture?.catTree){
     if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
     state.score -= FURNITURE_COST;
@@ -1426,7 +1457,7 @@ $('buyFurnitureBtn').addEventListener('click', ()=>{
     if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
     state.score -= FURNITURE_COST;
     state.furniture = state.furniture || {};
-    state.furniture.catToy = true; // NEW
+    state.furniture.catToy = true;
     $('shopMsg').textContent='Cat Toy placed! Check the bottom-right of the bazaar. 🧸'; $('shopMsg').className='feedback ok';
     if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); }
     persist();
@@ -1459,17 +1490,35 @@ $('resetNamesBtn').addEventListener('click', ()=>{ if(!confirm('Reset ALL cat na
 $('resetBtn').addEventListener('click', ()=>{
   if(!confirm('Reset ALL progress for this profile? (score, streak, SRS, unlocks, achievements)')) return;
   state = defaultState();
-  state.start_date = todayISO();
+  state.start_date  = todayISO();
+  state.start_daynum = utcDayNum();
   persist();
   alert('Progress cleared for ' + (ACTIVE_PROFILE || 'this profile') + '.');
 });
 
-/* Midnight countdown */
-function msUntilNextMidnight(){ const n=new Date(), t=new Date(n); t.setHours(24,0,0,0); return t-n; }
-function fmt(ms){ const s=Math.floor(ms/1000); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
-function showMidnight(){ alert(`New words unlock at local midnight.\nTime remaining: ${fmt(msUntilNextMidnight())}`); }
+/* Midnight countdown (device-agnostic: 00:00 UTC) */
+function fmt(ms){ const s=Math.floor(Math.max(0,ms)/1000); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
+function showMidnight(){
+  const ms = utcMidnightMsUntilNext();
+  alert(`New words unlock daily at 00:00 UTC.\nTime remaining: ${fmt(ms)}`);
+}
 $('midnightBtn').addEventListener('click', showMidnight);
 $('midnightBtn0').addEventListener('click', showMidnight);
+
+// Auto-roll at 00:00 UTC even if tab stays open
+function scheduleDailyUnlockUTC(){
+  clearTimeout(window.__ffDailyUTC);
+  window.__ffDailyUTC = setTimeout(()=>{
+    if (ACTIVE_PROFILE){ initDailyUnlock(); updateBadges(); ensureOrder(); showItem(); }
+    scheduleDailyUnlockUTC();
+  }, utcMidnightMsUntilNext() + 1200);
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && ACTIVE_PROFILE){
+    initDailyUnlock();
+    updateBadges();
+  }
+});
 
 /* Profile flow */
 function useProfile(name){
@@ -1477,6 +1526,7 @@ function useProfile(name){
   loadState(); $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
   $('profileOverlay').style.display='none'; $('startOverlay').style.display='grid';
   if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
+  scheduleDailyUnlockUTC();
 }
 $('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
 $('quickSia').addEventListener('click', ()=>{ const pin = prompt('Enter developer PIN:'); if(pin === '3232'){ useProfile('Sia'); } else{ alert('Incorrect PIN.'); } });
@@ -1520,7 +1570,7 @@ function showItem(){
 }
 function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
-/* Night Sky background (22:00–02:00) — brief) */
+/* Night Sky background (22:00–02:00) */
 (function nightSkyBackground(){
   try{
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1612,12 +1662,11 @@ function openPostcards(){
 $('openPostcards').addEventListener('click', openPostcards);
 $('closePostcards').addEventListener('click', ()=> $('postcardsModal').style.display='none');
 
-/* ===================== DICTIONARY (10 / page + click-to-play) ===================== */
+/* ===================== DICTIONARY ===================== */
 const DICT_PAGE_SIZE = 10;
 let dictPage = 0;
 
 function learnedIndicesInOrder(){
-  // Code order (ascending index), only items learned so far
   return [...getCoveredSet()]
     .filter(i => i < unlockedCount())
     .sort((a,b)=>a-b);
