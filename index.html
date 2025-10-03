@@ -75,15 +75,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   width:92px; height:auto; z-index:1; pointer-events:none;
   filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
 }
-/* place the cat toy at the bottom-right of the bazaar */
-#furnCatToy{
-  position:absolute;
-  right:8px;
-  bottom:8px;
-  left:auto;
-  top:auto;
-  width:72px;
-}
 
 /* roaming cats overlay */
 .cat-layer{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
@@ -303,6 +294,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
             <button id="sayBtn" class="btn" disabled title="(optional speech recog)">🎙️ Say it</button>
             <button id="hintBtn" class="btn">💡 Hint</button>
             <button id="revealBtn" class="btn">👀 Reveal</button>
+            <button id="backBtn" class="btn" style="display:none">⬅️ Back</button>
             <button id="nextBtn" class="primary">➡️ Next</button>
           </div>
           <div class="feedback" id="speechFeedback"></div>
@@ -534,7 +526,7 @@ const store = {
 };
 
 /* ===================== CONSTANTS ===================== */
-const DAILY_WORDS = 2;
+const DAILY_WORDS = 5;
 const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
 const MINI_QUIZ_SIZE = 5;
 const AUDIO_QUIZ_SIZE = 8;
@@ -546,9 +538,8 @@ const CATNIP_SPEED_FACTOR = 3.0;
 const CATNIP_TURN_FACTOR = 0.45;
 const FURNITURE_COST = 1000;
 const CAT_TREE_IMG = 'images/cat_tree.png';
-const CAT_TOY_IMG  = 'images/cat_toy.png'; // NEW: toy asset
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
-const POSTCARD_UNLOCK_EVERY = 20;
+const POSTCARD_UNLOCK_EVERY = 15;
 
 /* Example sentences */
 const SENTENCES = [
@@ -694,7 +685,7 @@ const words = [
   {fa:"کم", en:"a little", translit:"kam", emoji:"🔅", audio:"audio/kam.mp3", image:"images/kam.png"},
   {fa:"همیشه", en:"always", translit:"hamishe", emoji:"♾️", audio:"audio/hamishe.mp3", image:"images/hamishe.png"},
   {fa:"گاهی", en:"sometimes", translit:"gâhi", emoji:"🔄", audio:"audio/gahi.mp3", image:"images/gahi.png"},
-  {fa:"هیچوقت", en:"never", translit:"hichvaght", emoji:"🚫", audio:"audio/hichvaght.mp3", image:"images/hichvaght.png"},
+  {fa:"هیچوقت", en:"never", translit:"hichvaqt", emoji:"🚫", audio:"audio/hichvaqt.mp3", image:"images/hichvaqt.png"},
   {fa:"امسال", en:"this year", translit:"emsâl", emoji:"📅", audio:"audio/emsal.mp3", image:"images/emsal.png"},
   {fa:"ساعت چند است؟", en:"what time is it?", translit:"sâ’at chand ast?", emoji:"⏰", audio:"audio/saatchandast.mp3", image:"images/saatchandast.png"},
   {fa:"حالت چطور است؟", en:"how are you?", translit:"hâlet chetur ast?", emoji:"🙂", audio:"audio/haletcheturast.mp3", image:"images/haletcheturast.png"},
@@ -705,7 +696,7 @@ const words = [
   {fa:"تشنه‌ام", en:"I’m thirsty", translit:"tashneam", emoji:"🥤", audio:"audio/tashneam.mp3", image:"images/tashneam.png"},
   {fa:"بله، حتماً", en:"yes, of course", translit:"bale hatman", emoji:"✅", audio:"audio/bale_hatman.mp3", image:"images/bale_hatman.png"},
   {fa:"نه، متشکرم", en:"no, thank you", translit:"na moteshakeram", emoji:"🙅", audio:"audio/na_moteshakeram.mp3", image:"images/na_moteshakeram.png"},
-  {fa:"می‌خواهم", en:"I want", translit:"mikham", emoji:"🤲", audio:"audio/mikham.mp3", image:"images/mikham.png"},
+    {fa:"می‌خواهم", en:"I want", translit:"mikham", emoji:"🤲", audio:"audio/mikham.mp3", image:"images/mikham.png"},
 {fa:"لازم دارم", en:"I need", translit:"lâzem dâram", emoji:"📌", audio:"audio/lazem_daram.mp3", image:"images/lazem_daram.png"},
 {fa:"می‌توانم", en:"I can", translit:"mitavânam", emoji:"💪", audio:"audio/mitavanam.mp3", image:"images/mitavanam.png"},
 {fa:"نمی‌توانم", en:"I can’t", translit:"nemitavânam", emoji:"🚫", audio:"audio/nemitavanam.mp3", image:"images/nemitavanam.png"},
@@ -785,22 +776,7 @@ const POSTCARDS = [
 const $=id=>document.getElementById(id);
 const bySel=s=>document.querySelector(s);
 function now(){return Date.now()}
-
-/* LOCAL date string (no UTC drift) */
-function todayISO(){
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,'0');
-  const day = String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
-/* Safe parser for "YYYY-MM-DD" into local Date at 00:00 */
-function parseLocalDate(ymd){
-  if(!ymd || typeof ymd!=='string') return new Date();
-  const [y,m,d] = ymd.split('-').map(n=>parseInt(n,10));
-  return new Date(y, (m||1)-1, d||1);
-}
-
+function todayISO(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
 function normalizeTranslit(s){return (s||'').toLowerCase().normalize('NFKD').replace(/[\u0302\u0304]/g,'').replace(/[^a-z0-9]+/g,'').trim()}
 function normalizeFa(s){return (s||'').replace(/\s+/g,'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200C\u200F\u202A-\u202E]/g,'')}
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]} return a }
@@ -832,7 +808,7 @@ const defaultState = ()=>({
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
-  furniture:{catTree:false, catToy:false}, /* NEW: catToy flag */
+  furniture:{catTree:false},
   catNames:{}, nameCursor:-1, showCatNames:false
 });
 let state = defaultState();
@@ -853,13 +829,11 @@ function addCovered(i){ const s=getCoveredSet(); s.add(i); state.covered=[...s];
 /* Cats unlocked from milestones */
 function computeCatsUnlocked(){ const learned = learnedCount(); return CAT_UNLOCK_THRESHOLDS.filter(t => learned >= t).length; }
 
-/* ===== DAILY UNLOCK (robust) ===== */
 function initDailyUnlock(){
   if(!state.start_date){ state.start_date=todayISO(); }
-  const startDate = parseLocalDate(state.start_date);
+  const startDate = new Date(state.start_date+'T00:00:00');
   const dNow = new Date(); dNow.setHours(0,0,0,0);
-  const rawDiff = Math.floor((dNow - startDate)/86400000);
-  const diffDays = Number.isFinite(rawDiff) ? Math.max(0, rawDiff) : 0;
+  const diffDays = Math.floor((dNow - startDate)/86400000);
   const shouldUnlock = Math.min(words.length, (diffDays+1)*DAILY_WORDS);
   state.unlocked_count = Math.max(state.unlocked_count||0, shouldUnlock);
   persist();
@@ -892,8 +866,7 @@ function loadState(){
   if(state.inventory.fish===undefined) state.inventory.fish=0;
   if(state.inventory.catnip===undefined) state.inventory.catnip=0;
   if(state.inventory.nameTokens===undefined) state.inventory.nameTokens=0;
-  if(!state.furniture) state.furniture = {catTree:false, catToy:false}; /* NEW default */
-  if(typeof state.furniture.catToy!=='boolean') state.furniture.catToy=false; /* NEW ensure */
+  if(!state.furniture) state.furniture = {catTree:false};
   if(!state.catNames) state.catNames = {};
   if(typeof state.nameCursor!=='number') state.nameCursor = -1;
   if(typeof state.showCatNames!=='boolean') state.showCatNames = false;
@@ -919,17 +892,13 @@ function mergeStates(local, remote){
   const ls = local?.start_date, rs = remote?.start_date;
   const earliestStart = (ls && rs) ? (ls < rs ? ls : rs) : (ls || rs || todayISO());
   base.start_date = earliestStart;
-
   const dNow = new Date(); dNow.setHours(0,0,0,0);
-  const sDate = parseLocalDate(earliestStart);
-  const rawDiff = Math.floor((dNow - sDate)/86400000);
-  const diffDays = Number.isFinite(rawDiff) ? Math.max(0, rawDiff) : 0;
+  const sDate = new Date(earliestStart + 'T00:00:00');
+  const diffDays = Math.floor((dNow - sDate)/86400000);
   const shouldUnlock = Math.min(words.length, (diffDays + 1) * DAILY_WORDS);
-
   const localUnlocked  = local?.unlocked_count  || 0;
   const remoteUnlocked = remote?.unlocked_count || 0;
   base.unlocked_count = Math.max(localUnlocked, remoteUnlocked, shouldUnlock);
-
   const cov = new Set([...(local.covered||[]), ...(remote.covered||[])]); base.covered = [...cov];
   base.score  = Math.max(local.score||0, remote.score||0);
   base.streak = (lts >= rts ? local.streak : remote.streak) || 0;
@@ -938,11 +907,7 @@ function mergeStates(local, remote){
     catnip:    Math.max(local.inventory?.catnip||0,    remote.inventory?.catnip||0),
     nameTokens:Math.max(local.inventory?.nameTokens||0,remote.inventory?.nameTokens||0)
   };
-  // keep both furniture flags
-  base.furniture = {
-    catTree: !!(local.furniture?.catTree || remote.furniture?.catTree),
-    catToy:  !!(local.furniture?.catToy  || remote.furniture?.catToy)
-  };
+  base.furniture = { catTree: !!(local.furniture?.catTree || remote.furniture?.catTree) };
   base.catNames   = (lts >= rts ? {...(local.catNames||{})} : {...(remote.catNames||{})});
   base.nameCursor = (lts >= rts ? (local.nameCursor??-1)    : (remote.nameCursor??-1));
   base.achievements = {...(local.achievements||{}), ...(remote.achievements||{})};
@@ -1287,43 +1252,9 @@ function renderMap(){
 }
 function renderFurniture(){
   const container = $('mapWrap'); if(!container) return;
-
-  // Cat Tree (top-left by default .furniture)
-  let tree = $('furnCatTree');
-  const hasTree = !!(state.furniture?.catTree);
-  if(hasTree && !tree){
-    tree = document.createElement('img');
-    tree.id = 'furnCatTree';
-    tree.className = 'furniture';
-    tree.src = CAT_TREE_IMG;
-    tree.alt = 'Cat Tree';
-    container.appendChild(tree);
-  }else if(!hasTree && tree){
-    tree.remove();
-  }
-
-  // Cat Toy (bottom-right)
-  let toy = $('furnCatToy');
-  const hasToy = !!(state.furniture?.catToy);
-  if(hasToy && !toy){
-    toy = document.createElement('img');
-    toy.id = 'furnCatToy';
-    toy.className = 'furniture';
-    toy.src = CAT_TOY_IMG;
-    toy.alt = 'Cat Toy';
-    container.appendChild(toy);
-  }else if(!hasToy && toy){
-    toy.remove();
-  }
-
-  // Ensure bottom-right placement even if CSS hasn't applied yet
-  if(hasToy && toy){
-    toy.style.top = 'auto';
-    toy.style.left = 'auto';
-    toy.style.right = '8px';
-    toy.style.bottom = '8px';
-    toy.style.width = '72px';
-  }
+  let el = $('furnCatTree'); const owned = !!(state.furniture?.catTree);
+  if(owned && !el){ el = document.createElement('img'); el.id = 'furnCatTree'; el.className = 'furniture'; el.src = CAT_TREE_IMG; el.alt = 'Cat Tree'; container.appendChild(el); }
+  else if(!owned && el){ el.remove(); }
 }
 
 /* ===================== CATNIP PARTY ===================== */
@@ -1373,6 +1304,7 @@ $('checkBtn').addEventListener('click', ()=>{
 });
 $('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.streak=0; persist(); next(); });
 $('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
+$('backBtn').addEventListener('click', ()=>{ if(mode!=='learn') return; $('typeInput').value=''; idx = (idx - 1 + Math.max(1, order.length)) % Math.max(1, order.length); showItem(); });
 
 function startMode(newMode){ endMiniQuiz(); endAudioQuiz(); mode = newMode; resetSessionProgress(); ensureOrder(); showItem(); }
 $('learnBtn').addEventListener('click', ()=> startMode('learn'));
@@ -1397,23 +1329,11 @@ function updateShopUI(){
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){ nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`; nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0); }
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
-
-  // Furniture button: Cat Tree -> Cat Toy -> done
   if(furnBtn){
-    const ownsTree = !!(state.furniture?.catTree);
-    const ownsToy  = !!(state.furniture?.catToy);
-    if(!ownsTree){
-      furnBtn.textContent = `🪑 Buy Cat Tree (${FURNITURE_COST})`;
-      furnBtn.disabled = state.score < FURNITURE_COST;
-    }else if(!ownsToy){
-      furnBtn.textContent = `🪑 Buy Cat Toy (${FURNITURE_COST})`;
-      furnBtn.disabled = state.score < FURNITURE_COST;
-    }else{
-      furnBtn.textContent = '🪑 All Furniture Owned';
-      furnBtn.disabled = true;
-    }
+    const owned = !!(state.furniture?.catTree);
+    furnBtn.textContent = `🪑 Buy Furniture (${FURNITURE_COST})`;
+    furnBtn.disabled = state.score < FURNITURE_COST;
   }
-
   const sel=$('catSelect');
   if(sel){
     const n = state.mapUnlocked||0; sel.innerHTML='';
@@ -1456,28 +1376,17 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`; $('shopMsg').className='feedback ok'; $('catNameInput').value=''; $('nameArea').style.display='none'; flashCatNames(4000); persist();
 });
 $('buyFurnitureBtn').addEventListener('click', ()=>{
-  // Buy order: Cat Tree -> Cat Toy
-  if(!state.furniture?.catTree){
+  if(state.furniture?.catTree){
     if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
     state.score -= FURNITURE_COST;
-    state.furniture = state.furniture || {};
-    state.furniture.catTree = true;
-    $('shopMsg').textContent='Cat Tree placed! The cats are thrilled. 🐈🌳'; $('shopMsg').className='feedback ok';
-    if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); }
+    $('shopMsg').textContent='Another lovely piece added! (More types coming soon)'; $('shopMsg').className='feedback ok';
     persist();
     return;
   }
-  if(!state.furniture?.catToy){
-    if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
-    state.score -= FURNITURE_COST;
-    state.furniture = state.furniture || {};
-    state.furniture.catToy = true; // NEW
-    $('shopMsg').textContent='Cat Toy placed! Check the bottom-right of the bazaar. 🧸'; $('shopMsg').className='feedback ok';
-    if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); }
-    persist();
-    return;
-  }
-  $('shopMsg').textContent='All furniture already placed!'; $('shopMsg').className='feedback ok';
+  if(state.score < FURNITURE_COST){ $('shopMsg').textContent='Not enough points for furniture.'; $('shopMsg').className='feedback warn'; return; }
+  state.score -= FURNITURE_COST; state.furniture = state.furniture || {}; state.furniture.catTree = true;
+  $('shopMsg').textContent='Cat Tree placed! The cats are thrilled. 🐈🌳'; $('shopMsg').className='feedback ok';
+  if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); } persist();
 });
 function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Show Names'; }
 function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = getCatName(c.idx); } c.el.title = getCatName(c.idx); }); } }
@@ -1509,43 +1418,17 @@ $('resetBtn').addEventListener('click', ()=>{
   alert('Progress cleared for ' + (ACTIVE_PROFILE || 'this profile') + '.');
 });
 
-/* Midnight countdown + real rollover */
+/* Midnight countdown */
 function msUntilNextMidnight(){ const n=new Date(), t=new Date(n); t.setHours(24,0,0,0); return t-n; }
 function fmt(ms){ const s=Math.floor(ms/1000); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
 function showMidnight(){ alert(`New words unlock at local midnight.\nTime remaining: ${fmt(msUntilNextMidnight())}`); }
 $('midnightBtn').addEventListener('click', showMidnight);
 $('midnightBtn0').addEventListener('click', showMidnight);
 
-/* ===== Rollover engine to advance unlocks reliably ===== */
-function runDailyRolloverIfNeeded(){
-  const key = 'last_seen_date';
-  const prev = store.get(key, null);
-  const today = todayISO();
-  if (prev !== today) {
-    store.set(key, today);
-    initDailyUnlock();    // recompute and persist
-    updateBadges();       // refresh UI counts
-  }
-}
-function scheduleMidnightUnlock(){
-  clearTimeout(window.__midnightUnlockTimer);
-  window.__midnightUnlockTimer = setTimeout(()=>{
-    runDailyRolloverIfNeeded();
-    scheduleMidnightUnlock();
-  }, msUntilNextMidnight() + 1100);
-}
-
 /* Profile flow */
 function useProfile(name){
   ACTIVE_PROFILE = String(name||'').trim() || 'Guest';
-  loadState();
-  // Start rollover watchers for this profile
-  runDailyRolloverIfNeeded();
-  scheduleMidnightUnlock();
-  window.addEventListener('focus', runDailyRolloverIfNeeded);
-  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') runDailyRolloverIfNeeded(); });
-
-  $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
+  loadState(); $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
   $('profileOverlay').style.display='none'; $('startOverlay').style.display='grid';
   if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
 }
@@ -1580,6 +1463,7 @@ document.addEventListener('click', (e)=>{
 function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=pool.slice(); shuffle(order); idx=0; }
 function showImageOrEmoji(item){ const pic=$('pic'), emo=$('emoji'); setImageWithFallback(pic, emo, item); }
 function showItem(){
+  const bb=$('backBtn'); if(bb) bb.style.display = (mode==='learn')?'inline-flex':'none';
   const pool = (mode==='quiz')? quizPool(): learnPool();
   if(order.length===0 || order.some(i=>!pool.includes(i))) ensureOrder();
   const gi = order[idx % order.length]; const item = words[gi]; showImageOrEmoji(item);
