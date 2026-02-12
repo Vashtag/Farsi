@@ -548,7 +548,21 @@ const SENTENCES = [
   { fa:"این خانه بزرگ است.", translit:"in khâne bozorg ast.", en:"This house is big." },
   { fa:"من کتاب می‌خوانم.", translit:"man ketâb mikhânam.", en:"I am reading a book." },
   { fa:"امروز هوا خوب است.", translit:"emruz havâ khub ast.", en:"The weather is good today." },
-  { fa:"سگ در پارک است.", translit:"sag dar pârk ast.", en:"The dog is in the park." }
+  { fa:"سگ در پارک است.", translit:"sag dar pârk ast.", en:"The dog is in the park." },
+  { fa:"من چای می‌خواهم.", translit:"man chây mikham.", en:"I want tea." },
+  { fa:"این غذا خوشمزه است.", translit:"in ghazâ khoshmaze ast.", en:"This food is delicious." },
+  { fa:"من فردا می‌روم.", translit:"man fardâ miravam.", en:"I am going tomorrow." },
+  { fa:"اسم من نیکول است.", translit:"esm-e man nikol ast.", en:"My name is Nicole." },
+  { fa:"لطفاً آهسته صحبت کنید.", translit:"lotfan âheste sohbat konid.", en:"Please speak slowly." },
+  { fa:"من فارسی یاد می‌گیرم.", translit:"man fârsi yâd migiram.", en:"I am learning Farsi." },
+  { fa:"این کتاب خیلی خوب است.", translit:"in ketâb kheyli khub ast.", en:"This book is very good." },
+  { fa:"من گرسنه هستم.", translit:"man gorsne hastam.", en:"I am hungry." },
+  { fa:"هوا سرد است.", translit:"havâ sard ast.", en:"The weather is cold." },
+  { fa:"آن ماشین قرمز است.", translit:"ân mâshin ghermez ast.", en:"That car is red." },
+  { fa:"من دوست دارم شنا کنم.", translit:"man dust dâram shenâ konam.", en:"I like to swim." },
+  { fa:"قهوه یا چای؟", translit:"ghahve yâ chây?", en:"Coffee or tea?" },
+  { fa:"من خسته هستم.", translit:"man khaste hastam.", en:"I am tired." },
+  { fa:"بازار نزدیک است.", translit:"bâzâr nazdik ast.", en:"The bazaar is nearby." }
 ];
 
 /* ===================== WORDS ===================== */
@@ -803,7 +817,7 @@ function setImageWithFallback(imgEl, emojiEl, item){
 /* ===================== STATE (per profile) ===================== */
 const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0,
-  achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false}, achFx:{},
+  achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false,mastered100:false,score1000:false,allColors:false}, achFx:{},
   mapUnlocked:0, mapDays:[],
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
@@ -814,10 +828,15 @@ const defaultState = ()=>({
 let state = defaultState();
 
 let mode='learn', order=[], idx=0;
-let sessionTotal = 0;
 let sessionAnswered = new Set();
-function resetSessionProgress(){ sessionTotal = unlockedCount(); sessionAnswered = new Set(); updateSessionBar(); }
-function updateSessionBar(){ const pct = Math.round((sessionAnswered.size/Math.max(1,sessionTotal))*100); $('progressBar').style.width = pct + '%'; }
+function resetSessionProgress(){ sessionAnswered = new Set(); updateSessionBar(); }
+function updateSessionBar(){
+  const pool = (mode==='quiz') ? quizPool() : learnPool();
+  const poolSize = pool.length;
+  const answered = pool.filter(i => sessionAnswered.has(i)).length;
+  const pct = Math.round((answered / Math.max(1, poolSize)) * 100);
+  $('progressBar').style.width = pct + '%';
+}
 
 /* SRS helpers */
 function ensureSRS(i){ if(!state.srs[i]) state.srs[i]={stage:0,due:0,seen:0,correct:0,wrong:0}; return state.srs[i]; }
@@ -958,8 +977,11 @@ function reflectBadges(){
   const defs = [
     {key:'first10', label:'First 10 mastered', ico:'🥇'},
     {key:'perfectMini', label:'Perfect Mini Quiz', ico:'🎯'},
-    {key:'streak7', label:'7-day streak', ico:'🏅'},
-    {key:'mastered50', label:'50 mastered', ico:'💪'}
+    {key:'streak7', label:'7 in a row', ico:'🏅'},
+    {key:'mastered50', label:'50 mastered', ico:'💪'},
+    {key:'mastered100', label:'100 mastered', ico:'🏆'},
+    {key:'score1000', label:'Reach 1000 points', ico:'💰'},
+    {key:'allColors', label:'Learn all colors', ico:'🌈'}
   ];
   const box = $('achList');
   box.classList.add('badges-grid');
@@ -1230,7 +1252,15 @@ function handleAnswer(correct, gi, source='typing'){
   }
   persist(); setTimeout(next, 450);
 }
-function updateAchievementProgress(){ if(masteredIndices().length >= 10) awardAchievement('first10'); if(masteredIndices().length >= 50) awardAchievement('mastered50'); }
+const COLOR_INDICES = words.reduce((acc,w,i)=>{ if(['white','black','red','blue','green','yellow','purple','orange (color)','pink'].includes(w.en)) acc.push(i); return acc; }, []);
+function updateAchievementProgress(){
+  const m = masteredIndices(), mSet = new Set(m);
+  if(m.length >= 10) awardAchievement('first10');
+  if(m.length >= 50) awardAchievement('mastered50');
+  if(m.length >= 100) awardAchievement('mastered100');
+  if(state.score >= 1000) awardAchievement('score1000');
+  if(COLOR_INDICES.length && COLOR_INDICES.every(i => mSet.has(i))) awardAchievement('allColors');
+}
 function checkDailyGoalAndMap(){
   const today=todayISO(); let days = state.mapDays||[]; let todayRec = days.find(d=>d.date===today);
   if(!todayRec){ todayRec={date:today, correct:0, goalMet:false}; days=[...days,todayRec]; }
@@ -1331,8 +1361,8 @@ function updateShopUI(){
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
   if(furnBtn){
     const owned = !!(state.furniture?.catTree);
-    furnBtn.textContent = `🪑 Buy Furniture (${FURNITURE_COST})`;
-    furnBtn.disabled = state.score < FURNITURE_COST;
+    furnBtn.textContent = owned ? '🪑 Furniture ✓ Owned' : `🪑 Buy Furniture (${FURNITURE_COST})`;
+    furnBtn.disabled = owned || state.score < FURNITURE_COST;
   }
   const sel=$('catSelect');
   if(sel){
@@ -1397,6 +1427,7 @@ $('openSettings').addEventListener('click', ()=>{ $('settingsModal').style.displ
 $('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
 $('settingsModal').addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
 $('reviewToggle').addEventListener('click', ()=>{ state.settings.reviewAll = !state.settings.reviewAll; persist(); $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`; });
+$('themeSelect').addEventListener('change', (e)=>{ applyTheme(e.target.value); });
 $('openSentences').addEventListener('click', ()=>{ $('settingsModal').style.display='none'; openSentences(); });
 $('closeSentences').addEventListener('click', ()=> $('sentencesModal').style.display='none');
 $('sentPrev').addEventListener('click', ()=>{ sentenceIdx--; renderSentence(); });
@@ -1431,6 +1462,7 @@ function useProfile(name){
   loadState(); $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
   $('profileOverlay').style.display='none'; $('startOverlay').style.display='grid';
   if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
+  if(state.settings?.musicOn){ initMusic(); musicAudio.play().catch(()=>{}); updateMusicBtnUI(); }
 }
 $('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
 $('quickSia').addEventListener('click', ()=>{ const pin = prompt('Enter developer PIN:'); if(pin === '3232'){ useProfile('Sia'); } else{ alert('Incorrect PIN.'); } });
@@ -1471,7 +1503,7 @@ function showItem(){
   else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
   $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
-  $('hintBtn').style.display = 'none'; $('typeInput').value=''; maybeFocusInput();
+  $('hintBtn').style.display = (mode==='quiz')?'inline-flex':'none'; $('typeInput').value=''; maybeFocusInput();
 }
 function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
 
