@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Farsi Fun — Learn Persian Basics</title>
+<title>Farsi Fun</title>
 <style>
 :root{
   --bg:#0f172a;--card:#111827;--muted:#94a3b8;--text:#e5e7eb;--accent:#22c55e;--accent-2:#38bdf8;--warn:#f59e0b;--err:#ef4444;
@@ -267,7 +267,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 </head>
 <body>
 <header>
-  <h1>✨ Farsi Fun — Learn Persian Basics</h1>
+  <h1>✨ Farsi Fun</h1>
   <div class="stats">
     <div class="badge" id="profileBadge">Profile: —</div>
     <div class="badge" id="scoreBadge">Score: 0</div>
@@ -301,7 +301,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="startQuiz" class="accent" type="button">🎯 Quiz Mode</button>
       <button id="startAlphabets" class="rose" type="button">🔤 Alphabets</button>
     </div>
-    <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s. New words unlock at <button id="midnightBtn0" class="btn" style="padding:2px 6px">midnight</button>.</p>
+    <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b> for the best experience. <b>Listen</b> plays the word audio.</p>
   </div>
 </div>
 
@@ -313,9 +313,8 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
         <button id="learnBtn" class="btn">Learn Mode</button>
         <button id="quizBtn" class="btn">Quiz Mode</button>
         <button id="audioQuizBtn" class="btn">Audio Quiz</button>
-        <button id="spellBtn" class="btn">Spell It!</button>
+        <button id="spellBtn" class="btn">Spell It</button>
         <button id="musicToggle" class="btn">🎵 Play Music</button>
-        <span class="tiny">New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰</span>
       </div>
     </div>
     <div class="mode-right">
@@ -359,7 +358,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   </div>
 </main>
 
-<footer style="padding:16px;text-align:center;color:#94a3b8"> Have fun! </footer>
+<footer style="padding:16px;text-align:center;color:#94a3b8">Have fun! &nbsp;·&nbsp; New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 8px;font-size:12px">midnight</button> ⏰</footer>
 <div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
 <div id="sadFace" class="cele-msg" style="display:none">😢</div>
 
@@ -587,7 +586,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 <div id="spellModal" class="modal">
   <div class="modal-card" style="max-width:520px;text-align:center">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <h3 style="margin:0">Spell It!</h3>
+      <h3 style="margin:0">Spell It</h3>
       <button id="spellQuit" class="btn">✖ Quit</button>
     </div>
     <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:14px">
@@ -1567,7 +1566,6 @@ function msUntilNextMidnight(){ const n=new Date(), t=new Date(n); t.setHours(24
 function fmt(ms){ const s=Math.floor(ms/1000); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
 function showMidnight(){ alert(`New words unlock at local midnight.\nTime remaining: ${fmt(msUntilNextMidnight())}`); }
 $('midnightBtn').addEventListener('click', showMidnight);
-$('midnightBtn0').addEventListener('click', showMidnight);
 
 /* Profile flow */
 function useProfile(name){
@@ -1670,7 +1668,7 @@ $('alphaNext').addEventListener('click', ()=>{
 });
 $('alphabetModal').addEventListener('click',(e)=>{ if(e.target.id==='alphabetModal') $('alphabetModal').style.display='none'; });
 
-/* ── Spell It! ── */
+/* ── Spell It ── */
 const SPELL_SIZE = 8;
 const SPELL_PTS  = 3;
 const DECOY_POOL = ['ا','ب','پ','ت','ج','چ','د','ر','ز','س','ش','ک','گ','ل','م','ن','و','ه','ی','خ','ف','ق'];
