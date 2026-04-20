@@ -313,7 +313,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
         <button id="learnBtn" class="btn">Learn Mode</button>
         <button id="quizBtn" class="btn">Quiz Mode</button>
         <button id="audioQuizBtn" class="btn">Audio Quiz</button>
-        <button id="spellBtn" class="btn">✏️ Spell It!</button>
+        <button id="spellBtn" class="btn">Spell It!</button>
         <button id="musicToggle" class="btn">🎵 Play Music</button>
         <span class="tiny">New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰</span>
       </div>
@@ -587,7 +587,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 <div id="spellModal" class="modal">
   <div class="modal-card" style="max-width:520px;text-align:center">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <h3 style="margin:0">✏️ Spell It!</h3>
+      <h3 style="margin:0">Spell It!</h3>
       <button id="spellQuit" class="btn">✖ Quit</button>
     </div>
     <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:14px">
@@ -607,6 +607,10 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <!-- Letter tiles -->
     <div id="spellTiles" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px;min-height:54px"></div>
     <div id="spellFeedback" class="feedback" style="min-height:28px"></div>
+    <div id="spellReveal" style="display:none;margin-top:16px">
+      <div id="spellRevealWord" style="font-size:52px;direction:rtl;color:#a78bfa;margin-bottom:12px;letter-spacing:2px"></div>
+      <button id="spellNext" class="primary">Next →</button>
+    </div>
   </div>
 </div>
 
@@ -1709,6 +1713,7 @@ function renderSpellQuestion(){
     return;
   }
   SP.locked = false;
+  $('spellReveal').style.display = 'none';
   $('spellFeedback').textContent = '';
   $('spellFeedback').className = 'feedback';
 
@@ -1809,8 +1814,8 @@ function checkSpellAnswer(){
     $('spellFeedback').className   = 'feedback ok';
     Array.from($('spellSlots').children).forEach(s=>{ s.style.borderColor='#22c55e'; s.style.color='#22c55e'; });
     celebrateSimple();
-    SP.qIdx++;
-    setTimeout(()=> renderSpellQuestion(), 900);
+    $('spellRevealWord').textContent = item.fa;
+    $('spellReveal').style.display = 'block';
   } else {
     $('spellFeedback').textContent = `Not quite — try again!`;
     $('spellFeedback').className   = 'feedback warn';
@@ -1827,6 +1832,11 @@ function checkSpellAnswer(){
 }
 
 $('spellQuit').addEventListener('click', ()=> endSpellModal());
+$('spellNext').addEventListener('click', ()=>{
+  $('spellReveal').style.display = 'none';
+  SP.qIdx++;
+  renderSpellQuestion();
+});
 $('spellModal').addEventListener('click',(e)=>{ if(e.target.id==='spellModal') endSpellModal(); });
 $('spellBtn').addEventListener('click', ()=> openSpellModal());
 
