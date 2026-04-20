@@ -582,6 +582,22 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   </div>
 </div>
 
+<!-- Category Picker Modal -->
+<div id="catModal" class="modal">
+  <div class="modal-card" style="max-width:420px;text-align:center">
+    <h3 style="margin:0 0 6px">Choose a category</h3>
+    <p class="tiny" style="margin:0 0 18px;color:#6b7280">Only words in that category will be shown</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="cat-pick primary"  data-cat="all">📚 All Words</button>
+      <button class="cat-pick"          data-cat="greetings">👋 Greetings</button>
+      <button class="cat-pick"          data-cat="food">🍽️ Food</button>
+      <button class="cat-pick"          data-cat="cooking">🍳 Cooking</button>
+      <button class="cat-pick"          data-cat="travel">✈️ Travel</button>
+    </div>
+    <button id="catCancel" class="btn" style="margin-top:16px;width:100%">Cancel</button>
+  </div>
+</div>
+
 <!-- Spell It Modal -->
 <div id="spellModal" class="modal">
   <div class="modal-card" style="max-width:520px;text-align:center">
@@ -831,6 +847,174 @@ const words = [
 {fa:"سخت", en:"difficult", translit:"sakht", emoji:"💪", audio:"audio/sakht.mp3", image:"images/sakht.png"},
 ];
 
+/* ── Word categories (indices match words array) ── */
+const CATS_MAP = [
+  ["food","cooking"],           // 0   apple
+  [],                           // 1   book
+  [],                           // 2   cat
+  [],                           // 3   dog
+  ["food","cooking","greetings"],// 4  water
+  ["food","cooking"],           // 5   bread
+  ["food","greetings"],         // 6   tea
+  ["travel"],                   // 7   car
+  [],                           // 8   house
+  [],                           // 9   door
+  ["greetings"],                // 10  hello
+  ["greetings"],                // 11  goodbye
+  ["greetings"],                // 12  yes
+  ["greetings"],                // 13  no
+  ["greetings"],                // 14  please
+  ["greetings"],                // 15  thank you
+  ["greetings"],                // 16  good morning
+  ["greetings"],                // 17  good night
+  ["travel"],                   // 18  tomorrow
+  [],                           // 19  yesterday
+  [],                           // 20  today
+  ["food","cooking"],           // 21  butter
+  ["food","cooking"],           // 22  cheese
+  ["food","cooking"],           // 23  egg
+  ["food","cooking"],           // 24  meat
+  ["food","cooking"],           // 25  chicken
+  [],                           // 26  cow
+  ["food","cooking"],           // 27  fish
+  ["food","cooking"],           // 28  rice
+  ["food","cooking"],           // 29  sugar
+  ["cooking"],                  // 30  salt
+  ["cooking"],                  // 31  pepper
+  ["food","cooking"],           // 32  lemon
+  ["food"],                     // 33  orange
+  ["food"],                     // 34  banana
+  ["food"],                     // 35  watermelon
+  ["food"],                     // 36  grape
+  ["food"],                     // 37  kiwi
+  ["food"],                     // 38  strawberry
+  ["food","cooking"],           // 39  cucumber
+  ["food","cooking"],           // 40  tomato
+  ["food","cooking"],           // 41  potato
+  ["food","cooking"],           // 42  carrot
+  ["food","cooking"],           // 43  mushroom
+  ["food","cooking"],           // 44  eggplant
+  ["food","cooking"],           // 45  bean
+  ["food","cooking"],           // 46  lentil
+  ["food"],                     // 47  food
+  ["food","greetings"],         // 48  juice
+  ["food"],                     // 49  milk
+  ["food","greetings"],         // 50  coffee
+  ["food"],                     // 51  beer
+  ["food"],                     // 52  wine
+  [],                           // 53  light
+  [],                           // 54  dark
+  [],                           // 55  white
+  [],                           // 56  black
+  [],                           // 57  red
+  [],                           // 58  blue
+  [],                           // 59  green
+  [],                           // 60  yellow
+  [],                           // 61  purple
+  [],                           // 62  orange (color)
+  [],                           // 63  pink
+  ["food"],                     // 64  ice cream
+  ["food"],                     // 65  chocolate
+  ["food","cooking"],           // 66  cake
+  ["travel"],                   // 67  money
+  ["travel"],                   // 68  bank card
+  ["greetings"],                // 69  gift
+  ["greetings"],                // 70  wedding
+  ["greetings"],                // 71  birthday
+  ["greetings"],                // 72  love
+  [],                           // 73  swim
+  [],                           // 74  play
+  [],                           // 75  watch
+  ["greetings"],                // 76  I like
+  ["travel"],                   // 77  I go
+  ["travel"],                   // 78  I come
+  [],                           // 79  see
+  [],                           // 80  hear
+  ["greetings"],                // 81  say
+  ["food"],                     // 82  eat
+  ["travel"],                   // 83  sleep
+  [],                           // 84  awake
+  [],                           // 85  teach
+  [],                           // 86  work
+  [],                           // 87  read
+  [],                           // 88  write
+  ["greetings"],                // 89  ask/question
+  ["greetings"],                // 90  answer
+  ["travel"],                   // 91  shop
+  ["travel"],                   // 92  drive
+  ["travel"],                   // 93  walk
+  ["greetings"],                // 94  smile
+  [],                           // 95  cry
+  ["greetings"],                // 96  laugh
+  ["food"],                     // 97  hungry
+  ["food"],                     // 98  thirsty
+  ["travel"],                   // 99  tired
+  ["greetings"],                // 100 happy
+  [],                           // 101 sad
+  [],                           // 102 angry
+  [],                           // 103 calm
+  [],                           // 104 big
+  [],                           // 105 small
+  [],                           // 106 tall
+  [],                           // 107 short
+  ["cooking"],                  // 108 hot
+  ["cooking"],                  // 109 cold
+  ["travel"],                   // 110 expensive
+  ["travel"],                   // 111 cheap
+  [],                           // 112 beautiful
+  [],                           // 113 ugly
+  ["travel"],                   // 114 near
+  ["travel"],                   // 115 far
+  ["travel"],                   // 116 left
+  ["travel"],                   // 117 right
+  ["travel"],                   // 118 up
+  ["travel"],                   // 119 down
+  ["travel","greetings"],       // 120 where
+  ["greetings"],                // 121 when
+  ["greetings"],                // 122 how
+  ["greetings"],                // 123 why
+  ["greetings"],                // 124 who
+  ["greetings"],                // 125 what
+  ["travel","greetings"],       // 126 how many
+  ["travel"],                   // 127 how much
+  [],                           // 128 a lot
+  [],                           // 129 a little
+  [],                           // 130 always
+  [],                           // 131 sometimes
+  [],                           // 132 never
+  [],                           // 133 this year
+  ["travel","greetings"],       // 134 what time is it?
+  ["greetings"],                // 135 how are you?
+  ["greetings"],                // 136 I'm good
+  ["greetings"],                // 137 I'm okay
+  ["travel","greetings"],       // 138 I'm tired
+  ["food","greetings"],         // 139 I'm hungry
+  ["food"],                     // 140 I'm thirsty
+  ["greetings"],                // 141 yes, of course
+  ["greetings"],                // 142 no, thank you
+  ["greetings"],                // 143 I want
+  ["greetings"],                // 144 I need
+  ["greetings"],                // 145 I can
+  ["greetings"],                // 146 I can't
+  ["greetings"],                // 147 I know
+  ["greetings"],                // 148 I don't know
+  ["greetings"],                // 149 I understand
+  ["greetings","travel"],       // 150 I didn't understand
+  ["travel"],                   // 151 I want to go
+  ["food"],                     // 152 I want to eat
+  ["travel"],                   // 153 I want to sleep
+  ["greetings"],                // 154 I like (duplicate)
+  ["greetings"],                // 155 I don't like
+  ["greetings"],                // 156 great
+  ["greetings"],                // 157 good
+  [],                           // 158 bad
+  ["travel"],                   // 159 fast
+  ["travel","greetings"],       // 160 slow
+  [],                           // 161 easy
+  [],                           // 162 difficult
+];
+CATS_MAP.forEach((cats, i) => { if (words[i]) words[i].cats = cats; });
+
 /* ===================== THEMES ===================== */
 const THEMES = [
  {key:'default', name:'Ocean (default)', unlockAt:0, vars:{'--grad1':'#0b1229','--grad2':'#121a36','--accent-2':'#38bdf8','--accent':'#22c55e','--bg':'#0f172a'}},
@@ -961,7 +1145,9 @@ function unlockedIndices(){ return [...Array(unlockedCount()).keys()]; }
 function masteredIndices(){ return [...getCoveredSet()].filter(i=>i<unlockedCount()); }
 function dueIndices(){ return unlockedIndices().filter(i=>isDue(i)); }
 function quizPool(){ const due=dueIndices(); if(due.length) return due; const m=masteredIndices(); return m.length?m:unlockedIndices(); }
-function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return [...due,...rest]; }
+let activeCat = 'all';
+function catFilter(pool){ return activeCat==='all' ? pool : pool.filter(i=>(words[i].cats||[]).includes(activeCat)); }
+function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return catFilter([...due,...rest]); }
 
 /* ===================== PERSIST ===================== */
 function persist(){
@@ -1436,7 +1622,21 @@ $('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); })
 $('backBtn').addEventListener('click', ()=>{ if(mode!=='learn') return; $('typeInput').value=''; idx = (idx - 1 + Math.max(1, order.length)) % Math.max(1, order.length); showItem(); });
 
 function startMode(newMode){ endMiniQuiz(); endAudioQuiz(); mode = newMode; resetSessionProgress(); ensureOrder(); showItem(); }
-$('learnBtn').addEventListener('click', ()=> startMode('learn'));
+/* Category picker */
+const CAT_LABELS = { all:'📚 All Words', greetings:'👋 Greetings', food:'🍽️ Food', cooking:'🍳 Cooking', travel:'✈️ Travel' };
+function openCatModal(){ $('catModal').style.display='grid'; }
+function closeCatModal(){ $('catModal').style.display='none'; }
+$('catCancel').addEventListener('click', closeCatModal);
+$('catModal').addEventListener('click', e=>{ if(e.target.id==='catModal') closeCatModal(); });
+document.querySelectorAll('.cat-pick').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    activeCat = btn.dataset.cat;
+    $('learnBtn').textContent = 'Learn: ' + (CAT_LABELS[activeCat]||activeCat);
+    closeCatModal();
+    startMode('learn');
+  });
+});
+$('learnBtn').addEventListener('click', ()=> openCatModal());
 $('quizBtn').addEventListener('click', ()=> startMode('quiz'));
 $('audioQuizBtn').addEventListener('click', ()=> openAudioQuiz());
 
