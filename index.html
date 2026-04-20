@@ -845,6 +845,41 @@ const words = [
 {fa:"آهسته", en:"slow", translit:"âheste", emoji:"🐢", audio:"audio/aheste.mp3", image:"images/aheste.png"},
 {fa:"آسان", en:"easy", translit:"âsân", emoji:"👌", audio:"audio/asan.mp3", image:"images/asan.png"},
 {fa:"سخت", en:"difficult", translit:"sakht", emoji:"💪", audio:"audio/sakht.mp3", image:"images/sakht.png"},
+  /* ── Travel pack ── */
+  {fa:"مامان", en:"mom", translit:"māmān", emoji:"🤱", audio:"", image:""},
+  {fa:"بابا", en:"dad", translit:"bābā", emoji:"👨", audio:"", image:""},
+  {fa:"مامان بزرگ", en:"grandma", translit:"māmān bozorg", emoji:"👵", audio:"", image:""},
+  {fa:"بابا بزرگ", en:"grandpa", translit:"bābā bozorg", emoji:"👴", audio:"", image:""},
+  {fa:"خواهر", en:"sister", translit:"khāhar", emoji:"👧", audio:"", image:""},
+  {fa:"برادر", en:"brother", translit:"barādar", emoji:"👦", audio:"", image:""},
+  {fa:"عمه", en:"aunt (dad's side)", translit:"amme", emoji:"👩", audio:"", image:""},
+  {fa:"عمو", en:"uncle (dad's side)", translit:"amoo", emoji:"👨", audio:"", image:""},
+  {fa:"خاله", en:"aunt (mom's side)", translit:"khāle", emoji:"👩", audio:"", image:""},
+  {fa:"دایی", en:"uncle (mom's side)", translit:"dāyi", emoji:"👨", audio:"", image:""},
+  {fa:"خانواده", en:"family", translit:"khānevāde", emoji:"👨‍👩‍👧‍👦", audio:"", image:""},
+  {fa:"هواپیما", en:"airplane", translit:"havāpeymā", emoji:"✈️", audio:"", image:""},
+  {fa:"فرودگاه", en:"airport", translit:"forudgāh", emoji:"🛫", audio:"", image:""},
+  {fa:"چمدان", en:"suitcase", translit:"chamedan", emoji:"🧳", audio:"", image:""},
+  {fa:"پاسپورت", en:"passport", translit:"pāsport", emoji:"🛂", audio:"", image:""},
+  {fa:"هتل", en:"hotel", translit:"hotel", emoji:"🏨", audio:"", image:""},
+  {fa:"تاکسی", en:"taxi", translit:"tāksi", emoji:"🚕", audio:"", image:""},
+  {fa:"اتوبوس", en:"bus", translit:"otobus", emoji:"🚌", audio:"", image:""},
+  {fa:"قطار", en:"train", translit:"qatār", emoji:"🚂", audio:"", image:""},
+  {fa:"بلیط", en:"ticket", translit:"belit", emoji:"🎫", audio:"", image:""},
+  {fa:"دوستت دارم", en:"I love you", translit:"dustat dāram", emoji:"❤️", audio:"", image:""},
+  {fa:"دلم برات تنگ شده", en:"I missed you", translit:"delam barāt tang shode", emoji:"🥺", audio:"", image:""},
+  {fa:"کمک", en:"help", translit:"komak", emoji:"🆘", audio:"", image:""},
+  {fa:"دستشویی", en:"bathroom", translit:"dastshui", emoji:"🚽", audio:"", image:""},
+  {fa:"ممنون", en:"thanks (warm)", translit:"mamnoon", emoji:"🙏", audio:"", image:""},
+  {fa:"یک", en:"one", translit:"yek", emoji:"1️⃣", audio:"", image:""},
+  {fa:"دو", en:"two", translit:"do", emoji:"2️⃣", audio:"", image:""},
+  {fa:"سه", en:"three", translit:"se", emoji:"3️⃣", audio:"", image:""},
+  {fa:"چهار", en:"four", translit:"chahār", emoji:"4️⃣", audio:"", image:""},
+  {fa:"پنج", en:"five", translit:"panj", emoji:"5️⃣", audio:"", image:""},
+  {fa:"شش", en:"six", translit:"shesh", emoji:"6️⃣", audio:"", image:""},
+  {fa:"هفت", en:"seven", translit:"haft", emoji:"7️⃣", audio:"", image:""},
+  {fa:"هشت", en:"eight", translit:"hasht", emoji:"8️⃣", audio:"", image:""},
+  {fa:"ده", en:"ten", translit:"dah", emoji:"🔟", audio:"", image:""},
 ];
 
 /* ── Word categories (indices match words array) ── */
@@ -1012,6 +1047,41 @@ const CATS_MAP = [
   ["travel","greetings"],       // 160 slow
   [],                           // 161 easy
   [],                           // 162 difficult
+  /* travel pack — 163–195 */
+  ["travel"],                   // 163 mom
+  ["travel"],                   // 164 dad
+  ["travel"],                   // 165 grandma
+  ["travel"],                   // 166 grandpa
+  ["travel"],                   // 167 sister
+  ["travel"],                   // 168 brother
+  ["travel"],                   // 169 aunt (dad's)
+  ["travel"],                   // 170 uncle (dad's)
+  ["travel"],                   // 171 aunt (mom's)
+  ["travel"],                   // 172 uncle (mom's)
+  ["travel"],                   // 173 family
+  ["travel"],                   // 174 airplane
+  ["travel"],                   // 175 airport
+  ["travel"],                   // 176 suitcase
+  ["travel"],                   // 177 passport
+  ["travel"],                   // 178 hotel
+  ["travel"],                   // 179 taxi
+  ["travel"],                   // 180 bus
+  ["travel"],                   // 181 train
+  ["travel"],                   // 182 ticket
+  ["travel","greetings"],       // 183 I love you
+  ["travel","greetings"],       // 184 I missed you
+  ["travel","greetings"],       // 185 help
+  ["travel","greetings"],       // 186 bathroom
+  ["travel","greetings"],       // 187 thanks (warm)
+  ["travel","greetings"],       // 188 one
+  ["travel","greetings"],       // 189 two
+  ["travel","greetings"],       // 190 three
+  ["travel","greetings"],       // 191 four
+  ["travel","greetings"],       // 192 five
+  ["travel","greetings"],       // 193 six
+  ["travel","greetings"],       // 194 seven
+  ["travel","greetings"],       // 195 eight
+  ["travel","greetings"],       // 196 ten
 ];
 CATS_MAP.forEach((cats, i) => { if (words[i]) words[i].cats = cats; });
 
