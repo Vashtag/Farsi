@@ -879,6 +879,7 @@ const words = [
   {fa:"شش", en:"six", translit:"shesh", emoji:"6️⃣", audio:"", image:""},
   {fa:"هفت", en:"seven", translit:"haft", emoji:"7️⃣", audio:"", image:""},
   {fa:"هشت", en:"eight", translit:"hasht", emoji:"8️⃣", audio:"", image:""},
+  {fa:"نُه", en:"nine", translit:"noh", emoji:"9️⃣", audio:"", image:""},
   {fa:"ده", en:"ten", translit:"dah", emoji:"🔟", audio:"", image:""},
 ];
 
@@ -1081,7 +1082,8 @@ const CATS_MAP = [
   ["travel","greetings"],       // 193 six
   ["travel","greetings"],       // 194 seven
   ["travel","greetings"],       // 195 eight
-  ["travel","greetings"],       // 196 ten
+  ["travel","greetings"],       // 196 nine
+  ["travel","greetings"],       // 197 ten
 ];
 CATS_MAP.forEach((cats, i) => { if (words[i]) words[i].cats = cats; });
 
@@ -1862,6 +1864,7 @@ function startAs(m){
   if(m==='audio'){ openAudioQuiz(); return; }
   if(m==='alphabets'){ openAlphabetModal(); return; }
   if(m==='spell'){ openSpellModal(); return; }
+  if(m==='learn'){ openCatModal(); return; }
   mode=m; resetSessionProgress(); ensureOrder(); showItem();
 }
 ['startLearn','startQuiz','startAudio'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
