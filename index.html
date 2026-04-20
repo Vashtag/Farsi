@@ -452,6 +452,13 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <h3 style="margin:0">📚 Dictionary</h3>
       <button id="closeDict" class="btn">Close</button>
     </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="dict-cat-btn btn" data-cat="all">📚 All</button>
+      <button class="dict-cat-btn btn" data-cat="greetings">👋 Greetings</button>
+      <button class="dict-cat-btn btn" data-cat="food">🍽️ Food</button>
+      <button class="dict-cat-btn btn" data-cat="cooking">🍳 Cooking</button>
+      <button class="dict-cat-btn btn" data-cat="travel">✈️ Travel</button>
+    </div>
     <div id="dictPanel" class="stat">
       <table class="dict-table" id="dictTable"></table>
       <div id="dictEmpty" class="dict-empty" style="display:none">No learned words yet. Practice to add some!</div>
@@ -2239,9 +2246,9 @@ $('closePostcards').addEventListener('click', ()=> $('postcardsModal').style.dis
 /* ===================== DICTIONARY (10 / page + click-to-play) ===================== */
 const DICT_PAGE_SIZE = 10;
 let dictPage = 0;
+let dictCat = 'all';
 
 function learnedIndicesInOrder(){
-  // Code order (ascending index), only items learned so far
   return [...getCoveredSet()]
     .filter(i => i < unlockedCount())
     .sort((a,b)=>a-b);
@@ -2250,7 +2257,8 @@ function renderDictionary(){
   const tbl = $('dictTable'); const empty = $('dictEmpty'); const pageLbl = $('dictPageLabel');
   if(!tbl || !empty || !pageLbl) return;
 
-  const learned = learnedIndicesInOrder();
+  const all = learnedIndicesInOrder();
+  const learned = dictCat === 'all' ? all : all.filter(i => (words[i].cats||[]).includes(dictCat));
   const total = learned.length;
   const totalPages = Math.max(1, Math.ceil(total / DICT_PAGE_SIZE));
   if (dictPage >= totalPages) dictPage = totalPages - 1;
@@ -2302,7 +2310,17 @@ $('dictTable').addEventListener('click', (e)=>{
   if(!item) return;
   try{ const a = getAudio(item); a.currentTime = 0; a.play(); }catch{}
 });
-function openDictionary(){ dictPage = 0; renderDictionary(); $('dictModal').style.display='grid'; }
+function setDictCat(cat){
+  dictCat = cat; dictPage = 0;
+  document.querySelectorAll('.dict-cat-btn').forEach(b=>{
+    b.classList.toggle('primary', b.dataset.cat === cat);
+  });
+  renderDictionary();
+}
+document.querySelectorAll('.dict-cat-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=> setDictCat(btn.dataset.cat));
+});
+function openDictionary(){ setDictCat('all'); $('dictModal').style.display='grid'; }
 function closeDictionary(){ $('dictModal').style.display='none'; }
 $('openDictionary').addEventListener('click', openDictionary);
 $('closeDict').addEventListener('click', closeDictionary);
