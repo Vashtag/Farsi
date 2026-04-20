@@ -1527,7 +1527,14 @@ $('quickSia').addEventListener('click', ()=>{ const pin = prompt('Enter develope
 })();
 
 /* Start overlay: choose mode */
-function startAs(m){ if(m==='audio'){ $('startOverlay').style.display='none'; openAudioQuiz(); return; } if(m==='alphabets'){ $('startOverlay').style.display='none'; openAlphabetModal(); return; } if(m==='spell'){ $('startOverlay').style.display='none'; openSpellModal(); return; } mode=m; resetSessionProgress(); ensureOrder(); $('startOverlay').style.display='none'; showItem(); }
+function startAs(m){
+  $('startOverlay').style.display='none';
+  mode='learn'; resetSessionProgress(); ensureOrder(); showItem();
+  if(m==='audio'){ openAudioQuiz(); return; }
+  if(m==='alphabets'){ openAlphabetModal(); return; }
+  if(m==='spell'){ openSpellModal(); return; }
+  mode=m; resetSessionProgress(); ensureOrder(); showItem();
+}
 ['startLearn','startQuiz','startAudio'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
 $('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); if(e.target.id==='startAlphabets') startAs('alphabets'); if(e.target.id==='startSpell') startAs('spell'); });
 
