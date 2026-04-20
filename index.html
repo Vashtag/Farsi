@@ -582,6 +582,22 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   </div>
 </div>
 
+<!-- Category Picker Modal -->
+<div id="catModal" class="modal">
+  <div class="modal-card" style="max-width:420px;text-align:center">
+    <h3 style="margin:0 0 6px">Choose a category</h3>
+    <p class="tiny" style="margin:0 0 18px;color:#6b7280">Only words in that category will be shown</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="cat-pick primary"  data-cat="all">📚 All Words</button>
+      <button class="cat-pick"          data-cat="greetings">👋 Greetings</button>
+      <button class="cat-pick"          data-cat="food">🍽️ Food</button>
+      <button class="cat-pick"          data-cat="cooking">🍳 Cooking</button>
+      <button class="cat-pick"          data-cat="travel">✈️ Travel</button>
+    </div>
+    <button id="catCancel" class="btn" style="margin-top:16px;width:100%">Cancel</button>
+  </div>
+</div>
+
 <!-- Spell It Modal -->
 <div id="spellModal" class="modal">
   <div class="modal-card" style="max-width:520px;text-align:center">
