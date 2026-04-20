@@ -258,6 +258,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="startLearn" class="primary" type="button">📚 Learn Mode</button>
       <button id="startQuiz" class="accent" type="button">🎯 Quiz Mode</button>
       <button id="startAlphabets" class="btn" type="button" style="background:#1a2e1a;border-color:#2d5a2d;color:#7ec87e">🔤 Alphabets</button>
+      <button id="startSpell" class="btn" type="button" style="background:#1e1a2e;border-color:#3d2d5a;color:#c4b5fd">✏️ Spell It!</button>
     </div>
     <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s. New words unlock at <button id="midnightBtn0" class="btn" style="padding:2px 6px">midnight</button>.</p>
   </div>
@@ -269,6 +270,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="learnBtn" class="btn">Learn Mode</button>
       <button id="quizBtn" class="btn">Quiz Mode</button>
       <button id="audioQuizBtn" class="btn">Audio Quiz</button>
+      <button id="spellBtn" class="btn">✏️ Spell It!</button>
       <button id="musicToggle" class="btn">🎵 Play Music</button>
       <span class="tiny">New words unlock at <button id="midnightBtn" class="btn" style="padding:2px 6px">midnight</button> ⏰</span>
     </div>
@@ -534,6 +536,33 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="alphaNext" class="primary">Next →</button>
     </div>
     <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center" id="alphaDots"></div>
+  </div>
+</div>
+
+<!-- Spell It Modal -->
+<div id="spellModal" class="modal">
+  <div class="modal-card" style="max-width:520px;text-align:center">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <h3 style="margin:0">✏️ Spell It!</h3>
+      <button id="spellQuit" class="btn">✖ Quit</button>
+    </div>
+    <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:14px">
+      <div id="spellBar" class="bar" style="height:8px;width:0%"></div>
+    </div>
+    <!-- Hint area -->
+    <div style="margin-bottom:14px">
+      <div style="position:relative;width:110px;height:110px;margin:0 auto 8px">
+        <img id="spellPic" style="width:110px;height:110px;object-fit:contain;border-radius:12px" src="" alt="">
+        <span id="spellEmoji" style="font-size:72px;position:absolute;inset:0;display:flex;align-items:center;justify-content:center"></span>
+      </div>
+      <div id="spellEn" style="font-size:1.1rem;font-weight:600;color:#e5e7eb;margin-bottom:2px"></div>
+      <div id="spellTranslit" class="tiny" style="color:#6b7280"></div>
+    </div>
+    <!-- Answer slots -->
+    <div id="spellSlots" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px;direction:rtl;min-height:54px"></div>
+    <!-- Letter tiles -->
+    <div id="spellTiles" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px;min-height:54px"></div>
+    <div id="spellFeedback" class="feedback" style="min-height:28px"></div>
   </div>
 </div>
 
@@ -1498,9 +1527,9 @@ $('quickSia').addEventListener('click', ()=>{ const pin = prompt('Enter develope
 })();
 
 /* Start overlay: choose mode */
-function startAs(m){ if(m==='audio'){ $('startOverlay').style.display='none'; openAudioQuiz(); return; } if(m==='alphabets'){ $('startOverlay').style.display='none'; openAlphabetModal(); return; } mode=m; resetSessionProgress(); ensureOrder(); $('startOverlay').style.display='none'; showItem(); }
+function startAs(m){ if(m==='audio'){ $('startOverlay').style.display='none'; openAudioQuiz(); return; } if(m==='alphabets'){ $('startOverlay').style.display='none'; openAlphabetModal(); return; } if(m==='spell'){ $('startOverlay').style.display='none'; openSpellModal(); return; } mode=m; resetSessionProgress(); ensureOrder(); $('startOverlay').style.display='none'; showItem(); }
 ['startLearn','startQuiz','startAudio'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
-$('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); if(e.target.id==='startAlphabets') startAs('alphabets'); });
+$('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); if(e.target.id==='startAlphabets') startAs('alphabets'); if(e.target.id==='startSpell') startAs('spell'); });
 
 /* ── Alphabet Modal ── */
 const ALPHABET = [
@@ -1572,6 +1601,170 @@ $('alphaNext').addEventListener('click', ()=>{
   else { $('alphabetModal').style.display='none'; }
 });
 $('alphabetModal').addEventListener('click',(e)=>{ if(e.target.id==='alphabetModal') $('alphabetModal').style.display='none'; });
+
+/* ── Spell It! ── */
+const SPELL_SIZE = 8;
+const SPELL_PTS  = 3;
+const DECOY_POOL = ['ا','ب','پ','ت','ج','چ','د','ر','ز','س','ش','ک','گ','ل','م','ن','و','ه','ی','خ','ف','ق'];
+
+let SP = { queue:[], qIdx:0, slots:[], placed:[], locked:false };
+
+function spellablePool(){
+  const all = [...new Set([...unlockedIndices(), ...masteredIndices()])];
+  return all.filter(i=>{
+    const letters = Array.from(words[i].fa.replace(/\s/g,''));
+    return letters.length >= 2 && letters.length <= 6 && !words[i].fa.includes(' ');
+  });
+}
+
+function openSpellModal(){
+  const pool = spellablePool();
+  if(!pool.length){ return; }
+  const shuffled = pool.slice(); shuffle(shuffled);
+  SP.queue = shuffled.slice(0, SPELL_SIZE);
+  SP.qIdx = 0; SP.locked = false;
+  $('spellModal').style.display = 'grid';
+  renderSpellQuestion();
+}
+
+function endSpellModal(){
+  $('spellModal').style.display = 'none';
+  SP = { queue:[], qIdx:0, slots:[], placed:[], locked:false };
+  $('spellFeedback').textContent = '';
+  $('spellBar').style.width = '0%';
+  $('spellSlots').innerHTML = '';
+  $('spellTiles').innerHTML = '';
+}
+
+function renderSpellQuestion(){
+  if(SP.qIdx >= SP.queue.length){
+    $('spellFeedback').innerHTML = `All done! Great spelling! 🎉`;
+    $('spellFeedback').className = 'feedback ok';
+    $('spellBar').style.width = '100%';
+    setTimeout(()=> endSpellModal(), 1600);
+    return;
+  }
+  SP.locked = false;
+  $('spellFeedback').textContent = '';
+  $('spellFeedback').className = 'feedback';
+
+  const wi   = SP.queue[SP.qIdx];
+  const item = words[wi];
+  const letters = Array.from(item.fa);
+
+  // pick 2-3 decoys not already in word
+  const decoys = DECOY_POOL.filter(l => !letters.includes(l));
+  shuffle(decoys);
+  const nDecoys = Math.min(3, decoys.length);
+  const tileLetters = [...letters, ...decoys.slice(0, nDecoys)];
+  shuffle(tileLetters);
+
+  SP.slots  = Array(letters.length).fill(null);
+  SP.placed = [];
+
+  // progress bar
+  $('spellBar').style.width = `${(SP.qIdx / SPELL_SIZE) * 100}%`;
+
+  // image hint
+  setImageWithFallback($('spellPic'), $('spellEmoji'), item);
+  $('spellEn').textContent      = item.en;
+  $('spellTranslit').textContent = item.translit;
+
+  // slots
+  const slotsEl = $('spellSlots');
+  slotsEl.innerHTML = '';
+  letters.forEach((_,i)=>{
+    const s = document.createElement('div');
+    s.dataset.slotIdx = i;
+    s.style.cssText = 'width:48px;height:48px;border:2px dashed #374151;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;cursor:pointer;transition:border-color .2s';
+    s.addEventListener('click', ()=> removeFromSlot(i));
+    slotsEl.appendChild(s);
+  });
+
+  // tiles
+  const tilesEl = $('spellTiles');
+  tilesEl.innerHTML = '';
+  tileLetters.forEach((letter, ti)=>{
+    const t = document.createElement('button');
+    t.dataset.tileIdx = ti;
+    t.dataset.letter  = letter;
+    t.textContent     = letter;
+    t.style.cssText   = 'width:48px;height:48px;font-size:1.6rem;border-radius:10px;border:2px solid #374151;background:#0d1b38;color:#e5e7eb;cursor:pointer;transition:opacity .15s,border-color .2s';
+    t.addEventListener('click', ()=> placeTile(ti, letter, t));
+    tilesEl.appendChild(t);
+  });
+}
+
+function placeTile(ti, letter, btn){
+  if(SP.locked) return;
+  if(btn.disabled) return;
+  const nextEmpty = SP.slots.indexOf(null);
+  if(nextEmpty === -1) return;
+  SP.slots[nextEmpty] = letter;
+  SP.placed[nextEmpty] = ti;
+  btn.disabled = true;
+  btn.style.opacity = '0.25';
+
+  // fill slot display
+  const slotEl = $('spellSlots').children[nextEmpty];
+  slotEl.textContent = letter;
+  slotEl.style.borderColor = '#6366f1';
+  slotEl.style.color = '#e5e7eb';
+
+  // check if all filled
+  if(!SP.slots.includes(null)) checkSpellAnswer();
+}
+
+function removeFromSlot(slotIdx){
+  if(SP.locked) return;
+  if(SP.slots[slotIdx] === null) return;
+  const ti = SP.placed[slotIdx];
+  SP.slots[slotIdx] = null;
+  SP.placed[slotIdx] = undefined;
+
+  // re-enable tile
+  const tileEl = $('spellTiles').querySelector(`[data-tile-idx="${ti}"]`);
+  if(tileEl){ tileEl.disabled = false; tileEl.style.opacity = '1'; }
+
+  // clear slot display
+  const slotEl = $('spellSlots').children[slotIdx];
+  slotEl.textContent = '';
+  slotEl.style.borderColor = '#374151';
+}
+
+function checkSpellAnswer(){
+  SP.locked = true;
+  const wi   = SP.queue[SP.qIdx];
+  const item = words[wi];
+  const correct = Array.from(item.fa);
+  const isRight = SP.slots.every((l,i) => l === correct[i]);
+
+  if(isRight){
+    state.score += SPELL_PTS; state.streak += 1; addCovered(wi); persist();
+    $('spellFeedback').textContent = `✔ Correct! +${SPELL_PTS} points`;
+    $('spellFeedback').className   = 'feedback ok';
+    Array.from($('spellSlots').children).forEach(s=>{ s.style.borderColor='#22c55e'; s.style.color='#22c55e'; });
+    celebrateSimple();
+    SP.qIdx++;
+    setTimeout(()=> renderSpellQuestion(), 900);
+  } else {
+    $('spellFeedback').textContent = `Not quite — try again!`;
+    $('spellFeedback').className   = 'feedback warn';
+    Array.from($('spellSlots').children).forEach(s=>{ s.style.borderColor='#ef4444'; });
+    // shake then reset
+    setTimeout(()=>{
+      SP.slots.fill(null); SP.placed = [];
+      SP.locked = false;
+      Array.from($('spellSlots').children).forEach(s=>{ s.textContent=''; s.style.borderColor='#374151'; s.style.color=''; });
+      Array.from($('spellTiles').children).forEach(t=>{ t.disabled=false; t.style.opacity='1'; });
+      $('spellFeedback').textContent='';
+    }, 800);
+  }
+}
+
+$('spellQuit').addEventListener('click', ()=> endSpellModal());
+$('spellModal').addEventListener('click',(e)=>{ if(e.target.id==='spellModal') endSpellModal(); });
+$('spellBtn').addEventListener('click', ()=> openSpellModal());
 
 /* Close modals on backdrop click */
 document.addEventListener('click', (e)=>{
