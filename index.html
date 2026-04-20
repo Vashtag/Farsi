@@ -23,6 +23,7 @@ header h1{font-size:clamp(18px,2.5vw,28px);margin:0;letter-spacing:.5px;cursor:p
 .btn,button,select{appearance:none;border:none;background:#111827;color:#e5e7eb;border:1px solid #1f2937;padding:10px 14px;border-radius:12px;cursor:pointer}
 .btn:hover,button:hover,select:hover{background:#0b1229;border-color:#263042}
 .primary{background:linear-gradient(180deg,var(--accent),#16a34a);border-color:#14532d}
+.dict-cat-btn.dict-cat-active,.dict-cat-btn.dict-cat-active:hover{background:linear-gradient(180deg,var(--accent),#16a34a);border-color:#14532d;color:#fff}
 .accent{background:linear-gradient(180deg,var(--accent-2),#0ea5e9);border-color:#075985}
 .rose{background:linear-gradient(180deg,#f472b6,#db2777);border-color:#9d174d}
 main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
@@ -176,6 +177,8 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     max-height: 88vh;
     overflow-y: auto;
   }
+  /* Dictionary: table scrolls, prev/next stays visible */
+  #dictPanel { max-height: 52vh; overflow-y: auto; }
 }
 
 /* ========= Badge visuals ========= */
@@ -462,11 +465,11 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div id="dictPanel" class="stat">
       <table class="dict-table" id="dictTable"></table>
       <div id="dictEmpty" class="dict-empty" style="display:none">No learned words yet. Practice to add some!</div>
-      <div class="dict-controls">
-        <button id="dictPrev" class="btn">⬅ Prev</button>
-        <span id="dictPageLabel" class="tiny">Page 1 / 1</span>
-        <button id="dictNext" class="btn">Next ➡</button>
-      </div>
+    </div>
+    <div class="dict-controls" style="margin-top:10px">
+      <button id="dictPrev" class="btn">⬅ Prev</button>
+      <span id="dictPageLabel" class="tiny">Page 1 / 1</span>
+      <button id="dictNext" class="btn">Next ➡</button>
     </div>
   </div>
 </div>
@@ -2313,7 +2316,7 @@ $('dictTable').addEventListener('click', (e)=>{
 function setDictCat(cat){
   dictCat = cat; dictPage = 0;
   document.querySelectorAll('.dict-cat-btn').forEach(b=>{
-    b.classList.toggle('primary', b.dataset.cat === cat);
+    b.classList.toggle('dict-cat-active', b.dataset.cat === cat);
   });
   renderDictionary();
 }
