@@ -1145,7 +1145,9 @@ function unlockedIndices(){ return [...Array(unlockedCount()).keys()]; }
 function masteredIndices(){ return [...getCoveredSet()].filter(i=>i<unlockedCount()); }
 function dueIndices(){ return unlockedIndices().filter(i=>isDue(i)); }
 function quizPool(){ const due=dueIndices(); if(due.length) return due; const m=masteredIndices(); return m.length?m:unlockedIndices(); }
-function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return [...due,...rest]; }
+let activeCat = 'all';
+function catFilter(pool){ return activeCat==='all' ? pool : pool.filter(i=>(words[i].cats||[]).includes(activeCat)); }
+function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return catFilter([...due,...rest]); }
 
 /* ===================== PERSIST ===================== */
 function persist(){
@@ -1620,7 +1622,21 @@ $('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); })
 $('backBtn').addEventListener('click', ()=>{ if(mode!=='learn') return; $('typeInput').value=''; idx = (idx - 1 + Math.max(1, order.length)) % Math.max(1, order.length); showItem(); });
 
 function startMode(newMode){ endMiniQuiz(); endAudioQuiz(); mode = newMode; resetSessionProgress(); ensureOrder(); showItem(); }
-$('learnBtn').addEventListener('click', ()=> startMode('learn'));
+/* Category picker */
+const CAT_LABELS = { all:'📚 All Words', greetings:'👋 Greetings', food:'🍽️ Food', cooking:'🍳 Cooking', travel:'✈️ Travel' };
+function openCatModal(){ $('catModal').style.display='grid'; }
+function closeCatModal(){ $('catModal').style.display='none'; }
+$('catCancel').addEventListener('click', closeCatModal);
+$('catModal').addEventListener('click', e=>{ if(e.target.id==='catModal') closeCatModal(); });
+document.querySelectorAll('.cat-pick').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    activeCat = btn.dataset.cat;
+    $('learnBtn').textContent = 'Learn: ' + (CAT_LABELS[activeCat]||activeCat);
+    closeCatModal();
+    startMode('learn');
+  });
+});
+$('learnBtn').addEventListener('click', ()=> openCatModal());
 $('quizBtn').addEventListener('click', ()=> startMode('quiz'));
 $('audioQuizBtn').addEventListener('click', ()=> openAudioQuiz());
 
