@@ -257,6 +257,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div style="display:flex; gap:12px; flex-wrap:wrap">
       <button id="startLearn" class="primary" type="button">📚 Learn Mode</button>
       <button id="startQuiz" class="accent" type="button">🎯 Quiz Mode</button>
+      <button id="startAlphabets" class="btn" type="button" style="background:#1a2e1a;border-color:#2d5a2d;color:#7ec87e">🔤 Alphabets</button>
     </div>
     <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b>. <b>Listen</b> plays your MP3s. New words unlock at <button id="midnightBtn0" class="btn" style="padding:2px 6px">midnight</button>.</p>
   </div>
@@ -511,6 +512,28 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     </div>
     <div id="aqOptions" class="aq-grid" role="listbox" aria-label="Audio quiz options"></div>
     <div id="aqFeedback" class="feedback"></div>
+  </div>
+</div>
+
+<!-- Alphabet Modal -->
+<div id="alphabetModal" class="modal">
+  <div class="modal-card" style="max-width:480px;text-align:center">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h3 style="margin:0">🔤 Persian Alphabet</h3>
+      <button id="alphaClose" class="btn" title="Close">✖ Close</button>
+    </div>
+    <div id="alphaProgress" class="tiny" style="margin-bottom:10px">Letter 1 of 32</div>
+    <div style="background:#0a142e;border:1px solid #1f2937;border-radius:16px;padding:28px 20px;margin-bottom:16px">
+      <div id="alphaLetter" style="font-size:96px;line-height:1;margin-bottom:12px;direction:rtl">ا</div>
+      <div id="alphaName" style="font-size:1.3rem;font-weight:700;color:#a78bfa;margin-bottom:4px">Alef</div>
+      <div id="alphaSound" style="font-size:1rem;color:#9ca3af;margin-bottom:10px">Sound: <b style="color:#e5e7eb">ah / aa</b></div>
+      <div id="alphaExample" class="tiny" style="color:#6b7280"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button id="alphaPrev" class="btn">← Prev</button>
+      <button id="alphaNext" class="primary">Next →</button>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center" id="alphaDots"></div>
   </div>
 </div>
 
@@ -1475,9 +1498,80 @@ $('quickSia').addEventListener('click', ()=>{ const pin = prompt('Enter develope
 })();
 
 /* Start overlay: choose mode */
-function startAs(m){ if(m==='audio'){ $('startOverlay').style.display='none'; openAudioQuiz(); return; } mode=m; resetSessionProgress(); ensureOrder(); $('startOverlay').style.display='none'; showItem(); }
+function startAs(m){ if(m==='audio'){ $('startOverlay').style.display='none'; openAudioQuiz(); return; } if(m==='alphabets'){ $('startOverlay').style.display='none'; openAlphabetModal(); return; } mode=m; resetSessionProgress(); ensureOrder(); $('startOverlay').style.display='none'; showItem(); }
 ['startLearn','startQuiz','startAudio'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
-$('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz')  startAs('quiz'); });
+$('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); if(e.target.id==='startAlphabets') startAs('alphabets'); });
+
+/* ── Alphabet Modal ── */
+const ALPHABET = [
+  { letter:'ا', name:'Alef',   sound:'ah / aa',  ex:'آب (āb) = water' },
+  { letter:'ب', name:'Be',     sound:'b',         ex:'بابا (bābā) = dad' },
+  { letter:'پ', name:'Pe',     sound:'p',         ex:'پدر (pedar) = father' },
+  { letter:'ت', name:'Te',     sound:'t',         ex:'تخت (takht) = bed' },
+  { letter:'ث', name:'Se',     sound:'s',         ex:'ثانیه (sāniye) = second' },
+  { letter:'ج', name:'Jim',    sound:'j',         ex:'جوراب (jurāb) = sock' },
+  { letter:'چ', name:'Che',    sound:'ch',        ex:'چای (chāy) = tea' },
+  { letter:'ح', name:'He',     sound:'h',         ex:'حیوان (heyvān) = animal' },
+  { letter:'خ', name:'Khe',    sound:'kh',        ex:'خانه (khāne) = house' },
+  { letter:'د', name:'Dal',    sound:'d',         ex:'دست (dast) = hand' },
+  { letter:'ذ', name:'Zal',    sound:'z',         ex:'ذرت (zhorat) = corn' },
+  { letter:'ر', name:'Re',     sound:'r',         ex:'رنگ (rang) = color' },
+  { letter:'ز', name:'Ze',     sound:'z',         ex:'زبان (zabān) = tongue/language' },
+  { letter:'ژ', name:'Zhe',    sound:'zh (like measure)', ex:'ژاپن (zhāpon) = Japan' },
+  { letter:'س', name:'Sin',    sound:'s',         ex:'سیب (sib) = apple' },
+  { letter:'ش', name:'Shin',   sound:'sh',        ex:'شیر (shir) = milk/lion' },
+  { letter:'ص', name:'Sad',    sound:'s',         ex:'صبح (sobh) = morning' },
+  { letter:'ض', name:'Zad',    sound:'z',         ex:'ضربه (zarbe) = hit' },
+  { letter:'ط', name:'Ta',     sound:'t',         ex:'طلا (talā) = gold' },
+  { letter:'ظ', name:'Za',     sound:'z',         ex:'ظهر (zohr) = noon' },
+  { letter:'ع', name:'Eyn',    sound:'a / e (glottal)', ex:'عکس (aks) = photo' },
+  { letter:'غ', name:'Gheyn',  sound:'gh',        ex:'غذا (ghazā) = food' },
+  { letter:'ف', name:'Fe',     sound:'f',         ex:'فیل (fil) = elephant' },
+  { letter:'ق', name:'Qaf',    sound:'q / gh',    ex:'قلب (qalb) = heart' },
+  { letter:'ک', name:'Kaf',    sound:'k',         ex:'کتاب (ketāb) = book' },
+  { letter:'گ', name:'Gaf',    sound:'g',         ex:'گربه (gorbe) = cat' },
+  { letter:'ل', name:'Lam',    sound:'l',         ex:'لیمو (limu) = lemon' },
+  { letter:'م', name:'Mim',    sound:'m',         ex:'ماهی (māhi) = fish' },
+  { letter:'ن', name:'Nun',    sound:'n',         ex:'نان (nān) = bread' },
+  { letter:'و', name:'Vav',    sound:'v / oo',    ex:'واو (vāv) = wow' },
+  { letter:'ه', name:'He',     sound:'h',         ex:'هویج (havij) = carrot' },
+  { letter:'ی', name:'Ye',     sound:'y / ee',    ex:'یخ (yakh) = ice' },
+];
+
+let alphaIdx = 0;
+
+function openAlphabetModal(){
+  alphaIdx = 0;
+  renderAlphaCard();
+  $('alphabetModal').style.display = 'grid';
+}
+
+function renderAlphaCard(){
+  const a = ALPHABET[alphaIdx];
+  $('alphaLetter').textContent  = a.letter;
+  $('alphaName').textContent    = a.name;
+  $('alphaSound').innerHTML     = 'Sound: <b style="color:#e5e7eb">' + a.sound + '</b>';
+  $('alphaExample').textContent = a.ex;
+  $('alphaProgress').textContent = 'Letter ' + (alphaIdx+1) + ' of ' + ALPHABET.length;
+  $('alphaPrev').disabled = alphaIdx === 0;
+  $('alphaNext').textContent = alphaIdx === ALPHABET.length-1 ? '✔ Done' : 'Next →';
+  // dots
+  const dots = $('alphaDots');
+  dots.innerHTML = '';
+  ALPHABET.forEach((_,i)=>{
+    const d = document.createElement('span');
+    d.style.cssText = 'width:8px;height:8px;border-radius:50%;display:inline-block;background:' + (i===alphaIdx ? '#a78bfa' : '#1f2937');
+    dots.appendChild(d);
+  });
+}
+
+$('alphaClose').addEventListener('click', ()=>{ $('alphabetModal').style.display='none'; });
+$('alphaPrev').addEventListener('click', ()=>{ if(alphaIdx>0){ alphaIdx--; renderAlphaCard(); } });
+$('alphaNext').addEventListener('click', ()=>{
+  if(alphaIdx < ALPHABET.length-1){ alphaIdx++; renderAlphaCard(); }
+  else { $('alphabetModal').style.display='none'; }
+});
+$('alphabetModal').addEventListener('click',(e)=>{ if(e.target.id==='alphabetModal') $('alphabetModal').style.display='none'; });
 
 /* Close modals on backdrop click */
 document.addEventListener('click', (e)=>{
