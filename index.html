@@ -397,16 +397,49 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     </div>
 
     <div id="shopPanel" class="stat" style="display:none; margin-top:10px">
-      <div class="shop-row" style="justify-content:space-between">
-        <div class="muted">Score: <b id="shopScore">0</b> • Fish: <b id="shopFish">0</b> • Catnip: <b id="shopCatnip">0</b></div>
-        <div class="shop-row">
-          <button id="buyFishBtn" class="btn">🐟 Buy Fish (100)</button>
-          <button id="feedFishBtn" class="btn">🍽️ Feed Cats</button>
-          <button id="buyCatnipBtn" class="btn">🌿 Buy Catnip (250)</button>
-          <button id="useCatnipBtn" class="btn">🌿 Use Catnip</button>
-          <button id="toggleNameArea" class="btn">📝 Name a Cat (500)</button>
-          <button id="toggleFurnPanel" class="btn">🪑 Furniture</button>
+      <div class="muted" style="margin-bottom:8px">Score: <b id="shopScore">0</b> • Fish: <b id="shopFish">0</b> • Catnip: <b id="shopCatnip">0</b></div>
+      <div class="shop-row" style="flex-wrap:wrap;gap:8px;align-items:flex-start">
+
+        <!-- Food dropdown -->
+        <div style="position:relative">
+          <button id="toggleFoodPanel" class="btn">Food ▾</button>
+          <div id="foodPanel" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:12px;padding:8px;z-index:60;min-width:180px;flex-direction:column;gap:6px">
+            <button id="buyFishBtn" class="btn" style="width:100%;text-align:left">🐟 Buy Fish (100)</button>
+            <button id="buyCatnipBtn" class="btn" style="width:100%;text-align:left">🌿 Buy Catnip (250)</button>
+          </div>
         </div>
+
+        <!-- Feed dropdown -->
+        <div style="position:relative">
+          <button id="toggleFeedPanel" class="btn">Feed ▾</button>
+          <div id="feedPanel" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:12px;padding:8px;z-index:60;min-width:180px;flex-direction:column;gap:6px">
+            <button id="feedFishBtn" class="btn" style="width:100%;text-align:left">🍽️ Feed Cats</button>
+            <button id="useCatnipBtn" class="btn" style="width:100%;text-align:left">🌿 Use Catnip</button>
+          </div>
+        </div>
+
+        <!-- Name a cat -->
+        <button id="toggleNameArea" class="btn">📝 Name a Cat (500)</button>
+
+        <!-- Furniture dropdown -->
+        <div style="position:relative">
+          <button id="toggleFurnPanel" class="btn">🪑 Furniture ▾</button>
+          <div id="furnPanel" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:12px;padding:8px;z-index:60;min-width:200px;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <span class="tiny" style="color:#e5e7eb">Cat Tree</span>
+              <button id="buyTreeBtn" class="btn" style="white-space:nowrap">Buy (1000)</button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <span class="tiny" style="color:#e5e7eb">Cat Toy</span>
+              <button id="buyToyBtn" class="btn" style="white-space:nowrap">Buy (600)</button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <span class="tiny" style="color:#e5e7eb">Cat Bowl</span>
+              <button id="buyBowlBtn" class="btn" style="white-space:nowrap">Buy (800)</button>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div id="nameArea" style="display:none; margin-top:8px">
@@ -418,24 +451,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
         </div>
       </div>
 
-      <div id="furnPanel" style="display:none;margin-top:10px">
-        <div class="grid" style="gap:8px">
-          <div class="stat" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-            <div><b>🌳 Cat Tree</b><div class="tiny">A cosy tree for climbing</div></div>
-            <button id="buyTreeBtn" class="btn" style="white-space:nowrap">Buy (1000)</button>
-          </div>
-          <div class="stat" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-            <div><b>🎾 Cat Toy</b><div class="tiny">A fun toy under the tree</div></div>
-            <button id="buyToyBtn" class="btn" style="white-space:nowrap">Buy (600)</button>
-          </div>
-          <div class="stat" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-            <div><b>🥣 Cat Bowl</b><div class="tiny">A bowl in the corner</div></div>
-            <button id="buyBowlBtn" class="btn" style="white-space:nowrap">Buy (800)</button>
-          </div>
-        </div>
-      </div>
-
-      <div id="shopMsg" class="feedback"></div>
+      <div id="shopMsg" class="feedback" style="margin-top:8px"></div>
     </div>
   </div>
 </div>
@@ -1846,9 +1862,22 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   if(!state.catNames) state.catNames = {}; state.catNames[idx] = name; state.nameCursor = idx; state.inventory.nameTokens = Math.max(0, (state.inventory.nameTokens||0)-1);
   $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`; $('shopMsg').className='feedback ok'; $('catNameInput').value=''; $('nameArea').style.display='none'; flashCatNames(4000); persist();
 });
-$('toggleFurnPanel').addEventListener('click', ()=>{
-  const p=$('furnPanel'); p.style.display = p.style.display==='none' ? 'block' : 'none'; updateShopUI();
-});
+/* Shop dropdowns */
+function closeShopDropdowns(except){
+  ['foodPanel','feedPanel','furnPanel'].forEach(id=>{ if(id!==except){ const p=$(id); if(p) p.style.display='none'; } });
+}
+function toggleShopPanel(id){
+  const p=$(id); if(!p) return;
+  const next = p.style.display==='flex' ? 'none' : 'flex';
+  closeShopDropdowns(id);
+  p.style.display = next;
+  updateShopUI();
+}
+$('toggleFoodPanel').addEventListener('click', (e)=>{ e.stopPropagation(); toggleShopPanel('foodPanel'); });
+$('toggleFeedPanel').addEventListener('click', (e)=>{ e.stopPropagation(); toggleShopPanel('feedPanel'); });
+$('toggleFurnPanel').addEventListener('click', (e)=>{ e.stopPropagation(); toggleShopPanel('furnPanel'); });
+document.addEventListener('click', ()=> closeShopDropdowns(null));
+
 function buyFurnItem(key, cost, label){
   if(state.score < cost){ $('shopMsg').textContent='Not enough points.'; $('shopMsg').className='feedback warn'; return; }
   state.furniture = state.furniture || {}; state.furniture[key] = true;
@@ -1857,9 +1886,9 @@ function buyFurnItem(key, cost, label){
   if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:90,spread:80,startVelocity:55}); }
   renderFurniture(); updateShopUI(); persist();
 }
-$('buyTreeBtn').addEventListener('click',  ()=> buyFurnItem('catTree',  FURNITURE_COST, '🌳 Cat Tree'));
-$('buyToyBtn').addEventListener('click',   ()=> buyFurnItem('catToy',   CAT_TOY_COST,  '🎾 Cat Toy'));
-$('buyBowlBtn').addEventListener('click',  ()=> buyFurnItem('catBowl',  CAT_BOWL_COST, '🥣 Cat Bowl'));
+$('buyTreeBtn').addEventListener('click',  ()=> buyFurnItem('catTree',  FURNITURE_COST, 'Cat Tree'));
+$('buyToyBtn').addEventListener('click',   ()=> buyFurnItem('catToy',   CAT_TOY_COST,  'Cat Toy'));
+$('buyBowlBtn').addEventListener('click',  ()=> buyFurnItem('catBowl',  CAT_BOWL_COST, 'Cat Bowl'));
 function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Show Names'; }
 function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = getCatName(c.idx); } c.el.title = getCatName(c.idx); }); } }
 function flashCatNames(ms=3000){ flashNamesUntil = Date.now() + ms; updateNamesVisibility(); setTimeout(()=>updateNamesVisibility(), ms+50); }
