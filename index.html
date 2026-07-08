@@ -1311,9 +1311,7 @@ $('mqQuit').addEventListener('click', ()=> endMiniQuiz());
 let AQ = {queue:[], current:-1, answer:-1, total:0, correct:0, locked:false};
 function endAudioQuiz(){ $('audioQuizModal').style.display='none'; AQ={queue:[], current:-1, answer:-1, total:0, correct:0, locked:false}; $('aqFeedback').textContent=''; $('aqBar').style.width='0%'; $('aqOptions').innerHTML=''; }
 function openAudioQuiz(){
-  // include words with a recording, plus any word if a Persian TTS voice is available
-  const speakable = ttsAvailable();
-  const pool = unlockedIndices().filter(i=> words[i].audio || speakable); if(pool.length < 4){ alert('Unlock at least 4 items to play Audio Quiz.'); return; }
+  const pool = unlockedIndices().filter(i=>words[i].audio); if(pool.length < 4){ alert('Unlock at least 4 items to play Audio Quiz.'); return; }
   const qCount = Math.min(AUDIO_QUIZ_SIZE, pool.length); const shuffled = shuffle(pool.slice());
   AQ.queue = shuffled.slice(0, qCount); AQ.total = 0; AQ.correct = 0; AQ.locked = false;
   $('audioQuizModal').style.display='grid'; nextAQQuestion();
@@ -1337,7 +1335,7 @@ function nextAQQuestion(){
     btn.addEventListener('click', onAQOptionClick); box.appendChild(btn);
   });
   $('aqFeedback').textContent=''; $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`;
-  speakWord(correctItem);
+  playWord(correctItem);
 }
 function onAQOptionClick(e){
   if (AQ.locked) return; AQ.locked = true;
@@ -1354,7 +1352,7 @@ function onAQOptionClick(e){
   }
   $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`; setTimeout(nextAQQuestion, 600);
 }
-$('aqPlay').addEventListener('click', ()=>{ if(AQ.current<0) return; speakWord(words[AQ.current]); });
+$('aqPlay').addEventListener('click', ()=>{ if(AQ.current<0) return; playWord(words[AQ.current]); });
 $('aqQuit').addEventListener('click', ()=> endAudioQuiz());
 
 /* ===================== CELEBRATIONS & BADGE HELPERS ===================== */
@@ -1489,39 +1487,8 @@ function getAudio(item){
   if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);}
   return audioCache.get(url);
 }
-
-/* ---- Text-to-speech fallback (speaks the Persian script with a fa voice) ---- */
-let TTS_VOICES = [];
-function loadTTSVoices(){ try{ TTS_VOICES = window.speechSynthesis ? speechSynthesis.getVoices() : []; }catch{ TTS_VOICES=[]; } }
-if('speechSynthesis' in window){ loadTTSVoices(); try{ speechSynthesis.onvoiceschanged = loadTTSVoices; }catch{} }
-function faVoice(){
-  if(!TTS_VOICES.length) loadTTSVoices();
-  // Prefer a Persian/Farsi voice; fall back to Arabic script voice; else none
-  return TTS_VOICES.find(v=>/^fa\b|-IR|persian|farsi/i.test(v.lang+' '+v.name))
-      || TTS_VOICES.find(v=>/^ar\b|arabic/i.test(v.lang+' '+v.name))
-      || null;
-}
-function ttsAvailable(){ return ('speechSynthesis' in window) && !!faVoice(); }
-function speakFa(text){
-  if(!('speechSynthesis' in window) || !text) return false;
-  try{
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    const v = faVoice();
-    u.lang = (v && v.lang) ? v.lang : 'fa-IR';   // fa-IR makes the engine read the Persian script correctly
-    if(v) u.voice = v;
-    u.rate = 0.85;   // a touch slower for a young learner
-    speechSynthesis.speak(u);
-    return true;
-  }catch{ return false; }
-}
-/* Play the recorded file if we have one (your voice), else speak the Farsi via TTS */
-function speakWord(item){
-  const a = getAudio(item);
-  if(a){ try{ a.currentTime=0; a.play().catch(()=>{}); }catch{} return; }
-  speakFa(item.fa);
-}
-async function playYourAudio(){ const gi=order[idx]; speakWord(words[gi]); }
+function playWord(item){ const a=getAudio(item); if(!a) return; try{ a.currentTime=0; a.play().catch(()=>{}); }catch{} }
+async function playYourAudio(){ const gi=order[idx]; playWord(words[gi]); }
 
 /* ===================== SPEECH RECOG ===================== */
 let SR=null;
@@ -2288,9 +2255,7 @@ function showItem(){
   const gi = order[idx % order.length]; const item = words[gi]; showImageOrEmoji(item);
   if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
   else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
-  const lb=$('listenBtn'); lb.style.display = (mode==='quiz')?'none':'inline-flex';
-  lb.textContent = item.audio ? '🔊 Listen' : '🤖 Listen';
-  lb.title = item.audio ? 'Hear it' : 'Hear it (computer voice)';
+  $('listenBtn').style.display = (mode==='quiz' || !item.audio)?'none':'inline-flex';
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
   $('hintBtn').style.display = (mode==='quiz')?'inline-flex':'none'; $('typeInput').value=''; maybeFocusInput();
 }
@@ -2453,7 +2418,7 @@ $('dictTable').addEventListener('click', (e)=>{
   const idx = parseInt(btn.dataset.idx, 10);
   const item = words[idx];
   if(!item) return;
-  speakWord(item);
+  playWord(item);
 });
 function setDictCat(cat){
   dictCat = cat; dictPage = 0;
