@@ -557,6 +557,11 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button class="dict-cat-btn btn" data-cat="food">🍽️ Food</button>
       <button class="dict-cat-btn btn" data-cat="cooking">🍳 Cooking</button>
       <button class="dict-cat-btn btn" data-cat="travel">✈️ Travel</button>
+      <button class="dict-cat-btn btn" data-cat="animals">🐾 Animals</button>
+      <button class="dict-cat-btn btn" data-cat="body">🧑 Body</button>
+      <button class="dict-cat-btn btn" data-cat="clothes">👕 Clothes</button>
+      <button class="dict-cat-btn btn" data-cat="home">🏠 Home</button>
+      <button class="dict-cat-btn btn" data-cat="nature">🌳 Nature</button>
     </div>
     <div id="dictPanel" class="stat">
       <table class="dict-table" id="dictTable"></table>
@@ -709,6 +714,11 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button class="cat-pick"          data-cat="food">🍽️ Food</button>
       <button class="cat-pick"          data-cat="cooking">🍳 Cooking</button>
       <button class="cat-pick"          data-cat="travel">✈️ Travel</button>
+      <button class="cat-pick"          data-cat="animals">🐾 Animals</button>
+      <button class="cat-pick"          data-cat="body">🧑 Body</button>
+      <button class="cat-pick"          data-cat="clothes">👕 Clothes</button>
+      <button class="cat-pick"          data-cat="home">🏠 Home</button>
+      <button class="cat-pick"          data-cat="nature">🌳 Nature</button>
     </div>
     <button id="catCancel" class="btn" style="margin-top:16px;width:100%">Cancel</button>
   </div>
@@ -1535,7 +1545,7 @@ $('backBtn').addEventListener('click', ()=>{ if(mode!=='learn') return; $('typeI
 
 function startMode(newMode){ endMiniQuiz(); endAudioQuiz(); mode = newMode; resetSessionProgress(); ensureOrder(); showItem(); }
 /* Category picker */
-const CAT_LABELS = { all:'📚 All Words', greetings:'👋 Greetings', food:'🍽️ Food', cooking:'🍳 Cooking', travel:'✈️ Travel' };
+const CAT_LABELS = { all:'📚 All Words', greetings:'👋 Greetings', food:'🍽️ Food', cooking:'🍳 Cooking', travel:'✈️ Travel', animals:'🐾 Animals', body:'🧑 Body', clothes:'👕 Clothes', home:'🏠 Home', nature:'🌳 Nature' };
 function openCatModal(){ $('catModal').style.display='grid'; }
 function closeCatModal(){ $('catModal').style.display='none'; }
 $('catCancel').addEventListener('click', closeCatModal);
