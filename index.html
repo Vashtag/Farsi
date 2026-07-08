@@ -75,17 +75,18 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 #modeDrawer{display:contents}
 
 .tiny{font-size:12px;color:#94a3b8}
-.cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.92);border:1px solid #1f2937;padding:14px 18px;border-radius:14px;font-weight:800;z-index:20}
+.cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.95);border:2px solid var(--accent);padding:14px 22px;border-radius:18px;font-weight:900;font-size:17px;z-index:20;box-shadow:0 12px 40px rgba(0,0,0,.45)}
 .fade-out{animation:fadeOut .9s ease forwards}
 @keyframes fadeOut { to { opacity:0 } }
-.overlay{position:fixed;inset:0;background:radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.25), transparent 40%), rgba(15,23,42,.94);display:grid;place-items:center;z-index:10}
-.overlay-card,.modal-card{background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:18px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:760px;margin:0 16px}
-.modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45);z-index:12}
+.overlay{position:fixed;inset:0;background:radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.28), transparent 40%), rgba(15,23,42,.94);display:grid;place-items:center;z-index:10}
+.overlay-card,.modal-card{background:linear-gradient(180deg,#0d1530,#141d3e);border:1px solid var(--line);border-radius:24px;padding:26px;box-shadow:0 24px 80px rgba(0,0,0,.5);max-width:760px;margin:0 16px;animation:cardPop .22s cubic-bezier(.22,1.4,.36,1)}
+@keyframes cardPop{ from{ transform:scale(.94); opacity:0 } to{ transform:scale(1); opacity:1 } }
+.modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(4,8,20,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:12}
 #miniQuizModal,#sentencesModal,#audioQuizModal{backdrop-filter:blur(12px) saturate(120%);-webkit-backdrop-filter:blur(12px) saturate(120%)}
 .grid{display:grid;gap:10px}
 @media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
-.stat{background:#0b1229;border:1px solid #1f2937;border-radius:12px;padding:10px}
-.chip{display:inline-flex;gap:6px;background:#0b1229;border:1px solid #1f2937;border-radius:999px;padding:6px 10px;font-size:12px;color:#94a3b8;margin:2px 4px 0 0}
+.stat{background:var(--well);border:1px solid var(--line);border-radius:16px;padding:12px}
+.chip{display:inline-flex;gap:6px;background:var(--well);border:1px solid var(--line);border-radius:999px;padding:6px 10px;font-size:12px;color:#94a3b8;margin:2px 4px 0 0}
 
 /* Bazaar */
 .map-wrap{position:relative;margin-top:10px}
@@ -108,7 +109,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .cat-name{
   position:absolute; left:50%; top:-18px; transform:translateX(-50%);
   font-size:12px; padding:2px 6px; border-radius:8px;
-  background:rgba(17,24,39,.88); border:1px solid #1f2937; color:#e5e7eb;
+  background:rgba(17,24,39,.88); border:1px solid var(--line); color:#e5e7eb;
   white-space:nowrap; pointer-events:none; display:none;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,.35));
 }
@@ -123,7 +124,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 
 /* Arena when cats are unlocked (grid hidden) */
 .map-wrap.arena{
-  background:#0b1229;border:1px solid #1f2937;border-radius:12px;
+  background:#0b1229;border:1px solid var(--line);border-radius:12px;
   height:clamp(260px, 45vh, 380px);
 }
 
@@ -181,7 +182,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     left: 0;
     min-width: 180px;
     background: linear-gradient(180deg,#0b1229,#121a36);
-    border: 1px solid #1f2937;
+    border: 1px solid var(--line);
     border-radius: 14px;
     padding: 10px;
     z-index: 50;
@@ -212,7 +213,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .badges-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .badge-tile{
   position:relative; padding:10px 12px; border-radius:12px; font-size:14px;
-  background:#0b1229; border:1px solid #1f2937; color:#9aa7b7; display:flex; align-items:center; gap:8px;
+  background:#0b1229; border:1px solid var(--line); color:#9aa7b7; display:flex; align-items:center; gap:8px;
   filter:grayscale(1) brightness(.7); opacity:.65; transition:filter .25s ease, opacity .25s ease, box-shadow .25s ease;
 }
 .badge-tile .ico{width:22px; height:22px; display:grid; place-items:center}
@@ -259,10 +260,13 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 
 /* ======== Audio Quiz styles ======== */
 .aq-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.aq-option{ position:relative; aspect-ratio:1/1; border:1px solid #1f2937; border-radius:12px; background:#0b1229; display:grid; place-items:center; overflow:hidden; }
+.aq-option{ position:relative; aspect-ratio:1/1; border:2px solid var(--line); border-radius:18px; background:var(--well); display:grid; place-items:center; overflow:hidden;
+  transition:transform .12s ease, border-color .12s ease; }
+.aq-option:hover{ transform:translateY(-3px); border-color:#3b4d6b; }
 .aq-option img{ width:100%; height:100%; object-fit:contain; display:block; }
 .aq-option .aq-emoji{ font-size:48px; line-height:1; }
-.aq-option.correct{ border-color: var(--accent); box-shadow:0 0 0 2px rgba(34,197,94,.25) inset }
+.aq-option.correct{ border-color: var(--accent); box-shadow:0 0 0 3px rgba(34,197,94,.35) inset; animation:popCorrect .3s cubic-bezier(.22,1.6,.36,1); }
+@keyframes popCorrect{ 50%{ transform:scale(1.06) } }
 .aq-option.wrong{ border-color: var(--err); box-shadow:0 0 0 2px rgba(239,68,68,.22) inset }
 
 /* ======== Postcards ======== */
@@ -271,7 +275,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   grid-template-columns:repeat(auto-fill, minmax(140px,1fr));
 }
 .pc-tile{
-  position:relative; border:1px solid #1f2937; border-radius:12px;
+  position:relative; border:1px solid var(--line); border-radius:12px;
   background:#0b1229; overflow:hidden; cursor:pointer;
   display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px;
   transition:transform .08s ease, box-shadow .2s ease;
@@ -279,14 +283,16 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .pc-tile:hover{ transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.22) }
 .pc-thumb{
   width:100%; aspect-ratio:4/3; object-fit:cover; display:block;
-  border-radius:8px; border:1px solid #1f2937; background:#0b1229;
+  border-radius:8px; border:1px solid var(--line); background:#0b1229;
 }
 .pc-emoji{ font-size:48px; line-height:1; display:none }
 .pc-cap{ font-size:13px; color:#cbd5e1; margin-top:8px; text-align:center }
 
 /* ======== Dictionary ======== */
 .dict-table{width:100%; border-collapse:collapse;}
-.dict-table th,.dict-table td{border-bottom:1px solid #1f2937; padding:8px 10px; text-align:left;}
+.dict-table th,.dict-table td{border-bottom:1px solid var(--line); padding:10px 12px; text-align:left;}
+.dict-table tbody tr{transition:background .12s ease}
+.dict-table tbody tr:hover{background:rgba(56,189,248,.07)}
 .dict-table th{color:#9aa7b7;font-weight:600;font-size:13px}
 .dict-empty{color:#94a3b8;font-size:14px;padding:6px 0}
 .dict-controls{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
@@ -2140,7 +2146,7 @@ function renderSpellQuestion(){
   letters.forEach((_,i)=>{
     const s = document.createElement('div');
     s.dataset.slotIdx = i;
-    s.style.cssText = 'width:48px;height:48px;border:2px dashed #374151;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;cursor:pointer;transition:border-color .2s';
+    s.style.cssText = 'width:52px;height:52px;border:2px dashed #3b4d6b;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;cursor:pointer;transition:border-color .2s,transform .12s';
     s.addEventListener('click', ()=> removeFromSlot(i));
     slotsEl.appendChild(s);
   });
@@ -2153,7 +2159,7 @@ function renderSpellQuestion(){
     t.dataset.tileIdx = ti;
     t.dataset.letter  = letter;
     t.textContent     = letter;
-    t.style.cssText   = 'width:48px;height:48px;font-size:1.6rem;border-radius:10px;border:2px solid #374151;background:#0d1b38;color:#e5e7eb;cursor:pointer;transition:opacity .15s,border-color .2s';
+    t.style.cssText   = 'width:52px;height:52px;font-size:1.7rem;border-radius:14px;border:2px solid #2b3b5c;border-bottom-width:4px;border-bottom-color:#101a30;background:#1c2942;color:#e5e7eb;cursor:pointer;transition:opacity .15s,border-color .2s,transform .06s';
     t.addEventListener('click', ()=> placeTile(ti, letter, t));
     tilesEl.appendChild(t);
   });
