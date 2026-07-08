@@ -290,6 +290,10 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 @keyframes popCorrect{ 50%{ transform:scale(1.06) } }
 .aq-option.wrong{ border-color: var(--err); box-shadow:0 0 0 2px rgba(239,68,68,.22) inset }
 
+/* ======== Category picker grid ======== */
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cat-grid .cat-pick{font-size:13px;padding:10px 8px;text-align:center}
+
 /* ======== Journey path ======== */
 .jpath{max-height:68vh;overflow-y:auto;padding:6px 4px 12px}
 .junit{margin:16px 0 4px;text-align:center}
@@ -350,6 +354,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div class="badge" id="scoreBadge">Score: 0</div>
     <div class="badge" id="streakBadge">Streak: 0 🔥</div>
     <div class="badge" id="unlockedBadge">0/0 unlocked</div>
+    <button id="openProfile" class="icon-btn" title="Profile &amp; Journey">🧭</button>
     <button id="openMap" class="icon-btn" title="Bazaar Map">🗺️</button>
     <button id="openPostcards" class="icon-btn" title="Postcards">🏛️</button>
     <!-- Dictionary button removed from header; now in the mode row -->
@@ -374,8 +379,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <h2>How do you want to learn today?</h2>
     <p>Pick a mode to get started. You can switch later.</p>
     <div style="display:flex; gap:12px; flex-wrap:wrap">
-      <button id="startJourney" class="primary" type="button">🧭 Journey</button>
-      <button id="startLearn" class="btn" type="button">📚 Learn Mode</button>
+      <button id="startLearn" class="primary" type="button">📚 Learn Mode</button>
       <button id="startQuiz" class="accent" type="button">🎯 Quiz Mode</button>
       <button id="startAlphabets" class="rose" type="button">🔤 Alphabets</button>
     </div>
@@ -388,7 +392,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div class="mode-left">
       <button id="modesToggle" class="btn">Modes ▾</button>
       <div id="modeDrawer">
-        <button id="journeyBtn" class="btn">🧭 Journey</button>
         <button id="learnBtn" class="btn">Learn Mode</button>
         <button id="quizBtn" class="btn">Quiz Mode</button>
         <button id="audioQuizBtn" class="btn">Audio Quiz</button>
@@ -729,9 +732,10 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 <div id="journeyModal" class="modal">
   <div class="modal-card" style="max-width:540px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <h3 style="margin:0">🧭 Journey</h3>
+      <h3 style="margin:0" id="journeyTitle">🧭 Journey</h3>
       <button id="journeyClose" class="btn">Close</button>
     </div>
+    <div id="journeyStats" class="stat" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:space-around;margin-bottom:8px;font-size:13px"></div>
     <p class="tiny" id="journeySub" style="margin:0 0 6px;color:#6b7280">Follow the path — finish a lesson to unlock the next!</p>
     <div id="journeyPath" class="jpath"></div>
   </div>
@@ -739,11 +743,11 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 
 <!-- Category Picker Modal -->
 <div id="catModal" class="modal">
-  <div class="modal-card" style="max-width:420px;text-align:center">
-    <h3 style="margin:0 0 6px">Choose a category</h3>
-    <p class="tiny" style="margin:0 0 18px;color:#6b7280">Only words in that category will be shown</p>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <button class="cat-pick primary"  data-cat="all">📚 All Words</button>
+  <div class="modal-card" style="max-width:380px;text-align:center">
+    <h3 style="margin:0 0 4px">Choose a category</h3>
+    <p class="tiny" style="margin:0 0 14px;color:#6b7280">Show only words from one topic</p>
+    <div class="cat-grid">
+      <button class="cat-pick primary"  data-cat="all">📚 All</button>
       <button class="cat-pick"          data-cat="greetings">👋 Greetings</button>
       <button class="cat-pick"          data-cat="food">🍽️ Food</button>
       <button class="cat-pick"          data-cat="cooking">🍳 Cooking</button>
@@ -754,7 +758,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button class="cat-pick"          data-cat="home">🏠 Home</button>
       <button class="cat-pick"          data-cat="nature">🌳 Nature</button>
     </div>
-    <button id="catCancel" class="btn" style="margin-top:16px;width:100%">Cancel</button>
+    <button id="catCancel" class="btn" style="margin-top:14px;width:100%">Cancel</button>
   </div>
 </div>
 
@@ -1780,15 +1784,14 @@ let quickNicoleLongPressed=false;
 /* Start overlay: choose mode */
 function startAs(m){
   $('startOverlay').style.display='none';
-  lessonFilter = null;
+  lessonFilter = null; activeCat = 'all';   // always start on all words (weighting favors new)
+  const lb=$('learnBtn'); if(lb) lb.textContent='Learn Mode';
   mode = (m==='quiz') ? 'quiz' : 'learn';
   resetSessionProgress(); ensureOrder(); showItem();
   Jooni.greet();
   if(m==='alphabets'){ openAlphabetModal(); return; }
-  if(m==='journey'){ openJourney(); return; }
-  if(m==='learn'){ openCatModal(); return; }
 }
-$('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); if(e.target.id==='startAlphabets') startAs('alphabets'); if(e.target.id==='startJourney') startAs('journey'); });
+$('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); if(e.target.id==='startAlphabets') startAs('alphabets'); });
 
 /* ── Journey: progression map ── */
 const LESSON_SIZE = 5;      // words per lesson
@@ -1836,7 +1839,13 @@ function renderJourney(){
     wrap.appendChild(node); wrap.appendChild(label); nodesWrap.appendChild(wrap);
     if(cls==='current' && !currentNode) currentNode=node;
   });
-  $('journeySub').textContent = `${doneCount} of ${lessons.length} lessons complete · finish a lesson to unlock the next!`;
+  $('journeyTitle').textContent = `🧭 ${ACTIVE_PROFILE||'Your'}'s Journey`;
+  $('journeyStats').innerHTML =
+    `<span>⭐ <b>${state.score}</b> pts</span>`+
+    `<span>🔥 <b>${state.streak}</b> streak</span>`+
+    `<span>📖 <b>${(state.covered||[]).length}</b> learned</span>`+
+    `<span>🧭 <b>${doneCount}</b>/${lessons.length} lessons</span>`;
+  $('journeySub').textContent = `Finish a lesson to unlock the next!`;
   // scroll the current lesson into view
   setTimeout(()=>{ if(currentNode) currentNode.scrollIntoView({block:'center'}); }, 30);
 }
@@ -1849,7 +1858,7 @@ function launchLesson(idxs){
 }
 $('journeyClose').addEventListener('click', closeJourney);
 $('journeyModal').addEventListener('click', e=>{ if(e.target.id==='journeyModal') closeJourney(); });
-$('journeyBtn').addEventListener('click', openJourney);
+$('openProfile').addEventListener('click', openJourney);
 
 /* ── Alphabet Modal ── */
 const ALPHABET = [
