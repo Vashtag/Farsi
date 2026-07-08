@@ -293,6 +293,13 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 @keyframes popCorrect{ 50%{ transform:scale(1.06) } }
 .aq-option.wrong{ border-color: var(--err); box-shadow:0 0 0 2px rgba(239,68,68,.22) inset }
 
+/* ======== Streak calendar ======== */
+.scell{aspect-ratio:1/1;border-radius:6px;background:var(--well);border:1px solid var(--line);display:grid;place-items:center;font-size:12px;line-height:1}
+.scell.on{background:var(--accent);border-color:color-mix(in srgb,var(--accent) 55%,#000)}
+.scell.frozen{background:var(--accent-2);border-color:color-mix(in srgb,var(--accent-2) 55%,#000)}
+.scell.goal{box-shadow:0 0 0 2px #facc15 inset}
+.scell.today{outline:2px solid #fff;outline-offset:1px}
+
 /* ======== Category picker grid ======== */
 .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .cat-grid .cat-pick{font-size:13px;padding:10px 8px;text-align:center}
@@ -742,6 +749,14 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="journeyClose" class="btn">Close</button>
     </div>
     <div id="journeyStats" class="stat" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:space-around;margin-bottom:8px;font-size:13px"></div>
+    <div id="streakBlock" class="stat" style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:15px;font-weight:900">🔥 <span id="streakCount">0</span>-day streak</div>
+        <div class="tiny" id="freezeCount" title="Streak freezes protect a missed day">❄️ 0</div>
+      </div>
+      <div id="streakCal" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px"></div>
+      <div class="tiny" style="color:#6b7280;margin-top:6px">Last 4 weeks · 🟩 practiced · ⭐ goal met · ❄️ freeze</div>
+    </div>
     <p class="tiny" id="journeySub" style="margin:0 0 6px;color:#6b7280">Follow the path — finish a lesson to unlock the next!</p>
     <div id="journeyPath" class="jpath"></div>
   </div>
@@ -959,7 +974,7 @@ function setImageWithFallback(imgEl, emojiEl, item){
 const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0, releasedCount:RELEASE_BASE,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false,mastered100:false,score1000:false,allColors:false}, achFx:{},
-  mapUnlocked:0, mapDays:[],
+  mapUnlocked:0, mapDays:[], streakFreezes:0, streakFreezeAwardedAt:0,
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
@@ -1063,9 +1078,13 @@ function loadState(){
   if(typeof state.settings.musicOn!=='boolean') state.settings.musicOn=false;
   if(typeof state.settings.musicVol!=='number') state.settings.musicVol=0.28;
   state.achFx = state.achFx || {};
+  if(!Array.isArray(state.mapDays)) state.mapDays = [];
+  if(typeof state.streakFreezes !== 'number') state.streakFreezes = 0;
+  if(typeof state.streakFreezeAwardedAt !== 'number') state.streakFreezeAwardedAt = 0;
   initDailyUnlock();
   applyTheme(state.theme||'default');
   state.mapUnlocked = computeCatsUnlocked();
+  maybeUseFreeze(); awardStreakFreezes();
 }
 
 /* ======== NICOLE SYNC ======== */
@@ -1093,6 +1112,8 @@ function mergeStates(local, remote){
     nameTokens:Math.max(local.inventory?.nameTokens||0,remote.inventory?.nameTokens||0)
   };
   base.jooniPet = !!(local.jooniPet || remote.jooniPet);
+  base.streakFreezes = Math.max(local.streakFreezes||0, remote.streakFreezes||0);
+  base.streakFreezeAwardedAt = Math.max(local.streakFreezeAwardedAt||0, remote.streakFreezeAwardedAt||0);
   base.furniture = {
     catTree:  !!(local.furniture?.catTree  || remote.furniture?.catTree),
     catToy:   !!(local.furniture?.catToy   || remote.furniture?.catToy),
@@ -1561,6 +1582,49 @@ function checkDailyGoalAndMap(){
     Jooni.goalMet();
   }
   state.mapDays = days; persist();
+  awardStreakFreezes();
+}
+
+/* ===================== DAILY STREAK ===================== */
+function isoForOffset(daysAgo){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-daysAgo); return d.toISOString().slice(0,10); }
+function dayRec(dateStr){ return (state.mapDays||[]).find(d=>d.date===dateStr); }
+function dayActive(dateStr){ const r=dayRec(dateStr); return !!(r && ((r.correct||0)>0 || r.frozen)); }
+function computeDayStreak(){
+  let streak=0; const start = dayActive(isoForOffset(0)) ? 0 : 1;  // grace: today not practiced yet
+  for(let k=start;k<3650;k++){ if(dayActive(isoForOffset(k))) streak++; else break; }
+  return streak;
+}
+/* If yesterday was missed but the day before was active, spend a freeze to bridge it */
+function maybeUseFreeze(){
+  const y=isoForOffset(1), y2=isoForOffset(2);
+  if(!dayActive(isoForOffset(0)) && !dayActive(y) && dayActive(y2) && (state.streakFreezes||0)>0){
+    state.streakFreezes--; (state.mapDays=state.mapDays||[]).push({date:y, correct:0, goalMet:false, frozen:true}); persist();
+  }
+}
+/* Grant one streak-freeze for every 7 days of streak reached */
+function awardStreakFreezes(){
+  const milestone = Math.floor(computeDayStreak()/7);
+  const prev = state.streakFreezeAwardedAt||0;
+  if(milestone > prev){
+    state.streakFreezes = (state.streakFreezes||0) + (milestone - prev);
+    state.streakFreezeAwardedAt = milestone; persist();
+    if(typeof Jooni!=='undefined') Jooni.milestone(`${milestone*7}-day streak! You earned a ❄️ streak freeze — âfarin! 🔥`);
+  }
+}
+function renderStreakCalendar(){
+  const cal=$('streakCal'); if(cal){
+    cal.innerHTML='';
+    for(let k=27;k>=0;k--){
+      const ds=isoForOffset(k), r=dayRec(ds);
+      const cell=document.createElement('div'); cell.className='scell';
+      if(k===0) cell.classList.add('today');
+      if(r && r.frozen){ cell.classList.add('frozen'); cell.textContent='❄️'; }
+      else if(r && (r.correct||0)>0){ cell.classList.add('on'); if(r.goalMet){ cell.classList.add('goal'); cell.textContent='⭐'; } }
+      cal.appendChild(cell);
+    }
+  }
+  const sc=$('streakCount'); if(sc) sc.textContent = computeDayStreak();
+  const fc=$('freezeCount'); if(fc) fc.textContent = '❄️ '+(state.streakFreezes||0);
 }
 
 /* ===================== MAP & FURNITURE RENDER ===================== */
@@ -1909,9 +1973,9 @@ function renderJourney(){
   $('journeyTitle').textContent = `🧭 ${ACTIVE_PROFILE||'Your'}'s Journey`;
   $('journeyStats').innerHTML =
     `<span>⭐ <b>${state.score}</b> pts</span>`+
-    `<span>🔥 <b>${state.streak}</b> streak</span>`+
     `<span>📖 <b>${(state.covered||[]).length}</b> learned</span>`+
     `<span>🧭 <b>${doneCount}</b>/${lessons.length} lessons</span>`;
+  renderStreakCalendar();
   $('journeySub').textContent = `Finish a lesson to unlock the next!`;
   // scroll the current lesson into view
   setTimeout(()=>{ if(currentNode) currentNode.scrollIntoView({block:'center'}); }, 30);
