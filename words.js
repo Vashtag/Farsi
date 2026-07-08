@@ -203,6 +203,107 @@ const words = [
   {fa:"هشت", en:"eight", translit:"hasht", emoji:"8️⃣", audio:"", image:""},
   {fa:"نُه", en:"nine", translit:"noh", emoji:"9️⃣", audio:"", image:""},
   {fa:"ده", en:"ten", translit:"dah", emoji:"🔟", audio:"", image:""},
+  /* ===== +100 words: animals, body, clothes, home, nature, days ===== */
+  {fa:"پرنده", en:"bird", translit:"parande", emoji:"🐦", audio:"", image:""},
+  {fa:"اسب", en:"horse", translit:"asb", emoji:"🐴", audio:"", image:""},
+  {fa:"گوسفند", en:"sheep", translit:"gusfand", emoji:"🐑", audio:"", image:""},
+  {fa:"بز", en:"goat", translit:"boz", emoji:"🐐", audio:"", image:""},
+  {fa:"موش", en:"mouse", translit:"mush", emoji:"🐭", audio:"", image:""},
+  {fa:"ببر", en:"tiger", translit:"babr", emoji:"🐯", audio:"", image:""},
+  {fa:"فیل", en:"elephant", translit:"fil", emoji:"🐘", audio:"", image:""},
+  {fa:"میمون", en:"monkey", translit:"meymun", emoji:"🐒", audio:"", image:""},
+  {fa:"خرس", en:"bear", translit:"khers", emoji:"🐻", audio:"", image:""},
+  {fa:"خرگوش", en:"rabbit", translit:"khargush", emoji:"🐰", audio:"", image:""},
+  {fa:"اردک", en:"duck", translit:"ordak", emoji:"🦆", audio:"", image:""},
+  {fa:"قورباغه", en:"frog", translit:"ghurbâghe", emoji:"🐸", audio:"", image:""},
+  {fa:"مار", en:"snake", translit:"mâr", emoji:"🐍", audio:"", image:""},
+  {fa:"پروانه", en:"butterfly", translit:"parvâne", emoji:"🦋", audio:"", image:""},
+  {fa:"زنبور", en:"bee", translit:"zanbur", emoji:"🐝", audio:"", image:""},
+  {fa:"عنکبوت", en:"spider", translit:"ankabut", emoji:"🕷️", audio:"", image:""},
+  {fa:"لاک‌پشت", en:"turtle", translit:"lâkposht", emoji:"🐢", audio:"", image:""},
+  {fa:"زرافه", en:"giraffe", translit:"zarâfe", emoji:"🦒", audio:"", image:""},
+  {fa:"آهو", en:"deer", translit:"âhu", emoji:"🦌", audio:"", image:""},
+  {fa:"روباه", en:"fox", translit:"rubâh", emoji:"🦊", audio:"", image:""},
+  {fa:"خوک", en:"pig", translit:"khuk", emoji:"🐷", audio:"", image:""},
+  {fa:"الاغ", en:"donkey", translit:"olâgh", emoji:"🫏", audio:"", image:""},
+  {fa:"سر", en:"head", translit:"sar", emoji:"🧑", audio:"", image:""},
+  {fa:"مو", en:"hair", translit:"mu", emoji:"💇", audio:"", image:""},
+  {fa:"چشم", en:"eye", translit:"cheshm", emoji:"👁️", audio:"", image:""},
+  {fa:"گوش", en:"ear", translit:"gush", emoji:"👂", audio:"", image:""},
+  {fa:"بینی", en:"nose", translit:"bini", emoji:"👃", audio:"", image:""},
+  {fa:"دهان", en:"mouth", translit:"dahân", emoji:"👄", audio:"", image:""},
+  {fa:"دندان", en:"tooth", translit:"dandân", emoji:"🦷", audio:"", image:""},
+  {fa:"دست", en:"hand", translit:"dast", emoji:"✋", audio:"", image:""},
+  {fa:"انگشت", en:"finger", translit:"angosht", emoji:"👆", audio:"", image:""},
+  {fa:"بازو", en:"arm", translit:"bâzu", emoji:"💪", audio:"", image:""},
+  {fa:"پا", en:"foot", translit:"pâ", emoji:"🦶", audio:"", image:""},
+  {fa:"زانو", en:"knee", translit:"zânu", emoji:"🦵", audio:"", image:""},
+  {fa:"شکم", en:"tummy", translit:"shekam", emoji:"🤰", audio:"", image:""},
+  {fa:"قلب", en:"heart", translit:"ghalb", emoji:"❤️", audio:"", image:""},
+  {fa:"صورت", en:"face", translit:"surat", emoji:"😊", audio:"", image:""},
+  {fa:"زبان", en:"tongue", translit:"zabân", emoji:"👅", audio:"", image:""},
+  {fa:"پیراهن", en:"shirt", translit:"pirâhan", emoji:"👕", audio:"", image:""},
+  {fa:"شلوار", en:"pants", translit:"shalvâr", emoji:"👖", audio:"", image:""},
+  {fa:"لباس", en:"dress", translit:"lebâs", emoji:"👗", audio:"", image:""},
+  {fa:"کفش", en:"shoes", translit:"kafsh", emoji:"👟", audio:"", image:""},
+  {fa:"جوراب", en:"socks", translit:"jurâb", emoji:"🧦", audio:"", image:""},
+  {fa:"کلاه", en:"hat", translit:"kolâh", emoji:"🎩", audio:"", image:""},
+  {fa:"کت", en:"coat", translit:"kot", emoji:"🧥", audio:"", image:""},
+  {fa:"روسری", en:"scarf", translit:"rusari", emoji:"🧣", audio:"", image:""},
+  {fa:"دستکش", en:"gloves", translit:"dastkesh", emoji:"🧤", audio:"", image:""},
+  {fa:"عینک", en:"glasses", translit:"eynak", emoji:"👓", audio:"", image:""},
+  {fa:"انگشتر", en:"ring", translit:"angoshtar", emoji:"💍", audio:"", image:""},
+  {fa:"دامن", en:"skirt", translit:"dâman", emoji:"👚", audio:"", image:""},
+  {fa:"میز", en:"table", translit:"miz", emoji:"🍽️", audio:"", image:""},
+  {fa:"صندلی", en:"chair", translit:"sandali", emoji:"🪑", audio:"", image:""},
+  {fa:"تخت", en:"bed", translit:"takht", emoji:"🛏️", audio:"", image:""},
+  {fa:"پنجره", en:"window", translit:"panjere", emoji:"🪟", audio:"", image:""},
+  {fa:"اتاق", en:"room", translit:"otâgh", emoji:"🏠", audio:"", image:""},
+  {fa:"آشپزخانه", en:"kitchen", translit:"âshpazkhâne", emoji:"🍳", audio:"", image:""},
+  {fa:"چراغ", en:"lamp", translit:"cherâgh", emoji:"💡", audio:"", image:""},
+  {fa:"قاشق", en:"spoon", translit:"ghâshogh", emoji:"🥄", audio:"", image:""},
+  {fa:"چنگال", en:"fork", translit:"changâl", emoji:"🍴", audio:"", image:""},
+  {fa:"چاقو", en:"knife", translit:"châghu", emoji:"🔪", audio:"", image:""},
+  {fa:"بشقاب", en:"plate", translit:"boshghâb", emoji:"🍽️", audio:"", image:""},
+  {fa:"فنجان", en:"cup", translit:"fenjân", emoji:"☕", audio:"", image:""},
+  {fa:"لیوان", en:"glass", translit:"livân", emoji:"🥛", audio:"", image:""},
+  {fa:"کلید", en:"key", translit:"kelid", emoji:"🔑", audio:"", image:""},
+  {fa:"ساعت", en:"clock", translit:"sâ'at", emoji:"🕐", audio:"", image:""},
+  {fa:"آینه", en:"mirror", translit:"âyene", emoji:"🪞", audio:"", image:""},
+  {fa:"حوله", en:"towel", translit:"hole", emoji:"🧻", audio:"", image:""},
+  {fa:"صابون", en:"soap", translit:"sâbun", emoji:"🧼", audio:"", image:""},
+  {fa:"پتو", en:"blanket", translit:"patu", emoji:"🛌", audio:"", image:""},
+  {fa:"تلفن", en:"phone", translit:"telefon", emoji:"📞", audio:"", image:""},
+  {fa:"خورشید", en:"sun", translit:"khorshid", emoji:"☀️", audio:"", image:""},
+  {fa:"ماه", en:"moon", translit:"mâh", emoji:"🌙", audio:"", image:""},
+  {fa:"ستاره", en:"star", translit:"setâre", emoji:"⭐", audio:"", image:""},
+  {fa:"آسمان", en:"sky", translit:"âsmân", emoji:"🌌", audio:"", image:""},
+  {fa:"ابر", en:"cloud", translit:"abr", emoji:"☁️", audio:"", image:""},
+  {fa:"باران", en:"rain", translit:"bârân", emoji:"🌧️", audio:"", image:""},
+  {fa:"برف", en:"snow", translit:"barf", emoji:"❄️", audio:"", image:""},
+  {fa:"باد", en:"wind", translit:"bâd", emoji:"💨", audio:"", image:""},
+  {fa:"درخت", en:"tree", translit:"derakht", emoji:"🌳", audio:"", image:""},
+  {fa:"گل", en:"flower", translit:"gol", emoji:"🌸", audio:"", image:""},
+  {fa:"چمن", en:"grass", translit:"chaman", emoji:"🌱", audio:"", image:""},
+  {fa:"برگ", en:"leaf", translit:"barg", emoji:"🍃", audio:"", image:""},
+  {fa:"دریا", en:"sea", translit:"daryâ", emoji:"🌊", audio:"", image:""},
+  {fa:"کوه", en:"mountain", translit:"kuh", emoji:"⛰️", audio:"", image:""},
+  {fa:"رودخانه", en:"river", translit:"rudkhâne", emoji:"🏞️", audio:"", image:""},
+  {fa:"ساحل", en:"beach", translit:"sâhel", emoji:"🏖️", audio:"", image:""},
+  {fa:"باغ", en:"garden", translit:"bâgh", emoji:"🌷", audio:"", image:""},
+  {fa:"آتش", en:"fire", translit:"âtash", emoji:"🔥", audio:"", image:""},
+  {fa:"شنبه", en:"Saturday", translit:"shanbe", emoji:"📅", audio:"", image:""},
+  {fa:"یکشنبه", en:"Sunday", translit:"yekshanbe", emoji:"📅", audio:"", image:""},
+  {fa:"دوشنبه", en:"Monday", translit:"doshanbe", emoji:"📅", audio:"", image:""},
+  {fa:"سه‌شنبه", en:"Tuesday", translit:"seshanbe", emoji:"📅", audio:"", image:""},
+  {fa:"چهارشنبه", en:"Wednesday", translit:"chahârshanbe", emoji:"📅", audio:"", image:""},
+  {fa:"پنجشنبه", en:"Thursday", translit:"panjshanbe", emoji:"📅", audio:"", image:""},
+  {fa:"جمعه", en:"Friday", translit:"jome", emoji:"📅", audio:"", image:""},
+  {fa:"هفته", en:"week", translit:"hafte", emoji:"🗓️", audio:"", image:""},
+  {fa:"روز", en:"day", translit:"ruz", emoji:"📆", audio:"", image:""},
+  {fa:"شب", en:"night", translit:"shab", emoji:"🌃", audio:"", image:""},
+  {fa:"اسم", en:"name", translit:"esm", emoji:"🏷️", audio:"", image:""},
+  {fa:"دوست", en:"friend", translit:"dust", emoji:"🧑‍🤝‍🧑", audio:"", image:""},
 ];
 
 /* ── Word categories (indices match words array) ── */
@@ -406,5 +507,106 @@ const CATS_MAP = [
   ["travel","greetings"],       // 195 eight
   ["travel","greetings"],       // 196 nine
   ["travel","greetings"],       // 197 ten
+  /* +100 words 198-297 */
+  ["animals"],  // 198 bird
+  ["animals"],  // 199 horse
+  ["animals"],  // 200 sheep
+  ["animals"],  // 201 goat
+  ["animals"],  // 202 mouse
+  ["animals"],  // 203 tiger
+  ["animals"],  // 204 elephant
+  ["animals"],  // 205 monkey
+  ["animals"],  // 206 bear
+  ["animals"],  // 207 rabbit
+  ["animals"],  // 208 duck
+  ["animals"],  // 209 frog
+  ["animals"],  // 210 snake
+  ["animals"],  // 211 butterfly
+  ["animals"],  // 212 bee
+  ["animals"],  // 213 spider
+  ["animals"],  // 214 turtle
+  ["animals"],  // 215 giraffe
+  ["animals"],  // 216 deer
+  ["animals"],  // 217 fox
+  ["animals"],  // 218 pig
+  ["animals"],  // 219 donkey
+  ["body"],  // 220 head
+  ["body"],  // 221 hair
+  ["body"],  // 222 eye
+  ["body"],  // 223 ear
+  ["body"],  // 224 nose
+  ["body"],  // 225 mouth
+  ["body"],  // 226 tooth
+  ["body"],  // 227 hand
+  ["body"],  // 228 finger
+  ["body"],  // 229 arm
+  ["body"],  // 230 foot
+  ["body"],  // 231 knee
+  ["body"],  // 232 tummy
+  ["body"],  // 233 heart
+  ["body"],  // 234 face
+  ["body"],  // 235 tongue
+  ["clothes"],  // 236 shirt
+  ["clothes"],  // 237 pants
+  ["clothes"],  // 238 dress
+  ["clothes"],  // 239 shoes
+  ["clothes"],  // 240 socks
+  ["clothes"],  // 241 hat
+  ["clothes"],  // 242 coat
+  ["clothes"],  // 243 scarf
+  ["clothes"],  // 244 gloves
+  ["clothes"],  // 245 glasses
+  ["clothes"],  // 246 ring
+  ["clothes"],  // 247 skirt
+  ["home"],  // 248 table
+  ["home"],  // 249 chair
+  ["home"],  // 250 bed
+  ["home"],  // 251 window
+  ["home"],  // 252 room
+  ["home","cooking"],  // 253 kitchen
+  ["home"],  // 254 lamp
+  ["home","cooking"],  // 255 spoon
+  ["home","cooking"],  // 256 fork
+  ["home","cooking"],  // 257 knife
+  ["home","cooking"],  // 258 plate
+  ["home","cooking"],  // 259 cup
+  ["home","cooking"],  // 260 glass
+  ["home"],  // 261 key
+  ["home"],  // 262 clock
+  ["home"],  // 263 mirror
+  ["home"],  // 264 towel
+  ["home"],  // 265 soap
+  ["home"],  // 266 blanket
+  ["home"],  // 267 phone
+  ["nature"],  // 268 sun
+  ["nature"],  // 269 moon
+  ["nature"],  // 270 star
+  ["nature"],  // 271 sky
+  ["nature"],  // 272 cloud
+  ["nature"],  // 273 rain
+  ["nature"],  // 274 snow
+  ["nature"],  // 275 wind
+  ["nature"],  // 276 tree
+  ["nature"],  // 277 flower
+  ["nature"],  // 278 grass
+  ["nature"],  // 279 leaf
+  ["nature"],  // 280 sea
+  ["nature"],  // 281 mountain
+  ["nature"],  // 282 river
+  ["nature"],  // 283 beach
+  ["nature"],  // 284 garden
+  ["nature"],  // 285 fire
+  ["travel"],  // 286 Saturday
+  ["travel"],  // 287 Sunday
+  ["travel"],  // 288 Monday
+  ["travel"],  // 289 Tuesday
+  ["travel"],  // 290 Wednesday
+  ["travel"],  // 291 Thursday
+  ["travel"],  // 292 Friday
+  ["travel"],  // 293 week
+  ["travel"],  // 294 day
+  ["travel"],  // 295 night
+  ["greetings","travel"],  // 296 name
+  ["greetings","travel"],  // 297 friend
 ];
 CATS_MAP.forEach((cats, i) => { if (words[i]) words[i].cats = cats; });
