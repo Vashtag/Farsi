@@ -1998,7 +1998,38 @@ document.addEventListener('click', (e)=>{
 });
 
 /* Item order & display */
-function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=pool.slice(); shuffle(order); idx=0; }
+/* Build a recency-weighted session order:
+   - brand-new (never practiced) and due-for-review words appear most often
+   - recently-learned words appear often
+   - older mastered words are sprinkled in (a rotating sample) for recall */
+function buildWeightedOrder(pool){
+  if(!pool.length) return [];
+  const nu=[], du=[], rec=[], old=[];
+  for(const i of pool){
+    const r = state.srs[i];
+    if(!r || !r.seen) nu.push(i);                 // never practiced → newest
+    else if(isDue(i)) du.push(i);                 // due for spaced review
+    else if((r.stage||0) <= 1) rec.push(i);       // recently learned
+    else old.push(i);                             // older / well-known
+  }
+  shuffle(nu); shuffle(du); shuffle(rec); shuffle(old);
+  // Only a rotating sample of older words comes back each pass, for recall.
+  const sampleN = Math.min(old.length, Math.max(5, Math.ceil(old.length*0.25)));
+  const recall = old.slice(0, sampleN);
+  const seq = [];
+  const add = (arr,n)=> arr.forEach(i=>{ for(let k=0;k<n;k++) seq.push(i); });
+  add(nu,3); add(du,3); add(rec,2); add(recall,1);
+  if(!seq.length) pool.forEach(i=>seq.push(i));   // safety
+  shuffle(seq);
+  // De-cluster so the same word never lands twice in a row.
+  for(let k=1;k<seq.length;k++){
+    if(seq[k]===seq[k-1]){
+      for(let j=k+1;j<seq.length;j++){ if(seq[j]!==seq[k-1]){ [seq[k],seq[j]]=[seq[j],seq[k]]; break; } }
+    }
+  }
+  return seq;
+}
+function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=buildWeightedOrder(pool); idx=0; }
 function showImageOrEmoji(item){ const pic=$('pic'), emo=$('emoji'); setImageWithFallback(pic, emo, item); }
 function showItem(){
   const bb=$('backBtn'); if(bb) bb.style.display = (mode==='learn')?'inline-flex':'none';
@@ -2019,7 +2050,7 @@ function showItem(){
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
   $('hintBtn').style.display = (mode==='quiz')?'inline-flex':'none'; $('typeInput').value=''; maybeFocusInput();
 }
-function next(){ idx=(idx+1)%Math.max(1,order.length); showItem(); }
+function next(){ idx++; if(idx>=order.length) ensureOrder(); /* rebuild → re-weight + rotate recall sample */ showItem(); }
 
 /* Night Sky background (22:00–02:00) — brief) */
 (function nightSkyBackground(){
