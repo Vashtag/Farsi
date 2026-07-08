@@ -82,12 +82,10 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   transform:translateY(150%) scale(.9);opacity:0;pointer-events:none;
   transition:transform .42s cubic-bezier(.22,1.4,.36,1),opacity .28s ease}
 #jooni.show{transform:translateY(0) scale(1);opacity:1;pointer-events:auto}
-#jooniAvatar{flex:none;width:72px;height:72px;padding:0;border-radius:50%;overflow:hidden;
-  border:3px solid var(--accent);border-bottom-width:3px;background:var(--well);
-  box-shadow:0 10px 26px rgba(0,0,0,.45);cursor:pointer;display:grid;place-items:center}
+#jooniAvatar{flex:none;width:72px;height:72px;padding:0;border:0;background:none;box-shadow:none;
+  cursor:pointer;display:grid;place-items:center}
 #jooniAvatar:active{transform:translateY(1px)}
-#jooni.jmood-tip #jooniAvatar,#jooni.jmood-encourage #jooniAvatar{border-color:var(--accent-2)}
-#jooniImg{width:100%;height:100%;object-fit:cover;display:none}
+#jooniImg{width:100%;height:100%;object-fit:contain;display:none;filter:drop-shadow(0 8px 16px rgba(0,0,0,.45))}
 #jooniEmoji{font-size:40px;line-height:1}
 #jooni.wiggle #jooniAvatar{animation:jooniWiggle .6s ease}
 @keyframes jooniWiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-9deg)}60%{transform:rotate(7deg)}}
