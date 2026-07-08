@@ -1975,14 +1975,24 @@ function useProfile(name){
   if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
   if(state.settings?.musicOn){ initMusic(); musicAudio.play().catch(()=>{}); updateMusicBtnUI(); }
 }
-$('quickNicole').addEventListener('click', ()=> useProfile('Nicole'));
+$('quickNicole').addEventListener('click', (e)=>{ if(quickNicoleLongPressed){ quickNicoleLongPressed=false; e.preventDefault(); return; } useProfile('Nicole'); });
 $('quickSia').addEventListener('click', ()=>{ const pin = prompt('Enter developer PIN:'); if(pin === '3232'){ useProfile('Sia'); } else{ alert('Incorrect PIN.'); } });
 
+let quickNicoleLongPressed=false;
 (function(){ const overlay = $('profileOverlay'); const devBtn = $('quickSia'); let seq = '', timer=null, revealed=false;
+  function reveal(){ if(revealed) return; revealed=true; devBtn.style.display='inline-block';
+    const note=document.createElement('div'); note.className='tiny'; note.textContent='Developer button unlocked'; note.style.marginTop='10px'; overlay.querySelector('.overlay-card').appendChild(note); }
+  // Keyboard: type 3232 on the profile screen (desktop)
   window.addEventListener('keydown', (e)=>{ if(!overlay || overlay.style.display!=='grid' || revealed) return; if(!/^[0-9]$/.test(e.key)) return;
     seq+=e.key; clearTimeout(timer); timer=setTimeout(()=>{seq='';},1500);
-    if(seq.endsWith('3232')){ revealed=true; devBtn.style.display='inline-block'; const note=document.createElement('div'); note.className='tiny'; note.textContent='Developer button unlocked'; note.style.marginTop='10px'; overlay.querySelector('.overlay-card').appendChild(note); }
+    if(seq.endsWith('3232')) reveal();
   });
+  // Mobile: long-press the Nicole button for ~2s to reveal the dev button
+  const nicole = $('quickNicole'); let pressTimer=null;
+  function startPress(){ if(revealed) return; clearTimeout(pressTimer); pressTimer=setTimeout(()=>{ quickNicoleLongPressed=true; reveal(); }, 2000); }
+  function cancelPress(){ clearTimeout(pressTimer); }
+  ['pointerdown','touchstart'].forEach(ev=> nicole.addEventListener(ev, startPress));
+  ['pointerup','pointerleave','pointercancel','touchend','touchcancel','touchmove'].forEach(ev=> nicole.addEventListener(ev, cancelPress));
 })();
 
 /* Start overlay: choose mode */
