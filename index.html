@@ -127,6 +127,9 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .cat.flip{transform:scaleX(-1)}
 @media(min-width:760px){ .cat{font-size:40px} }
 .cat .cat-emoji{display:inline-block}
+.cat .cat-img{height:44px;width:auto;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
+@media(min-width:760px){ .cat .cat-img{height:56px} }
+.cat.catnip .cat-img{animation:catnipRoll .7s linear infinite}
 .cat-name{
   position:absolute; left:50%; top:-18px; transform:translateX(-50%);
   font-size:12px; padding:2px 6px; border-radius:8px;
@@ -528,6 +531,9 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
           </div>
         </div>
 
+        <!-- Adopt Jooni (special pet) -->
+        <button id="adoptJooniBtn" class="btn">🐱 Adopt Jooni (25000)</button>
+
       </div>
 
       <div id="nameArea" style="display:none; margin-top:8px">
@@ -835,6 +841,8 @@ const CAT_TOY_IMG   = 'images/cat_toy.png';
 const CAT_BOWL_IMG  = 'images/cat_bowl.png';
 const CAT_TOY_COST  = 600;
 const CAT_BOWL_COST = 800;
+const JOONI_PET_COST = 25000;
+const JOONI_SIDE_IMG = 'images/Jooni-Side.png';
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
 const POSTCARD_UNLOCK_EVERY = 15;
 
@@ -955,6 +963,7 @@ const defaultState = ()=>({
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
+  jooniPet:false,
   furniture:{catTree:false, catToy:false, catBowl:false},
   catNames:{}, nameCursor:-1, showCatNames:false
 });
@@ -1045,6 +1054,7 @@ function loadState(){
   if(!state.furniture) state.furniture = {catTree:false, catToy:false, catBowl:false};
   if(state.furniture.catToy  === undefined) state.furniture.catToy  = false;
   if(state.furniture.catBowl === undefined) state.furniture.catBowl = false;
+  if(typeof state.jooniPet !== 'boolean') state.jooniPet = false;
   if(!state.catNames) state.catNames = {};
   if(typeof state.nameCursor!=='number') state.nameCursor = -1;
   if(typeof state.showCatNames!=='boolean') state.showCatNames = false;
@@ -1082,6 +1092,7 @@ function mergeStates(local, remote){
     catnip:    Math.max(local.inventory?.catnip||0,    remote.inventory?.catnip||0),
     nameTokens:Math.max(local.inventory?.nameTokens||0,remote.inventory?.nameTokens||0)
   };
+  base.jooniPet = !!(local.jooniPet || remote.jooniPet);
   base.furniture = {
     catTree:  !!(local.furniture?.catTree  || remote.furniture?.catTree),
     catToy:   !!(local.furniture?.catToy   || remote.furniture?.catToy),
@@ -1181,7 +1192,21 @@ function spawnCats(count){
     cats.push(c); el.style.left = x + 'px'; el.style.top = y + 'px'; if(vx<0) el.classList.add('flip');
     if(catnipActive){ applyCatnipToCat(c); }
   }
+  if(state.jooniPet) spawnJooniCat(count);
   updateNamesVisibility();
+}
+function spawnJooniCat(i){
+  const el = document.createElement('div'); el.className = 'cat cat-jooni';
+  const img = document.createElement('img'); img.className='cat-img'; img.src=JOONI_SIDE_IMG; img.alt='Jooni';
+  const emo = document.createElement('span'); emo.className='cat-emoji'; emo.textContent='🐱'; emo.style.display='none';
+  img.onerror=()=>{ img.style.display='none'; emo.style.display='inline-block'; };
+  el.appendChild(img); el.appendChild(emo);
+  const label = document.createElement('div'); label.className='cat-name'; label.textContent='Jooni'; el.appendChild(label);
+  el.title='Jooni'; $('catLayer').appendChild(el);
+  const B=catAnim.bounds||{w:300,h:300}; const speed=30+Math.random()*40; const angle=Math.random()*Math.PI*2;
+  const c={ el, label, x:Math.random()*(B.w-40), y:Math.random()*(B.h-40), vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed, speed, idx:i, isJooni:true, nextTurn:performance.now()+800+Math.random()*1600, turnMult:1 };
+  cats.push(c); el.style.left=c.x+'px'; el.style.top=c.y+'px'; if(c.vx<0) el.classList.add('flip');
+  if(catnipActive) applyCatnipToCat(c);
 }
 function stepCats(ts){
   if(!catAnim.running) return;
@@ -1205,7 +1230,7 @@ function stepCats(ts){
   }
   updateNamesVisibility(); requestAnimationFrame(stepCats);
 }
-function startCats(){ const count = Math.max(0, state.mapUnlocked || 0); if(count<=0){ stopCats(); return; } spawnCats(count); catAnim.running = true; catAnim.lastTs = performance.now(); requestAnimationFrame(stepCats); window.addEventListener('resize', onResizeCats); }
+function startCats(){ const count = Math.max(0, state.mapUnlocked || 0); if(count<=0 && !state.jooniPet){ stopCats(); return; } if(catAnim.running){ spawnCats(count); return; } spawnCats(count); catAnim.running = true; catAnim.lastTs = performance.now(); requestAnimationFrame(stepCats); window.addEventListener('resize', onResizeCats); }
 function stopCats(){ catAnim.running = false; const layer = $('catLayer'); if(layer) layer.innerHTML=''; cats = []; window.removeEventListener('resize', onResizeCats); }
 function onResizeCats(){
   if(!catAnim.running) return; const layer = $('catLayer'); const rect = layer.getBoundingClientRect();
@@ -1526,7 +1551,7 @@ function checkDailyGoalAndMap(){
 function renderMap(){
   const wrap = $('mapGrid'), layer=$('catLayer'), container=$('mapWrap'); if(!wrap || !layer || !container) return;
   const catsUnlocked = state.mapUnlocked||0;
-  if(catsUnlocked<=0){
+  if(catsUnlocked<=0 && !state.jooniPet){
     container.classList.remove('arena'); wrap.style.display='grid'; layer.style.display='none'; wrap.innerHTML='';
     const tiles=12; for(let i=0;i<tiles;i++){ const t=document.createElement('div'); t.className='tile'; t.textContent='?'; wrap.appendChild(t); }
   }else{ wrap.style.display='none'; wrap.innerHTML=''; container.classList.add('arena'); layer.style.display='block'; }
@@ -1649,6 +1674,7 @@ function updateShopUI(){
   if(buyBtn){ buyBtn.textContent = `🐟 Buy Fish (${FISH_COST})`; buyBtn.disabled = state.score < FISH_COST; }
   if(feedBtn) feedBtn.disabled = (state.inventory?.fish||0) <= 0;
   const buyN=$('buyCatnipBtn'); if(buyN){ buyN.textContent = `🌿 Buy Catnip (${CATNIP_COST})`; buyN.disabled = state.score < CATNIP_COST; }
+  const jb=$('adoptJooniBtn'); if(jb){ jb.textContent = state.jooniPet ? '🐱 Jooni adopted ✓' : `🐱 Adopt Jooni (${JOONI_PET_COST})`; jb.disabled = state.jooniPet || state.score < JOONI_PET_COST; }
   updateCatnipCountdownUI();
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){ nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`; nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0); }
@@ -1665,7 +1691,7 @@ function updateShopUI(){
     for(let i=0;i<n;i++){ const opt=document.createElement('option'); opt.value=String(i); opt.textContent = `${i+1}: ${getCatName(i)}`; sel.appendChild(opt); }
     if(n>0 && $('nameArea').style.display!=='none'){ sel.value = String(Math.min(getNextCatIndex(), n-1)); }
   }
-  if(cats && cats.length){ cats.forEach(c => { const nm=getCatName(c.idx); c.el.title = nm; if(c.label) c.label.textContent = nm; }); }
+  if(cats && cats.length){ cats.forEach(c => { const nm=c.isJooni?'Jooni':getCatName(c.idx); c.el.title = nm; if(c.label) c.label.textContent = nm; }); }
 }
 $('openShop').addEventListener('click', ()=>{
   const panel = $('shopPanel'); panel.style.display = panel.style.display==='none' ? 'block' : 'none'; updateShopUI();
@@ -1730,8 +1756,17 @@ function buyFurnItem(key, cost, label){
 $('buyTreeBtn').addEventListener('click',  ()=> buyFurnItem('catTree',  FURNITURE_COST, 'Cat Tree'));
 $('buyToyBtn').addEventListener('click',   ()=> buyFurnItem('catToy',   CAT_TOY_COST,  'Cat Toy'));
 $('buyBowlBtn').addEventListener('click',  ()=> buyFurnItem('catBowl',  CAT_BOWL_COST, 'Cat Bowl'));
+$('adoptJooniBtn').addEventListener('click', ()=>{
+  if(state.jooniPet){ $('shopMsg').textContent='Jooni already lives here! 🐱'; $('shopMsg').className='feedback ok'; return; }
+  if(state.score < JOONI_PET_COST){ $('shopMsg').textContent=`Jooni costs ${JOONI_PET_COST} points — keep learning!`; $('shopMsg').className='feedback warn'; return; }
+  state.score -= JOONI_PET_COST; state.jooniPet = true;
+  $('shopMsg').textContent='You adopted Jooni! She’s exploring the bazaar 🐱💜'; $('shopMsg').className='feedback ok';
+  if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:140,spread:90,startVelocity:60}); }
+  if(typeof Jooni!=='undefined') Jooni.milestone('Yaaay! Now I live in your bazaar! Merci Nicole! 🐱💜');
+  renderMap(); startCats(); updateShopUI(); persist();  // startCats respawns if already running
+});
 function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Show Names'; }
-function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = getCatName(c.idx); } c.el.title = getCatName(c.idx); }); } }
+function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ const nm = c.isJooni ? 'Jooni' : getCatName(c.idx); if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = nm; } c.el.title = nm; }); } }
 function flashCatNames(ms=3000){ flashNamesUntil = Date.now() + ms; updateNamesVisibility(); setTimeout(()=>updateNamesVisibility(), ms+50); }
 $('toggleNamesBtn').addEventListener('click', ()=>{ state.showCatNames = !state.showCatNames; persist(); });
 
@@ -1749,7 +1784,7 @@ $('sentNext').addEventListener('click', ()=>{ sentenceIdx++; renderSentence(); }
 /* Reset Cat Names only */
 $('resetNamesBtn').addEventListener('click', ()=>{ if(!confirm('Reset ALL cat names for this profile? This cannot be undone.')) return;
   state.catNames = {}; state.nameCursor = -1; persist(); updateShopUI(); updateNamesVisibility();
-  if (cats && cats.length) { cats.forEach(c => { const nm = getCatName(c.idx); c.el.title = nm; if (c.label) c.label.textContent = nm; }); }
+  if (cats && cats.length) { cats.forEach(c => { const nm = c.isJooni?'Jooni':getCatName(c.idx); c.el.title = nm; if (c.label) c.label.textContent = nm; }); }
   const msg = $('shopMsg'); if (msg) { msg.textContent = 'All cat names cleared for this profile.'; msg.className = 'feedback ok'; }
 });
 
