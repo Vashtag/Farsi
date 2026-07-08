@@ -1383,19 +1383,30 @@ const Jooni = (function(){
   const CHEERS = [
     "Âfarin! <b>(well done)</b> 🐾","Bah bah! You got it! 😻","Purrfect spelling! 🐾",
     "Che khoob! <b>(how good!)</b> 💜","Âli! <b>(awesome)</b> Keep going!","Un-fur-gettable! 😸",
-    "Yes! Man be to eftekhâr mikonam — <b>I'm proud of you!</b>","Meoww-nificent! 🌟"
+    "Yes! Man be to eftekhâr mikonam — <b>I'm proud of you!</b>","Meoww-nificent! 🌟",
+    "Damet garm! <b>(nice one!)</b> 🔥","You're a little Farsi star ⭐","Cat-tastic! Keep it up! 😺",
+    "Doroste! <b>(correct!)</b> ✅","Wow, hafez would be proud! 📜","Nice! Your brain is purring 🧠",
+    "Barâvo! <b>(bravo!)</b> 👏","Ye dune-i! <b>(you're one of a kind!)</b> 💫","So smart! Âfarin âfarin! 🐾",
+    "Meow yes! Right again! 😻","You're on fire — <b>âtash!</b> 🔥","Kheyli bâhâli! <b>(you're so cool!)</b> 😎"
   ];
   const ENCOURAGE = [
     "Nazdik! <b>(close!)</b> Try again 💜","Eshkâli nadâre <b>(no worries)</b> — you've got this!",
     "Yavâsh yavâsh <b>(slowly)</b> — you'll get it! 🐾","Almost! I believe in you 😺",
-    "Nabâyad negarân bâshi <b>(don't worry)</b>, keep trying!"
+    "Nabâyad negarân bâshi <b>(don't worry)</b>, keep trying!","Oopsie — let's try once more! 🐾",
+    "Every cat slips sometimes 😸 try again!","Sa'y kon! <b>(give it a go!)</b> 💪",
+    "You're learning — that's what matters 💜","So close! One more try 🌟"
   ];
   const TIPS = [
     "Tip: Farsi reads right-to-left ←","Tap <b>🔊 Listen</b> to hear a word!",
     "<b>Salâm</b> means hello — try saying it! 👋","<b>Merci</b> means thank you, like in French!",
     "The <b>Alphabets</b> mode teaches Persian letters 🔤","<b>Gorbe</b> means cat — that's me! 🐱",
     "<b>Doostet dâram</b> means 'I love you' 💜","A little practice every day = <b>âli</b> (awesome)!",
-    "Try <b>Spell It</b> to build words letter by letter!","<b>Âb</b> = water, <b>nân</b> = bread. Yum! 🍞"
+    "Try <b>Spell It</b> to build words letter by letter!","<b>Âb</b> = water, <b>nân</b> = bread. Yum! 🍞",
+    "<b>Bale</b> = yes, <b>na</b> = no 🙂","<b>Mâmân</b> = mom, <b>bâbâ</b> = dad 👨‍👩‍👧",
+    "<b>Yek, do, se</b> = one, two, three 🔢","Do a <b>Lesson</b> to keep your path going! 🧭",
+    "<b>Khoshmaze!</b> means delicious 😋","<b>Sag</b> = dog, <b>mâhi</b> = fish 🐶🐟",
+    "Come back tomorrow to keep your streak 🔥","<b>Âyne</b>? No — <b>âyene</b> = mirror 🪞",
+    "Save points to adopt me in the bazaar! 🐱💜","<b>Shab bekheir</b> = good night 🌙"
   ];
   const GREET = [
     "Salâm Nicole! Ready to learn? 🐾","Meow! Jooni's here to help. Let's go! 😺",
@@ -1409,7 +1420,7 @@ const Jooni = (function(){
     "Salâm again, Nicole! Del-am barât tang shode <b>(I missed you!)</b> 🐾",
     "You came back! Meowvelous! Let's keep learning 😺","Khosh âmadi <b>(welcome back!)</b> — a new day, let's go! 🌅"
   ];
-  let elWrap, elText, elAvatar, hideT=null, idleT=null, ready=false, greeted=false;
+  let elWrap, elText, elAvatar, hideT=null, idleT=null, ready=false, greeted=false, cheerCount=0;
   function enabled(){ return (state?.settings?.jooniOn !== false); }
   function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
   function anyModalOpen(){ return !!document.querySelector('.modal[style*="grid"], .overlay[style*="grid"]'); }
@@ -1440,7 +1451,11 @@ const Jooni = (function(){
       elAvatar.addEventListener('click', ()=> say(pick(TIPS),'tip',5200));
       ready=true; resetIdle();
     },
-    cheer(){ say(pick(CHEERS),'happy',3600); },
+    cheer(){
+      // Don't pop up on every correct answer — guaranteed every 10th, ~30% otherwise
+      cheerCount++;
+      if(cheerCount >= 10 || Math.random() < 0.3){ cheerCount = 0; say(pick(CHEERS),'happy',3600); }
+    },
     encourage(){ say(pick(ENCOURAGE),'encourage',4200); },
     tip(){ say(pick(TIPS),'tip',5200); },
     milestone(html){ say(html,'happy',5200); },
