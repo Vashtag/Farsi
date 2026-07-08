@@ -179,6 +179,14 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   }
   /* Dictionary: table scrolls, prev/next stays visible */
   #dictPanel { max-height: 52vh; overflow-y: auto; }
+
+  /* Shop dropdowns: render in-flow on mobile so the scrolling
+     modal-card doesn't clip the absolutely-positioned panels */
+  #foodPanel, #feedPanel, #furnPanel {
+    position: static !important;
+    width: 100%;
+    margin-top: 6px;
+  }
 }
 
 /* ========= Badge visuals ========= */
@@ -348,7 +356,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
           </div>
           <div class="feedback" id="speechFeedback"></div>
           <label class="tiny" for="typeInput">Type the pronunciation (English letters):</label>
-          <input class="input" id="typeInput" placeholder="e.g., sib" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="latin"/>
+          <input class="input" id="typeInput" placeholder="e.g., sib" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text"/>
           <div class="controls">
             <button id="checkBtn" class="primary">✅ Check</button>
             <button id="skipBtn" class="btn">⏭️ Skip</button>
@@ -671,7 +679,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div id="spellTiles" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px;min-height:54px"></div>
     <div id="spellFeedback" class="feedback" style="min-height:28px"></div>
     <div id="spellReveal" style="display:none;margin-top:16px">
-      <div id="spellRevealWord" style="font-size:52px;direction:rtl;color:#a78bfa;margin-bottom:12px;letter-spacing:2px"></div>
+      <div id="spellRevealWord" style="font-size:52px;direction:rtl;color:#a78bfa;margin-bottom:12px"></div>
       <button id="spellNext" class="primary">Next →</button>
     </div>
   </div>
@@ -888,7 +896,7 @@ const words = [
 {fa:"می‌خواهم بروم", en:"I want to go", translit:"mikham beravam", emoji:"🏃", audio:"audio/mikham_beravam.mp3", image:"images/mikham_beravam.png"},
 {fa:"می‌خواهم بخورم", en:"I want to eat", translit:"mikham bokhoram", emoji:"🍽️", audio:"audio/mikham_bokhoram.mp3", image:"images/mikham_bokhoram.png"},
 {fa:"می‌خواهم بخوابم", en:"I want to sleep", translit:"mikham bekhâbam", emoji:"😴", audio:"audio/mikham_bekhabam.mp3", image:"images/mikham_bekhabam.png"},
-{fa:"دوست دارم", en:"I like", translit:"dust dâram", emoji:"❤️", audio:"audio/dust_daram.mp3", image:"images/dust_daram.png"},
+{fa:"ببخشید", en:"excuse me / sorry", translit:"bebakhshid", emoji:"🙇", audio:"", image:""},
 {fa:"دوست ندارم", en:"I don’t like", translit:"dust nadâram", emoji:"🚫❤️", audio:"audio/dust_nadaram.mp3", image:"images/dust_nadaram.png"},
 {fa:"عالی", en:"great", translit:"âli", emoji:"🌟", audio:"audio/ali.mp3", image:"images/ali.png"},
 {fa:"خوب", en:"good", translit:"khub", emoji:"👍", audio:"audio/khub.mp3", image:"images/khub.png"},
@@ -898,35 +906,35 @@ const words = [
 {fa:"آسان", en:"easy", translit:"âsân", emoji:"👌", audio:"audio/asan.mp3", image:"images/asan.png"},
 {fa:"سخت", en:"difficult", translit:"sakht", emoji:"💪", audio:"audio/sakht.mp3", image:"images/sakht.png"},
   /* ── Travel pack ── */
-  {fa:"مامان", en:"mom", translit:"māmān", emoji:"🤱", audio:"", image:""},
-  {fa:"بابا", en:"dad", translit:"bābā", emoji:"👨", audio:"", image:""},
-  {fa:"مامان بزرگ", en:"grandma", translit:"māmān bozorg", emoji:"👵", audio:"", image:""},
-  {fa:"بابا بزرگ", en:"grandpa", translit:"bābā bozorg", emoji:"👴", audio:"", image:""},
-  {fa:"خواهر", en:"sister", translit:"khāhar", emoji:"👧", audio:"", image:""},
-  {fa:"برادر", en:"brother", translit:"barādar", emoji:"👦", audio:"", image:""},
+  {fa:"مامان", en:"mom", translit:"mâmân", emoji:"🤱", audio:"", image:""},
+  {fa:"بابا", en:"dad", translit:"bâbâ", emoji:"👨", audio:"", image:""},
+  {fa:"مامان بزرگ", en:"grandma", translit:"mâmân bozorg", emoji:"👵", audio:"", image:""},
+  {fa:"بابا بزرگ", en:"grandpa", translit:"bâbâ bozorg", emoji:"👴", audio:"", image:""},
+  {fa:"خواهر", en:"sister", translit:"khâhar", emoji:"👧", audio:"", image:""},
+  {fa:"برادر", en:"brother", translit:"barâdar", emoji:"👦", audio:"", image:""},
   {fa:"عمه", en:"aunt (dad's side)", translit:"amme", emoji:"👩", audio:"", image:""},
-  {fa:"عمو", en:"uncle (dad's side)", translit:"amoo", emoji:"👨", audio:"", image:""},
-  {fa:"خاله", en:"aunt (mom's side)", translit:"khāle", emoji:"👩", audio:"", image:""},
-  {fa:"دایی", en:"uncle (mom's side)", translit:"dāyi", emoji:"👨", audio:"", image:""},
-  {fa:"خانواده", en:"family", translit:"khānevāde", emoji:"👨‍👩‍👧‍👦", audio:"", image:""},
-  {fa:"هواپیما", en:"airplane", translit:"havāpeymā", emoji:"✈️", audio:"", image:""},
-  {fa:"فرودگاه", en:"airport", translit:"forudgāh", emoji:"🛫", audio:"", image:""},
-  {fa:"چمدان", en:"suitcase", translit:"chamedan", emoji:"🧳", audio:"", image:""},
-  {fa:"پاسپورت", en:"passport", translit:"pāsport", emoji:"🛂", audio:"", image:""},
+  {fa:"عمو", en:"uncle (dad's side)", translit:"amu", emoji:"👨", audio:"", image:""},
+  {fa:"خاله", en:"aunt (mom's side)", translit:"khâle", emoji:"👩", audio:"", image:""},
+  {fa:"دایی", en:"uncle (mom's side)", translit:"dâyi", emoji:"👨", audio:"", image:""},
+  {fa:"خانواده", en:"family", translit:"khânevâde", emoji:"👨‍👩‍👧‍👦", audio:"", image:""},
+  {fa:"هواپیما", en:"airplane", translit:"havâpeymâ", emoji:"✈️", audio:"", image:""},
+  {fa:"فرودگاه", en:"airport", translit:"forudgâh", emoji:"🛫", audio:"", image:""},
+  {fa:"چمدان", en:"suitcase", translit:"chamedân", emoji:"🧳", audio:"", image:""},
+  {fa:"پاسپورت", en:"passport", translit:"pâsport", emoji:"🛂", audio:"", image:""},
   {fa:"هتل", en:"hotel", translit:"hotel", emoji:"🏨", audio:"", image:""},
-  {fa:"تاکسی", en:"taxi", translit:"tāksi", emoji:"🚕", audio:"", image:""},
+  {fa:"تاکسی", en:"taxi", translit:"tâksi", emoji:"🚕", audio:"", image:""},
   {fa:"اتوبوس", en:"bus", translit:"otobus", emoji:"🚌", audio:"", image:""},
-  {fa:"قطار", en:"train", translit:"qatār", emoji:"🚂", audio:"", image:""},
+  {fa:"قطار", en:"train", translit:"qatâr", emoji:"🚂", audio:"", image:""},
   {fa:"بلیط", en:"ticket", translit:"belit", emoji:"🎫", audio:"", image:""},
-  {fa:"دوستت دارم", en:"I love you", translit:"dustat dāram", emoji:"❤️", audio:"", image:""},
-  {fa:"دلم برات تنگ شده", en:"I missed you", translit:"delam barāt tang shode", emoji:"🥺", audio:"", image:""},
+  {fa:"دوستت دارم", en:"I love you", translit:"dustat dâram", emoji:"❤️", audio:"", image:""},
+  {fa:"دلم برات تنگ شده", en:"I missed you", translit:"delam barât tang shode", emoji:"🥺", audio:"", image:""},
   {fa:"کمک", en:"help", translit:"komak", emoji:"🆘", audio:"", image:""},
   {fa:"دستشویی", en:"bathroom", translit:"dastshui", emoji:"🚽", audio:"", image:""},
-  {fa:"ممنون", en:"thanks (warm)", translit:"mamnoon", emoji:"🙏", audio:"", image:""},
+  {fa:"ممنون", en:"thanks (warm)", translit:"mamnun", emoji:"🙏", audio:"", image:""},
   {fa:"یک", en:"one", translit:"yek", emoji:"1️⃣", audio:"", image:""},
   {fa:"دو", en:"two", translit:"do", emoji:"2️⃣", audio:"", image:""},
   {fa:"سه", en:"three", translit:"se", emoji:"3️⃣", audio:"", image:""},
-  {fa:"چهار", en:"four", translit:"chahār", emoji:"4️⃣", audio:"", image:""},
+  {fa:"چهار", en:"four", translit:"chahâr", emoji:"4️⃣", audio:"", image:""},
   {fa:"پنج", en:"five", translit:"panj", emoji:"5️⃣", audio:"", image:""},
   {fa:"شش", en:"six", translit:"shesh", emoji:"6️⃣", audio:"", image:""},
   {fa:"هفت", en:"seven", translit:"haft", emoji:"7️⃣", audio:"", image:""},
@@ -1091,7 +1099,7 @@ const CATS_MAP = [
   ["travel"],                   // 151 I want to go
   ["food"],                     // 152 I want to eat
   ["travel"],                   // 153 I want to sleep
-  ["greetings"],                // 154 I like (duplicate)
+  ["greetings","travel"],       // 154 excuse me / sorry
   ["greetings"],                // 155 I don't like
   ["greetings"],                // 156 great
   ["greetings"],                // 157 good
@@ -1100,7 +1108,7 @@ const CATS_MAP = [
   ["travel","greetings"],       // 160 slow
   [],                           // 161 easy
   [],                           // 162 difficult
-  /* travel pack — 163–195 */
+  /* travel pack — 163–197 */
   ["travel"],                   // 163 mom
   ["travel"],                   // 164 dad
   ["travel"],                   // 165 grandma
@@ -1268,7 +1276,7 @@ function unlockedCount(){ return state.unlocked_count||Math.min(words.length, DA
 function unlockedIndices(){ return [...Array(unlockedCount()).keys()]; }
 function masteredIndices(){ return [...getCoveredSet()].filter(i=>i<unlockedCount()); }
 function dueIndices(){ return unlockedIndices().filter(i=>isDue(i)); }
-function quizPool(){ const due=dueIndices(); if(due.length) return due; const m=masteredIndices(); return m.length?m:unlockedIndices(); }
+function quizPool(){ const due=catFilter(dueIndices()); if(due.length) return due; const m=catFilter(masteredIndices()); return m.length?m:catFilter(unlockedIndices()); }
 let activeCat = 'all';
 function catFilter(pool){ return activeCat==='all' ? pool : pool.filter(i=>(words[i].cats||[]).includes(activeCat)); }
 function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest=u.filter(i=>!isDue(i)); return catFilter([...due,...rest]); }
@@ -1541,12 +1549,16 @@ $('mqQuit').addEventListener('click', ()=> endMiniQuiz());
 let AQ = {queue:[], current:-1, answer:-1, total:0, correct:0, locked:false};
 function endAudioQuiz(){ $('audioQuizModal').style.display='none'; AQ={queue:[], current:-1, answer:-1, total:0, correct:0, locked:false}; $('aqFeedback').textContent=''; $('aqBar').style.width='0%'; $('aqOptions').innerHTML=''; }
 function openAudioQuiz(){
-  const pool = unlockedIndices(); if(pool.length < 4){ alert('Unlock at least 4 items to play Audio Quiz.'); return; }
+  const pool = unlockedIndices().filter(i=>words[i].audio); if(pool.length < 4){ alert('Unlock at least 4 items to play Audio Quiz.'); return; }
   const qCount = Math.min(AUDIO_QUIZ_SIZE, pool.length); const shuffled = shuffle(pool.slice());
   AQ.queue = shuffled.slice(0, qCount); AQ.total = 0; AQ.correct = 0; AQ.locked = false;
   $('audioQuizModal').style.display='grid'; nextAQQuestion();
 }
-function randomDistractors(correctIdx, pool, n=3){ const others = pool.filter(i=>i!==correctIdx); shuffle(others); return others.slice(0, Math.min(n, others.length)); }
+function randomDistractors(correctIdx, pool, n=3){
+  const seen = new Set([words[correctIdx].fa]);
+  const others = pool.filter(i=>{ if(i===correctIdx || seen.has(words[i].fa)) return false; seen.add(words[i].fa); return true; });
+  shuffle(others); return others.slice(0, Math.min(n, others.length));
+}
 function nextAQQuestion(){
   if(!AQ.queue.length){ $('aqFeedback').innerHTML = `Audio Quiz complete! Score: <b>${AQ.correct}</b> / ${AUDIO_QUIZ_SIZE}`; $('aqBar').style.width = '100%'; setTimeout(()=> endAudioQuiz(), 1200); return; }
   AQ.locked = false; AQ.current = AQ.queue.shift();
@@ -1561,7 +1573,7 @@ function nextAQQuestion(){
     btn.addEventListener('click', onAQOptionClick); box.appendChild(btn);
   });
   $('aqFeedback').textContent=''; $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`;
-  try{ const a=getAudio(correctItem); a.currentTime=0; a.play(); }catch{}
+  try{ const a=getAudio(correctItem); if(a){ a.currentTime=0; a.play().catch(()=>{}); } }catch{}
 }
 function onAQOptionClick(e){
   if (AQ.locked) return; AQ.locked = true;
@@ -1578,7 +1590,8 @@ function onAQOptionClick(e){
   }
   $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`; setTimeout(nextAQQuestion, 600);
 }
-$('aqPlay').addEventListener('click', ()=>{ if(AQ.current<0) return; const item = words[AQ.current]; try{ const a=getAudio(item); a.currentTime=0; a.play(); }catch{} });
+$('aqPlay').addEventListener('click', ()=>{ if(AQ.current<0) return; const item = words[AQ.current]; try{ const a=getAudio(item); if(a){ a.currentTime=0; a.play().catch(()=>{}); } }catch{} });
+$('aqQuit').addEventListener('click', ()=> endAudioQuiz());
 
 /* ===================== CELEBRATIONS & BADGE HELPERS ===================== */
 function happyDing(){ try{
@@ -1612,11 +1625,11 @@ function celebrateStreak7(){ fireworks(); awardAchievement('streak7'); const c=$
 /* ===================== AUDIO (word audio cache) ===================== */
 const audioCache=new Map();
 function getAudio(item){
-  const url=item.audio||`audio/${(item.translit||'').toLowerCase()}.mp3`;
+  const url=item.audio; if(!url) return null;
   if(!audioCache.has(url)){const a=new Audio();a.preload='auto';a.src=url;audioCache.set(url,a);}
   return audioCache.get(url);
 }
-async function playYourAudio(){ const gi=order[idx], item=words[gi]; try{ const a=getAudio(item); a.currentTime=0; await a.play(); }catch{} }
+async function playYourAudio(){ const gi=order[idx], item=words[gi]; try{ const a=getAudio(item); if(!a) return; a.currentTime=0; await a.play(); }catch{} }
 
 /* ===================== SPEECH RECOG ===================== */
 let SR=null;
@@ -1876,7 +1889,10 @@ function toggleShopPanel(id){
 $('toggleFoodPanel').addEventListener('click', (e)=>{ e.stopPropagation(); toggleShopPanel('foodPanel'); });
 $('toggleFeedPanel').addEventListener('click', (e)=>{ e.stopPropagation(); toggleShopPanel('feedPanel'); });
 $('toggleFurnPanel').addEventListener('click', (e)=>{ e.stopPropagation(); toggleShopPanel('furnPanel'); });
-document.addEventListener('click', ()=> closeShopDropdowns(null));
+document.addEventListener('click', (e)=>{
+  if(e.target.closest && e.target.closest('#foodPanel,#feedPanel,#furnPanel')) return; // keep panel open while shopping
+  closeShopDropdowns(null);
+});
 
 function buyFurnItem(key, cost, label){
   if(state.score < cost){ $('shopMsg').textContent='Not enough points.'; $('shopMsg').className='feedback warn'; return; }
@@ -1947,15 +1963,12 @@ $('quickSia').addEventListener('click', ()=>{ const pin = prompt('Enter develope
 /* Start overlay: choose mode */
 function startAs(m){
   $('startOverlay').style.display='none';
-  mode='learn'; resetSessionProgress(); ensureOrder(); showItem();
-  if(m==='audio'){ openAudioQuiz(); return; }
+  mode = (m==='quiz') ? 'quiz' : 'learn';
+  resetSessionProgress(); ensureOrder(); showItem();
   if(m==='alphabets'){ openAlphabetModal(); return; }
-  if(m==='spell'){ openSpellModal(); return; }
   if(m==='learn'){ openCatModal(); return; }
-  mode=m; resetSessionProgress(); ensureOrder(); showItem();
 }
-['startLearn','startQuiz','startAudio'].forEach(id=>{ const el=$(id); if(el) el.setAttribute('type','button'); });
-$('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); if(e.target.id==='startAlphabets') startAs('alphabets'); if(e.target.id==='startSpell') startAs('spell'); });
+$('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); if(e.target.id==='startAlphabets') startAs('alphabets'); });
 
 /* ── Alphabet Modal ── */
 const ALPHABET = [
@@ -1966,10 +1979,10 @@ const ALPHABET = [
   { letter:'ث', name:'Se',     sound:'s',         ex:'ثانیه (sāniye) = second' },
   { letter:'ج', name:'Jim',    sound:'j',         ex:'جوراب (jurāb) = sock' },
   { letter:'چ', name:'Che',    sound:'ch',        ex:'چای (chāy) = tea' },
-  { letter:'ح', name:'He',     sound:'h',         ex:'حیوان (heyvān) = animal' },
+  { letter:'ح', name:'He (jimi)', sound:'h',      ex:'حیوان (heyvān) = animal' },
   { letter:'خ', name:'Khe',    sound:'kh',        ex:'خانه (khāne) = house' },
   { letter:'د', name:'Dal',    sound:'d',         ex:'دست (dast) = hand' },
-  { letter:'ذ', name:'Zal',    sound:'z',         ex:'ذرت (zhorat) = corn' },
+  { letter:'ذ', name:'Zal',    sound:'z',         ex:'ذرت (zorrat) = corn' },
   { letter:'ر', name:'Re',     sound:'r',         ex:'رنگ (rang) = color' },
   { letter:'ز', name:'Ze',     sound:'z',         ex:'زبان (zabān) = tongue/language' },
   { letter:'ژ', name:'Zhe',    sound:'zh (like measure)', ex:'ژاپن (zhāpon) = Japan' },
@@ -1988,8 +2001,8 @@ const ALPHABET = [
   { letter:'ل', name:'Lam',    sound:'l',         ex:'لیمو (limu) = lemon' },
   { letter:'م', name:'Mim',    sound:'m',         ex:'ماهی (māhi) = fish' },
   { letter:'ن', name:'Nun',    sound:'n',         ex:'نان (nān) = bread' },
-  { letter:'و', name:'Vav',    sound:'v / oo',    ex:'واو (vāv) = wow' },
-  { letter:'ه', name:'He',     sound:'h',         ex:'هویج (havij) = carrot' },
+  { letter:'و', name:'Vav',    sound:'v / oo',    ex:'ورزش (varzesh) = exercise' },
+  { letter:'ه', name:'He (do-cheshm)', sound:'h', ex:'هویج (havij) = carrot' },
   { letter:'ی', name:'Ye',     sound:'y / ee',    ex:'یخ (yakh) = ice' },
 ];
 
@@ -2035,10 +2048,15 @@ const DECOY_POOL = ['ا','ب','پ','ت','ج','چ','د','ر','ز','س','ش','ک',
 
 let SP = { queue:[], qIdx:0, slots:[], placed:[], locked:false };
 
+/* Letters for spelling: strip spaces, ZWNJ, and combining diacritics
+   so words like می‌رم / لطفاً / نُه never produce invisible tiles */
+function spellLetters(item){
+  return Array.from(item.fa.replace(/[\s‌ً-ٰٟ]/g,''));
+}
 function spellablePool(){
   const all = [...new Set([...unlockedIndices(), ...masteredIndices()])];
   return all.filter(i=>{
-    const letters = Array.from(words[i].fa.replace(/\s/g,''));
+    const letters = spellLetters(words[i]);
     return letters.length >= 2 && letters.length <= 6 && !words[i].fa.includes(' ');
   });
 }
@@ -2077,7 +2095,7 @@ function renderSpellQuestion(){
 
   const wi   = SP.queue[SP.qIdx];
   const item = words[wi];
-  const letters = Array.from(item.fa);
+  const letters = spellLetters(item);
 
   // pick 2-3 decoys not already in word
   const decoys = DECOY_POOL.filter(l => !letters.includes(l));
@@ -2090,7 +2108,7 @@ function renderSpellQuestion(){
   SP.placed = [];
 
   // progress bar
-  $('spellBar').style.width = `${(SP.qIdx / SPELL_SIZE) * 100}%`;
+  $('spellBar').style.width = `${(SP.qIdx / Math.max(1, SP.queue.length)) * 100}%`;
 
   // image hint
   setImageWithFallback($('spellPic'), $('spellEmoji'), item);
@@ -2163,7 +2181,7 @@ function checkSpellAnswer(){
   SP.locked = true;
   const wi   = SP.queue[SP.qIdx];
   const item = words[wi];
-  const correct = Array.from(item.fa);
+  const correct = spellLetters(item);
   const isRight = SP.slots.every((l,i) => l === correct[i]);
 
   if(isRight){
@@ -2215,12 +2233,20 @@ function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); o
 function showImageOrEmoji(item){ const pic=$('pic'), emo=$('emoji'); setImageWithFallback(pic, emo, item); }
 function showItem(){
   const bb=$('backBtn'); if(bb) bb.style.display = (mode==='learn')?'inline-flex':'none';
-  const pool = (mode==='quiz')? quizPool(): learnPool();
+  let pool = (mode==='quiz')? quizPool(): learnPool();
+  if(!pool.length && activeCat!=='all'){
+    // No unlocked words in this category yet — fall back to All Words
+    activeCat='all';
+    const lb=$('learnBtn'); if(lb) lb.textContent='Learn Mode';
+    const fb=$('typeFeedback'); if(fb){ fb.textContent='No words in that category unlocked yet — showing all words.'; fb.className='feedback warn'; }
+    pool = (mode==='quiz')? quizPool(): learnPool();
+  }
+  if(!pool.length) return;
   if(order.length===0 || order.some(i=>!pool.includes(i))) ensureOrder();
   const gi = order[idx % order.length]; const item = words[gi]; showImageOrEmoji(item);
   if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
   else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
-  $('listenBtn').style.display = (mode==='quiz')?'none':'inline-flex';
+  $('listenBtn').style.display = (mode==='quiz' || !item.audio)?'none':'inline-flex';
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
   $('hintBtn').style.display = (mode==='quiz')?'inline-flex':'none'; $('typeInput').value=''; maybeFocusInput();
 }
@@ -2383,7 +2409,7 @@ $('dictTable').addEventListener('click', (e)=>{
   const idx = parseInt(btn.dataset.idx, 10);
   const item = words[idx];
   if(!item) return;
-  try{ const a = getAudio(item); a.currentTime = 0; a.play(); }catch{}
+  try{ const a = getAudio(item); if(a){ a.currentTime = 0; a.play().catch(()=>{}); } }catch{}
 });
 function setDictCat(cat){
   dictCat = cat; dictPage = 0;
