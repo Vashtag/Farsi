@@ -1701,6 +1701,14 @@ const Jooni = (function(){
     "Salâm Nicole! Ready to learn? 🐾","Meow! Jooni's here to help. Let's go! 😺",
     "Khosh âmadi! <b>(welcome!)</b> Let's practice 💜"
   ];
+  const GOAL = [
+    "You hit today's goal! Âfarin! 🎉🐾","Daily goal done — <b>kheyli khoob!</b> (very good!) 🌟",
+    "That's your 5 for today! I'm one proud kitty 😻","Goal complete! Esterâhat kon <b>(take a rest)</b> — you earned it! 💜"
+  ];
+  const WELCOME_BACK = [
+    "Salâm again, Nicole! Del-am barât tang shode <b>(I missed you!)</b> 🐾",
+    "You came back! Meowvelous! Let's keep learning 😺","Khosh âmadi <b>(welcome back!)</b> — a new day, let's go! 🌅"
+  ];
   let elWrap, elText, elAvatar, hideT=null, idleT=null, ready=false, greeted=false;
   function enabled(){ return (state?.settings?.jooniOn !== false); }
   function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
@@ -1736,7 +1744,15 @@ const Jooni = (function(){
     encourage(){ say(pick(ENCOURAGE),'encourage',4200); },
     tip(){ say(pick(TIPS),'tip',5200); },
     milestone(html){ say(html,'happy',5200); },
-    greet(){ if(greeted) return; greeted=true; setTimeout(()=>say(pick(GREET),'happy',4600), 700); },
+    goalMet(){ say(pick(GOAL),'happy',5600); },
+    greet(){
+      if(greeted) return; greeted=true;
+      // Welcome-back if she was last seen on an earlier day
+      const today = todayISO(); const last = state.jooniLastSeen;
+      state.jooniLastSeen = today; persist();
+      const msg = (last && last !== today) ? pick(WELCOME_BACK) : pick(GREET);
+      setTimeout(()=>say(msg,'happy',4800), 700);
+    },
     setEnabled(on){ if(!state.settings) state.settings={}; state.settings.jooniOn=on; if(!on) hide(); else resetIdle(); persist(); }
   };
 })();
@@ -1822,6 +1838,7 @@ function checkDailyGoalAndMap(){
   if(!todayRec){ todayRec={date:today, correct:0, goalMet:false}; days=[...days,todayRec]; }
   todayRec.correct++; if(!todayRec.goalMet && todayRec.correct>=DAILY_WORDS){
     todayRec.goalMet=true; if(window.confetti){ confetti({origin:{y:1,x:Math.random()},particleCount:60,spread:70,startVelocity:45,scalar:1.1}); }
+    Jooni.goalMet();
   }
   state.mapDays = days; persist();
 }
