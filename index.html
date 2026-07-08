@@ -350,11 +350,10 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 <header>
   <h1>✨ Farsi Fun</h1>
   <div class="stats">
-    <div class="badge" id="profileBadge">Profile: —</div>
+    <button class="badge" id="profileBadge" title="Open your Journey" style="cursor:pointer">🧭 Profile: —</button>
     <div class="badge" id="scoreBadge">Score: 0</div>
     <div class="badge" id="streakBadge">Streak: 0 🔥</div>
     <div class="badge" id="unlockedBadge">0/0 unlocked</div>
-    <button id="openProfile" class="icon-btn" title="Profile &amp; Journey">🧭</button>
     <button id="openMap" class="icon-btn" title="Bazaar Map">🗺️</button>
     <button id="openPostcards" class="icon-btn" title="Postcards">🏛️</button>
     <!-- Dictionary button removed from header; now in the mode row -->
@@ -379,8 +378,9 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <h2>How do you want to learn today?</h2>
     <p>Pick a mode to get started. You can switch later.</p>
     <div style="display:flex; gap:12px; flex-wrap:wrap">
-      <button id="startLearn" class="primary" type="button">📚 Learn Mode</button>
-      <button id="startQuiz" class="accent" type="button">🎯 Quiz Mode</button>
+      <button id="startLesson" class="primary" type="button">🧭 Today's Lesson</button>
+      <button id="startLearn" class="accent" type="button">📚 Learn (free)</button>
+      <button id="startQuiz" class="btn" type="button">🎯 Quiz Mode</button>
       <button id="startAlphabets" class="rose" type="button">🔤 Alphabets</button>
     </div>
     <p class="tiny" style="margin-top:10px">Tip: Use <b>Chrome</b> for the best experience. <b>Listen</b> plays the word audio.</p>
@@ -741,6 +741,17 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   </div>
 </div>
 
+<!-- Lesson complete card -->
+<div id="lessonDoneModal" class="modal">
+  <div class="modal-card" style="max-width:360px;text-align:center">
+    <div style="font-size:64px;line-height:1;margin-bottom:6px">🎉</div>
+    <h3 style="margin:0 0 2px">Lesson complete!</h3>
+    <p class="tiny" style="margin:0 0 6px;color:#6b7280">Great work — keep the streak going!</p>
+    <div id="lessonDoneStats" class="stat" style="display:flex;justify-content:space-around;margin:12px 0;font-size:15px;font-weight:800"></div>
+    <button id="lessonContinue" class="primary" style="width:100%">Continue →</button>
+  </div>
+</div>
+
 <!-- Category Picker Modal -->
 <div id="catModal" class="modal">
   <div class="modal-card" style="max-width:380px;text-align:center">
@@ -1002,6 +1013,7 @@ function maybeReleaseNextBatch(){
 function quizPool(){ const due=catFilter(dueIndices()); if(due.length) return due; const m=catFilter(masteredIndices()); return m.length?m:catFilter(unlockedIndices()); }
 let activeCat = 'all';
 let lessonFilter = null;  // when set (array of indices), restrict practice to a single Journey lesson
+let lessonActive = false, lessonCorrect = 0, lessonTotal = 0;  // finite-lesson run state
 function catFilter(pool){
   let p = (activeCat==='all') ? pool : pool.filter(i=>(words[i].cats||[]).includes(activeCat));
   if(lessonFilter){ const set=new Set(lessonFilter); p = p.filter(i=>set.has(i)); }
@@ -1114,7 +1126,7 @@ function initSharedNicoleSync(){
 
 /* ===================== UI UPDATE ===================== */
 function updateBadges(){
-  $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE||'—'}`;
+  $('profileBadge').textContent = `🧭 ${ACTIVE_PROFILE||'—'}`;
   $('scoreBadge').textContent   = `Score: ${state.score}`;
   $('streakBadge').textContent  = `Streak: ${state.streak} 🔥`;
   $('unlockedBadge').textContent= `${unlockedCount()}/${words.length} unlocked`;
@@ -1472,9 +1484,11 @@ const POINTS_PER_CORRECT_LQ = 2; // 2 points for Learn & Quiz modes
 
 function handleAnswer(correct, gi, source='typing'){
   const r=ensureSRS(gi); r.seen++;
+  if(lessonActive) lessonTotal++;
   if(correct){
     r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1); scheduleAfter(gi,SRS_INTERVALS_HOURS[r.stage]||24);
     state.score+=POINTS_PER_CORRECT_LQ; state.streak+=1; addCovered(gi);
+    if(lessonActive) lessonCorrect++;
     sessionAnswered.add(gi); updateSessionBar();
     if(source!=='speech'){ $('typeFeedback').textContent=`Great! +${POINTS_PER_CORRECT_LQ} points`; $('typeFeedback').className='feedback ok'; }
     celebrateSimple();
@@ -1485,7 +1499,9 @@ function handleAnswer(correct, gi, source='typing'){
     state.streak=0; if(source!=='speech'){ $('typeFeedback').textContent='Not quite.'; $('typeFeedback').className='feedback warn'; }
     Jooni.encourage();
   }
-  persist(); setTimeout(next, 450);
+  persist();
+  if(lessonActive && lessonFilter && lessonFilter.every(i=>sessionAnswered.has(i))){ setTimeout(finishLesson, 550); return; }
+  setTimeout(next, 450);
 }
 const COLOR_INDICES = words.reduce((acc,w,i)=>{ if(['white','black','red','blue','green','yellow','purple','orange (color)','pink'].includes(w.en)) acc.push(i); return acc; }, []);
 function updateAchievementProgress(){
@@ -1586,7 +1602,7 @@ $('skipBtn').addEventListener('click', ()=>{ $('typeInput').value=''; state.stre
 $('nextBtn').addEventListener('click', ()=>{ $('typeInput').value=''; next(); });
 $('backBtn').addEventListener('click', ()=>{ if(mode!=='learn') return; $('typeInput').value=''; idx = (idx - 1 + Math.max(1, order.length)) % Math.max(1, order.length); showItem(); });
 
-function startMode(newMode){ endMiniQuiz(); endAudioQuiz(); lessonFilter=null; mode = newMode; resetSessionProgress(); ensureOrder(); showItem(); }
+function startMode(newMode){ endMiniQuiz(); endAudioQuiz(); lessonFilter=null; lessonActive=false; mode = newMode; resetSessionProgress(); ensureOrder(); showItem(); }
 /* Category picker */
 const CAT_LABELS = { all:'📚 All Words', greetings:'👋 Greetings', food:'🍽️ Food', cooking:'🍳 Cooking', travel:'✈️ Travel', animals:'🐾 Animals', body:'🧑 Body', clothes:'👕 Clothes', home:'🏠 Home', nature:'🌳 Nature' };
 function openCatModal(){ $('catModal').style.display='grid'; }
@@ -1595,7 +1611,7 @@ $('catCancel').addEventListener('click', closeCatModal);
 $('catModal').addEventListener('click', e=>{ if(e.target.id==='catModal') closeCatModal(); });
 document.querySelectorAll('.cat-pick').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    lessonFilter = null;
+    lessonFilter = null; lessonActive = false;
     activeCat = btn.dataset.cat;
     $('learnBtn').textContent = 'Learn: ' + (CAT_LABELS[activeCat]||activeCat);
     closeCatModal();
@@ -1755,7 +1771,7 @@ $('midnightBtn').addEventListener('click', showMidnight);
 /* Profile flow */
 function useProfile(name){
   ACTIVE_PROFILE = String(name||'').trim() || 'Guest';
-  loadState(); $('profileBadge').textContent = `Profile: ${ACTIVE_PROFILE}`;
+  loadState(); $('profileBadge').textContent = `🧭 ${ACTIVE_PROFILE}`;
   $('profileOverlay').style.display='none'; $('startOverlay').style.display='grid';
   if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
   if(state.settings?.musicOn){ initMusic(); musicAudio.play().catch(()=>{}); updateMusicBtnUI(); }
@@ -1784,14 +1800,14 @@ let quickNicoleLongPressed=false;
 /* Start overlay: choose mode */
 function startAs(m){
   $('startOverlay').style.display='none';
-  lessonFilter = null; activeCat = 'all';   // always start on all words (weighting favors new)
+  lessonFilter = null; lessonActive = false; activeCat = 'all';   // always start on all words (weighting favors new)
   const lb=$('learnBtn'); if(lb) lb.textContent='Learn Mode';
   mode = (m==='quiz') ? 'quiz' : 'learn';
   resetSessionProgress(); ensureOrder(); showItem();
   Jooni.greet();
   if(m==='alphabets'){ openAlphabetModal(); return; }
 }
-$('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); if(e.target.id==='startAlphabets') startAs('alphabets'); });
+$('startOverlay').addEventListener('click',(e)=>{ if(e.target.id==='startLesson') startCurrentLesson(); if(e.target.id==='startLearn') startAs('learn'); if(e.target.id==='startQuiz') startAs('quiz'); if(e.target.id==='startAlphabets') startAs('alphabets'); });
 
 /* ── Journey: progression map ── */
 const LESSON_SIZE = 5;      // words per lesson
@@ -1852,13 +1868,33 @@ function renderJourney(){
 function launchLesson(idxs){
   lessonFilter = idxs.slice();
   activeCat = 'all';
+  lessonActive = true; lessonCorrect = 0; lessonTotal = 0;
   closeJourney();
   $('startOverlay').style.display='none';
   mode='learn'; resetSessionProgress(); ensureOrder(); showItem();
 }
+function currentLessonIdxs(){
+  const lessons = deriveLessons(), cov = getCoveredSet();
+  for(const idxs of lessons){
+    if(idxs.every(isReleased) && !idxs.every(i=>cov.has(i))) return idxs;   // first released, unfinished
+  }
+  for(let k=lessons.length-1;k>=0;k--){ if(lessons[k].every(isReleased)) return lessons[k]; } // all done → replay last
+  return lessons[0];
+}
+function startCurrentLesson(){ $('startOverlay').style.display='none'; launchLesson(currentLessonIdxs()); Jooni.greet(); }
+function finishLesson(){
+  lessonActive = false;
+  const acc = lessonTotal ? Math.round(lessonCorrect/lessonTotal*100) : 100;
+  const xp = lessonCorrect * POINTS_PER_CORRECT_LQ;
+  $('lessonDoneStats').innerHTML = `<span>⭐ +${xp} XP</span><span>🎯 ${acc}%</span>`;
+  if(window.confetti) confetti({particleCount:130,spread:85,startVelocity:55,origin:{y:.6}});
+  if(typeof Jooni!=='undefined') Jooni.milestone("Lesson complete! Âfarin Nicole! 🎉🐾");
+  $('lessonDoneModal').style.display='grid';
+}
+$('lessonContinue').addEventListener('click', ()=>{ $('lessonDoneModal').style.display='none'; lessonFilter=null; openJourney(); });
 $('journeyClose').addEventListener('click', closeJourney);
 $('journeyModal').addEventListener('click', e=>{ if(e.target.id==='journeyModal') closeJourney(); });
-$('openProfile').addEventListener('click', openJourney);
+$('profileBadge').addEventListener('click', openJourney);
 
 /* ── Alphabet Modal ── */
 const ALPHABET = [
