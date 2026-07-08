@@ -76,6 +76,29 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 
 .tiny{font-size:12px;color:#94a3b8}
 .cele-msg{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:rgba(17,24,39,.95);border:2px solid var(--accent);padding:14px 22px;border-radius:18px;font-weight:900;font-size:17px;z-index:20;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+
+/* ===== Jooni mascot ===== */
+#jooni{position:fixed;left:16px;bottom:16px;z-index:30;display:flex;align-items:flex-end;gap:10px;
+  transform:translateY(150%) scale(.9);opacity:0;pointer-events:none;
+  transition:transform .42s cubic-bezier(.22,1.4,.36,1),opacity .28s ease}
+#jooni.show{transform:translateY(0) scale(1);opacity:1;pointer-events:auto}
+#jooniAvatar{flex:none;width:72px;height:72px;padding:0;border-radius:50%;overflow:hidden;
+  border:3px solid var(--accent);border-bottom-width:3px;background:var(--well);
+  box-shadow:0 10px 26px rgba(0,0,0,.45);cursor:pointer;display:grid;place-items:center}
+#jooniAvatar:active{transform:translateY(1px)}
+#jooni.jmood-tip #jooniAvatar,#jooni.jmood-encourage #jooniAvatar{border-color:var(--accent-2)}
+#jooniImg{width:100%;height:100%;object-fit:cover;display:none}
+#jooniEmoji{font-size:40px;line-height:1}
+#jooni.wiggle #jooniAvatar{animation:jooniWiggle .6s ease}
+@keyframes jooniWiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-9deg)}60%{transform:rotate(7deg)}}
+#jooniBubble{max-width:min(230px,66vw);background:#fff;color:#0b1229;font-weight:800;font-size:14px;line-height:1.35;
+  padding:11px 14px;border-radius:16px 16px 16px 4px;box-shadow:0 10px 30px rgba(0,0,0,.4);
+  position:relative;margin-bottom:8px}
+#jooniBubble::after{content:"";position:absolute;left:14px;bottom:-8px;width:0;height:0;
+  border:8px solid transparent;border-top-color:#fff;border-bottom:0}
+#jooniBubble b{color:#c2410c}
+@media (max-width:700px){ #jooni{left:12px;bottom:12px} #jooniAvatar{width:60px;height:60px} #jooniEmoji{font-size:34px} }
+@media (prefers-reduced-motion: reduce){ #jooni,#jooni.wiggle #jooniAvatar{transition:opacity .2s;animation:none} }
 .fade-out{animation:fadeOut .9s ease forwards}
 @keyframes fadeOut { to { opacity:0 } }
 .overlay{position:fixed;inset:0;background:radial-gradient(1000px 600px at 50% -10%, rgba(56,189,248,.28), transparent 40%), rgba(15,23,42,.94);display:grid;place-items:center;z-index:10}
@@ -398,6 +421,15 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 <div id="celebration" class="cele-msg" style="display:none">let's goooooo 🎉</div>
 <div id="sadFace" class="cele-msg" style="display:none">😢</div>
 
+<!-- Jooni the mascot cat -->
+<div id="jooni" aria-live="polite">
+  <div id="jooniBubble"><span id="jooniText"></span></div>
+  <button id="jooniAvatar" type="button" title="Ask Jooni" aria-label="Jooni the cat — tap for a tip">
+    <img id="jooniImg" alt="Jooni">
+    <span id="jooniEmoji">🐱</span>
+  </button>
+</div>
+
 <!-- Achievements Modal -->
 <div id="achModal" class="modal">
   <div class="modal-card">
@@ -566,6 +598,11 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
         <b>Music</b>
         <p class="tiny">Background music while you learn.</p>
         <button id="musicToggle" class="btn">🎵 Play Music</button>
+      </div>
+      <div class="stat">
+        <b>Jooni the cat</b>
+        <p class="tiny">Your mascot who cheers you on and gives tips.</p>
+        <button id="jooniToggle" class="btn">🐱 Jooni: ON</button>
       </div>
       <div class="stat">
         <b>Sentence Practice</b>
@@ -1565,7 +1602,7 @@ $('mqCheck').addEventListener('click', ()=>{
   miniQ.total++;
   const ok = normalizeTranslit($('mqInput').value)===normalizeTranslit(item.translit);
   if(ok){ miniQ.correct++; $('mqFeedback').textContent='Nice!'; $('mqFeedback').className='feedback ok'; celebrateSimple(); }
-  else{ $('mqFeedback').textContent='Answer: ' + item.translit; $('mqFeedback').className='feedback warn'; state.streak=0; persist(); }
+  else{ $('mqFeedback').textContent='Answer: ' + item.translit; $('mqFeedback').className='feedback warn'; state.streak=0; persist(); Jooni.encourage(); }
   setTimeout(nextMiniQuestion, 350);
 });
 $('mqInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('mqCheck').click(); } });
@@ -1611,7 +1648,7 @@ function onAQOptionClick(e){
   }else{
     e.currentTarget.classList.add('wrong'); $('aqFeedback').textContent = `Answer: ${words[AQ.current].en}`; $('aqFeedback').className = 'feedback warn';
     Array.from($('aqOptions').children).forEach(btn=>{ const idx = parseInt(btn.dataset.idx,10); if(idx === AQ.current) btn.classList.add('correct'); });
-    state.streak = 0; persist();
+    state.streak = 0; persist(); Jooni.encourage();
   }
   $('aqBar').style.width = `${(AQ.total / Math.max(1, AUDIO_QUIZ_SIZE)) * 100}%`; setTimeout(nextAQQuestion, 600);
 }
@@ -1638,10 +1675,75 @@ function celebrateSimple(){
   const c=$('celebration'); c.textContent="let's goooooo 🎉"; c.style.display='block';
   setTimeout(()=>c.classList.add('fade-out'),800);
   setTimeout(()=>{c.classList.remove('fade-out'); c.style.display='none';},1600);
+  Jooni.cheer();
 }
+
+/* ===================== JOONI THE MASCOT ===================== */
+const Jooni = (function(){
+  const CHEERS = [
+    "Âfarin! <b>(well done)</b> 🐾","Bah bah! You got it! 😻","Purrfect spelling! 🐾",
+    "Che khoob! <b>(how good!)</b> 💜","Âli! <b>(awesome)</b> Keep going!","Un-fur-gettable! 😸",
+    "Yes! Man be to eftekhâr mikonam — <b>I'm proud of you!</b>","Meoww-nificent! 🌟"
+  ];
+  const ENCOURAGE = [
+    "Nazdik! <b>(close!)</b> Try again 💜","Eshkâli nadâre <b>(no worries)</b> — you've got this!",
+    "Yavâsh yavâsh <b>(slowly)</b> — you'll get it! 🐾","Almost! I believe in you 😺",
+    "Nabâyad negarân bâshi <b>(don't worry)</b>, keep trying!"
+  ];
+  const TIPS = [
+    "Tip: Farsi reads right-to-left ←","Tap <b>🔊 Listen</b> to hear a word!",
+    "<b>Salâm</b> means hello — try saying it! 👋","<b>Merci</b> means thank you, like in French!",
+    "The <b>Alphabets</b> mode teaches Persian letters 🔤","<b>Gorbe</b> means cat — that's me! 🐱",
+    "<b>Doostet dâram</b> means 'I love you' 💜","A little practice every day = <b>âli</b> (awesome)!",
+    "Try <b>Spell It</b> to build words letter by letter!","<b>Âb</b> = water, <b>nân</b> = bread. Yum! 🍞"
+  ];
+  const GREET = [
+    "Salâm Nicole! Ready to learn? 🐾","Meow! Jooni's here to help. Let's go! 😺",
+    "Khosh âmadi! <b>(welcome!)</b> Let's practice 💜"
+  ];
+  let elWrap, elText, elAvatar, hideT=null, idleT=null, ready=false, greeted=false;
+  function enabled(){ return (state?.settings?.jooniOn !== false); }
+  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function anyModalOpen(){ return !!document.querySelector('.modal[style*="grid"], .overlay[style*="grid"]'); }
+  function say(html, mood='happy', dur=4200){
+    if(!ready || !enabled()) return;
+    elText.innerHTML = html;
+    elWrap.className = 'jmood-'+mood;
+    // reflow then show + wiggle
+    void elWrap.offsetWidth;
+    elWrap.classList.add('show','wiggle');
+    setTimeout(()=>elWrap.classList.remove('wiggle'), 650);
+    clearTimeout(hideT); hideT = setTimeout(hide, dur);
+    resetIdle();
+  }
+  function hide(){ if(elWrap) elWrap.classList.remove('show'); }
+  function resetIdle(){
+    clearTimeout(idleT);
+    idleT = setTimeout(()=>{ if(enabled() && !anyModalOpen() && document.visibilityState==='visible') say(pick(TIPS),'tip',5200); resetIdle(); }, 55000);
+  }
+  return {
+    init(){
+      elWrap=$('jooni'); elText=$('jooniText'); elAvatar=$('jooniAvatar');
+      if(!elWrap) return;
+      const img=$('jooniImg'), emo=$('jooniEmoji');
+      img.onload=()=>{ img.style.display='block'; emo.style.display='none'; };
+      img.onerror=()=>{ img.style.display='none'; emo.style.display='grid'; };
+      img.src='images/Jooni.png';
+      elAvatar.addEventListener('click', ()=> say(pick(TIPS),'tip',5200));
+      ready=true; resetIdle();
+    },
+    cheer(){ say(pick(CHEERS),'happy',3600); },
+    encourage(){ say(pick(ENCOURAGE),'encourage',4200); },
+    tip(){ say(pick(TIPS),'tip',5200); },
+    milestone(html){ say(html,'happy',5200); },
+    greet(){ if(greeted) return; greeted=true; setTimeout(()=>say(pick(GREET),'happy',4600), 700); },
+    setEnabled(on){ if(!state.settings) state.settings={}; state.settings.jooniOn=on; if(!on) hide(); else resetIdle(); persist(); }
+  };
+})();
 function ensureAchFx(){ if(!state.achFx) state.achFx = {}; return state.achFx; }
 function sparkleBadgeOnce(key){
   const fx = ensureAchFx(); if(fx[key]) return; fx[key] = true;
+  Jooni.milestone("A new badge! Âfarin Nicole! 🏅🐾");
   const el = bySel(`.badge-tile[data-key="${key}"]`); if(el){ el.classList.add('sparkle'); if(window.confetti) confetti({particleCount:60, spread:65, startVelocity:45, scalar:0.9}); setTimeout(()=>el && el.classList.remove('sparkle'), 1200); }
 }
 function awardAchievement(key){ if(!state.achievements[key]){ state.achievements[key] = true; persist(); sparkleBadgeOnce(key); } else { persist(); } }
@@ -1702,6 +1804,7 @@ function handleAnswer(correct, gi, source='typing'){
   }else{
     r.wrong++; r.stage=Math.max(0,r.stage-1); scheduleAfter(gi,2);
     state.streak=0; if(source!=='speech'){ $('typeFeedback').textContent='Not quite.'; $('typeFeedback').className='feedback warn'; }
+    Jooni.encourage();
   }
   persist(); setTimeout(next, 450);
 }
@@ -1935,7 +2038,8 @@ function updateNamesVisibility(){ const show = state.showCatNames || (Date.now()
 function flashCatNames(ms=3000){ flashNamesUntil = Date.now() + ms; updateNamesVisibility(); setTimeout(()=>updateNamesVisibility(), ms+50); }
 $('toggleNamesBtn').addEventListener('click', ()=>{ state.showCatNames = !state.showCatNames; persist(); });
 
-$('openSettings').addEventListener('click', ()=>{ $('settingsModal').style.display='grid'; $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`; populateThemeDropdown(); });
+$('openSettings').addEventListener('click', ()=>{ $('settingsModal').style.display='grid'; $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`; $('jooniToggle').textContent=`🐱 Jooni: ${state.settings?.jooniOn===false?'OFF':'ON'}`; populateThemeDropdown(); });
+$('jooniToggle').addEventListener('click', ()=>{ const on = !(state.settings?.jooniOn!==false); Jooni.setEnabled(on); $('jooniToggle').textContent=`🐱 Jooni: ${on?'ON':'OFF'}`; if(on) Jooni.tip(); });
 $('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
 $('settingsModal').addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
 $('reviewToggle').addEventListener('click', ()=>{ state.settings.reviewAll = !state.settings.reviewAll; persist(); $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings.reviewAll?'ON':'OFF'}`; });
@@ -1974,6 +2078,7 @@ function useProfile(name){
   $('profileOverlay').style.display='none'; $('startOverlay').style.display='grid';
   if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
   if(state.settings?.musicOn){ initMusic(); musicAudio.play().catch(()=>{}); updateMusicBtnUI(); }
+  Jooni.init();
 }
 $('quickNicole').addEventListener('click', (e)=>{ if(quickNicoleLongPressed){ quickNicoleLongPressed=false; e.preventDefault(); return; } useProfile('Nicole'); });
 $('quickSia').addEventListener('click', ()=>{ const pin = prompt('Enter developer PIN:'); if(pin === '3232'){ useProfile('Sia'); } else{ alert('Incorrect PIN.'); } });
@@ -2000,6 +2105,7 @@ function startAs(m){
   $('startOverlay').style.display='none';
   mode = (m==='quiz') ? 'quiz' : 'learn';
   resetSessionProgress(); ensureOrder(); showItem();
+  Jooni.greet();
   if(m==='alphabets'){ openAlphabetModal(); return; }
   if(m==='learn'){ openCatModal(); return; }
 }
@@ -2231,6 +2337,7 @@ function checkSpellAnswer(){
     $('spellFeedback').textContent = `Not quite — try again!`;
     $('spellFeedback').className   = 'feedback warn';
     Array.from($('spellSlots').children).forEach(s=>{ s.style.borderColor='#ef4444'; });
+    Jooni.encourage();
     // shake then reset
     setTimeout(()=>{
       SP.slots.fill(null); SP.placed = [];
