@@ -293,6 +293,25 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 @keyframes popCorrect{ 50%{ transform:scale(1.06) } }
 .aq-option.wrong{ border-color: var(--err); box-shadow:0 0 0 2px rgba(239,68,68,.22) inset }
 
+/* ======== Match game ======== */
+.mtile{padding:14px 10px;border-radius:14px;border:2px solid #2b3b5c;border-bottom-width:4px;border-bottom-color:#101a30;
+  background:#1c2942;color:#e5e7eb;cursor:pointer;font-weight:800;font-size:16px;min-height:52px;
+  display:flex;align-items:center;justify-content:center;text-align:center;transition:filter .12s ease,transform .06s ease,opacity .2s ease}
+.mtile.fa{font-family:var(--font-farsi);direction:rtl;font-size:20px}
+.mtile:hover{filter:brightness(1.12)}
+.mtile:active{transform:translateY(2px);border-bottom-width:2px}
+.mtile.sel{border-color:var(--accent-2);border-bottom-color:var(--accent-2);box-shadow:0 0 0 2px rgba(56,189,248,.35) inset}
+.mtile.matched{background:var(--accent);border-color:color-mix(in srgb,var(--accent) 55%,#000);border-bottom-color:color-mix(in srgb,var(--accent) 35%,#000);color:#06240f;opacity:.5;cursor:default;pointer-events:none}
+.mtile.wrong{border-color:var(--err);border-bottom-color:var(--err);animation:mwrong .3s}
+@keyframes mwrong{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+/* ======== Streak calendar ======== */
+.scell{aspect-ratio:1/1;border-radius:6px;background:var(--well);border:1px solid var(--line);display:grid;place-items:center;font-size:12px;line-height:1}
+.scell.on{background:var(--accent);border-color:color-mix(in srgb,var(--accent) 55%,#000)}
+.scell.frozen{background:var(--accent-2);border-color:color-mix(in srgb,var(--accent-2) 55%,#000)}
+.scell.goal{box-shadow:0 0 0 2px #facc15 inset}
+.scell.today{outline:2px solid #fff;outline-offset:1px}
+
 /* ======== Category picker grid ======== */
 .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .cat-grid .cat-pick{font-size:13px;padding:10px 8px;text-align:center}
@@ -399,6 +418,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
         <button id="quizBtn" class="btn">Quiz Mode</button>
         <button id="audioQuizBtn" class="btn">Audio Quiz</button>
         <button id="spellBtn" class="btn">Spell It</button>
+        <button id="matchBtn" class="btn">🃏 Match</button>
 
       </div>
     </div>
@@ -742,6 +762,14 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="journeyClose" class="btn">Close</button>
     </div>
     <div id="journeyStats" class="stat" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:space-around;margin-bottom:8px;font-size:13px"></div>
+    <div id="streakBlock" class="stat" style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:15px;font-weight:900">🔥 <span id="streakCount">0</span>-day streak</div>
+        <div class="tiny" id="freezeCount" title="Streak freezes protect a missed day">❄️ 0</div>
+      </div>
+      <div id="streakCal" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px"></div>
+      <div class="tiny" style="color:#6b7280;margin-top:6px">Last 4 weeks · 🟩 practiced · ⭐ goal met · ❄️ freeze</div>
+    </div>
     <p class="tiny" id="journeySub" style="margin:0 0 6px;color:#6b7280">Follow the path — finish a lesson to unlock the next!</p>
     <div id="journeyPath" class="jpath"></div>
   </div>
@@ -776,6 +804,25 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button class="cat-pick"          data-cat="nature">🌳 Nature</button>
     </div>
     <button id="catCancel" class="btn" style="margin-top:14px;width:100%">Cancel</button>
+  </div>
+</div>
+
+<!-- Match (tap-the-pairs) Modal -->
+<div id="matchModal" class="modal">
+  <div class="modal-card" style="max-width:520px;text-align:center">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <h3 style="margin:0">🃏 Match the Pairs</h3>
+      <button id="matchQuit" class="btn">✖ Quit</button>
+    </div>
+    <p class="tiny" style="margin:0 0 12px;color:#6b7280">Tap a Farsi word, then its English match</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div id="matchLeft" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div id="matchRight" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+    <div id="matchFeedback" class="feedback" style="min-height:28px;margin-top:12px"></div>
+    <div id="matchDone" style="display:none;margin-top:6px">
+      <button id="matchAgain" class="primary" style="width:100%">Play again 🔁</button>
+    </div>
   </div>
 </div>
 
@@ -959,7 +1006,7 @@ function setImageWithFallback(imgEl, emojiEl, item){
 const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0, releasedCount:RELEASE_BASE,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false,mastered100:false,score1000:false,allColors:false}, achFx:{},
-  mapUnlocked:0, mapDays:[],
+  mapUnlocked:0, mapDays:[], streakFreezes:0, streakFreezeAwardedAt:0,
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
@@ -1063,9 +1110,13 @@ function loadState(){
   if(typeof state.settings.musicOn!=='boolean') state.settings.musicOn=false;
   if(typeof state.settings.musicVol!=='number') state.settings.musicVol=0.28;
   state.achFx = state.achFx || {};
+  if(!Array.isArray(state.mapDays)) state.mapDays = [];
+  if(typeof state.streakFreezes !== 'number') state.streakFreezes = 0;
+  if(typeof state.streakFreezeAwardedAt !== 'number') state.streakFreezeAwardedAt = 0;
   initDailyUnlock();
   applyTheme(state.theme||'default');
   state.mapUnlocked = computeCatsUnlocked();
+  maybeUseFreeze(); awardStreakFreezes();
 }
 
 /* ======== NICOLE SYNC ======== */
@@ -1093,6 +1144,8 @@ function mergeStates(local, remote){
     nameTokens:Math.max(local.inventory?.nameTokens||0,remote.inventory?.nameTokens||0)
   };
   base.jooniPet = !!(local.jooniPet || remote.jooniPet);
+  base.streakFreezes = Math.max(local.streakFreezes||0, remote.streakFreezes||0);
+  base.streakFreezeAwardedAt = Math.max(local.streakFreezeAwardedAt||0, remote.streakFreezeAwardedAt||0);
   base.furniture = {
     catTree:  !!(local.furniture?.catTree  || remote.furniture?.catTree),
     catToy:   !!(local.furniture?.catToy   || remote.furniture?.catToy),
@@ -1561,6 +1614,49 @@ function checkDailyGoalAndMap(){
     Jooni.goalMet();
   }
   state.mapDays = days; persist();
+  awardStreakFreezes();
+}
+
+/* ===================== DAILY STREAK ===================== */
+function isoForOffset(daysAgo){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-daysAgo); return d.toISOString().slice(0,10); }
+function dayRec(dateStr){ return (state.mapDays||[]).find(d=>d.date===dateStr); }
+function dayActive(dateStr){ const r=dayRec(dateStr); return !!(r && ((r.correct||0)>0 || r.frozen)); }
+function computeDayStreak(){
+  let streak=0; const start = dayActive(isoForOffset(0)) ? 0 : 1;  // grace: today not practiced yet
+  for(let k=start;k<3650;k++){ if(dayActive(isoForOffset(k))) streak++; else break; }
+  return streak;
+}
+/* If yesterday was missed but the day before was active, spend a freeze to bridge it */
+function maybeUseFreeze(){
+  const y=isoForOffset(1), y2=isoForOffset(2);
+  if(!dayActive(isoForOffset(0)) && !dayActive(y) && dayActive(y2) && (state.streakFreezes||0)>0){
+    state.streakFreezes--; (state.mapDays=state.mapDays||[]).push({date:y, correct:0, goalMet:false, frozen:true}); persist();
+  }
+}
+/* Grant one streak-freeze for every 7 days of streak reached */
+function awardStreakFreezes(){
+  const milestone = Math.floor(computeDayStreak()/7);
+  const prev = state.streakFreezeAwardedAt||0;
+  if(milestone > prev){
+    state.streakFreezes = (state.streakFreezes||0) + (milestone - prev);
+    state.streakFreezeAwardedAt = milestone; persist();
+    if(typeof Jooni!=='undefined') Jooni.milestone(`${milestone*7}-day streak! You earned a ❄️ streak freeze — âfarin! 🔥`);
+  }
+}
+function renderStreakCalendar(){
+  const cal=$('streakCal'); if(cal){
+    cal.innerHTML='';
+    for(let k=27;k>=0;k--){
+      const ds=isoForOffset(k), r=dayRec(ds);
+      const cell=document.createElement('div'); cell.className='scell';
+      if(k===0) cell.classList.add('today');
+      if(r && r.frozen){ cell.classList.add('frozen'); cell.textContent='❄️'; }
+      else if(r && (r.correct||0)>0){ cell.classList.add('on'); if(r.goalMet){ cell.classList.add('goal'); cell.textContent='⭐'; } }
+      cal.appendChild(cell);
+    }
+  }
+  const sc=$('streakCount'); if(sc) sc.textContent = computeDayStreak();
+  const fc=$('freezeCount'); if(fc) fc.textContent = '❄️ '+(state.streakFreezes||0);
 }
 
 /* ===================== MAP & FURNITURE RENDER ===================== */
@@ -1909,9 +2005,9 @@ function renderJourney(){
   $('journeyTitle').textContent = `🧭 ${ACTIVE_PROFILE||'Your'}'s Journey`;
   $('journeyStats').innerHTML =
     `<span>⭐ <b>${state.score}</b> pts</span>`+
-    `<span>🔥 <b>${state.streak}</b> streak</span>`+
     `<span>📖 <b>${(state.covered||[]).length}</b> learned</span>`+
     `<span>🧭 <b>${doneCount}</b>/${lessons.length} lessons</span>`;
+  renderStreakCalendar();
   $('journeySub').textContent = `Finish a lesson to unlock the next!`;
   // scroll the current lesson into view
   setTimeout(()=>{ if(currentNode) currentNode.scrollIntoView({block:'center'}); }, 30);
@@ -2193,6 +2289,70 @@ $('spellNext').addEventListener('click', ()=>{
 });
 $('spellModal').addEventListener('click',(e)=>{ if(e.target.id==='spellModal') endSpellModal(); });
 $('spellBtn').addEventListener('click', ()=> openSpellModal());
+
+/* ── Match the Pairs (tap-the-pairs) ── */
+const MATCH_PAIRS = 5;
+let MG = { sel:null, matched:0, locked:false };
+function matchPool(){
+  const covered = masteredIndices();               // words she's learned
+  const pool = covered.length >= MATCH_PAIRS ? covered : unlockedIndices();
+  return pool;
+}
+function openMatchModal(){
+  const pool = matchPool();
+  if(pool.length < MATCH_PAIRS){ alert(`Learn at least ${MATCH_PAIRS} words first to play Match!`); return; }
+  $('matchModal').style.display='grid';
+  startMatchRound();
+}
+function endMatchModal(){ $('matchModal').style.display='none'; }
+function startMatchRound(){
+  MG = { sel:null, matched:0, locked:false };
+  $('matchFeedback').textContent=''; $('matchFeedback').className='feedback';
+  $('matchDone').style.display='none';
+  const pool = matchPool().slice(); shuffle(pool);
+  const picks = pool.slice(0, MATCH_PAIRS);
+  const left = $('matchLeft'), right = $('matchRight');
+  left.innerHTML=''; right.innerHTML='';
+  const faOrder = picks.slice(); shuffle(faOrder);
+  const enOrder = picks.slice(); shuffle(enOrder);
+  faOrder.forEach(wi=>{
+    const t=document.createElement('button'); t.type='button'; t.className='mtile fa'; t.textContent=words[wi].fa;
+    t.dataset.wi=wi; t.dataset.side='fa'; t.addEventListener('click',()=>onMatchTap(t)); left.appendChild(t);
+  });
+  enOrder.forEach(wi=>{
+    const t=document.createElement('button'); t.type='button'; t.className='mtile'; t.textContent=words[wi].en;
+    t.dataset.wi=wi; t.dataset.side='en'; t.addEventListener('click',()=>onMatchTap(t)); right.appendChild(t);
+  });
+}
+function onMatchTap(tile){
+  if(MG.locked || tile.classList.contains('matched')) return;
+  if(!MG.sel){ MG.sel=tile; tile.classList.add('sel'); return; }
+  if(MG.sel===tile){ tile.classList.remove('sel'); MG.sel=null; return; }
+  if(MG.sel.dataset.side===tile.dataset.side){ MG.sel.classList.remove('sel'); MG.sel=tile; tile.classList.add('sel'); return; }
+  // opposite sides → evaluate
+  const a=MG.sel, b=tile;
+  if(a.dataset.wi===b.dataset.wi){
+    a.classList.remove('sel'); a.classList.add('matched'); b.classList.add('matched');
+    MG.sel=null; MG.matched++;
+    state.score += 1; addCovered(parseInt(a.dataset.wi,10)); persist();
+    Jooni.cheer();
+    if(MG.matched>=MATCH_PAIRS){
+      MG.locked=true;
+      $('matchFeedback').textContent='All matched! 🎉 Âfarin!'; $('matchFeedback').className='feedback ok';
+      if(window.confetti) confetti({particleCount:110,spread:80,origin:{y:.6}});
+      $('matchDone').style.display='block';
+    }
+  } else {
+    MG.locked=true;
+    a.classList.add('wrong'); b.classList.add('wrong'); a.classList.remove('sel');
+    $('matchFeedback').textContent='Not a match — try again!'; $('matchFeedback').className='feedback warn';
+    setTimeout(()=>{ a.classList.remove('wrong'); b.classList.remove('wrong'); $('matchFeedback').textContent=''; MG.sel=null; MG.locked=false; }, 550);
+  }
+}
+$('matchBtn').addEventListener('click', ()=> openMatchModal());
+$('matchQuit').addEventListener('click', ()=> endMatchModal());
+$('matchAgain').addEventListener('click', ()=> startMatchRound());
+$('matchModal').addEventListener('click', e=>{ if(e.target.id==='matchModal') endMatchModal(); });
 
 /* Close modals on backdrop click */
 document.addEventListener('click', (e)=>{
