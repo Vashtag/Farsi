@@ -131,6 +131,8 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .cat .cat-img{height:44px;width:auto;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
 @media(min-width:760px){ .cat .cat-img{height:56px} }
 .cat.catnip .cat-img{animation:catnipRoll .7s linear infinite}
+.ball{position:absolute;font-size:26px;z-index:3;pointer-events:none;will-change:transform,left,top;filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
+@media(min-width:760px){ .ball{font-size:32px} }
 .cat-name{
   position:absolute; left:50%; top:-18px; transform:translateX(-50%);
   font-size:12px; padding:2px 6px; border-radius:8px;
@@ -304,7 +306,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .lgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
 .lopt{padding:14px 10px;border-radius:14px;border:2px solid #2b3b5c;border-bottom-width:4px;border-bottom-color:#101a30;background:#1c2942;color:#e5e7eb;cursor:pointer;font-weight:800;font-size:15px;min-height:56px;display:flex;align-items:center;justify-content:center;text-align:center;transition:filter .12s,transform .06s}
 .lopt:hover{filter:brightness(1.12)} .lopt:active{transform:translateY(2px);border-bottom-width:2px}
-.lopt.img-opt{aspect-ratio:1/1;min-height:0}
+.lopt.img-opt{height:120px;min-height:0}
 .lopt.img-opt img{max-width:100%;max-height:100%;object-fit:contain} .lopt.img-opt .lemoji{font-size:52px}
 .lopt.correct{background:var(--accent);border-color:color-mix(in srgb,var(--accent) 55%,#000);color:#06240f}
 .lopt.wrong{background:color-mix(in srgb,var(--err) 30%,#1c2942);border-color:var(--err)}
@@ -426,7 +428,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <p>Pick a mode to get started. You can switch later.</p>
     <div style="display:flex; gap:12px; flex-wrap:wrap">
       <button id="startLesson" class="primary" type="button">🧭 Today's Lesson</button>
-      <button id="startLearn" class="accent" type="button">📚 Learn (free)</button>
+      <button id="startLearn" class="accent" type="button">📚 Learn</button>
       <button id="startQuiz" class="btn" type="button">🎯 Quiz Mode</button>
       <button id="startAlphabets" class="rose" type="button">🔤 Alphabets</button>
     </div>
@@ -575,6 +577,9 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
             </div>
           </div>
         </div>
+
+        <!-- Play ball -->
+        <button id="buyBallBtn" class="btn">⚽ Ball (300)</button>
 
         <!-- Adopt Jooni (special pet) -->
         <button id="adoptJooniBtn" class="btn">🐱 Adopt Jooni (25000)</button>
@@ -815,7 +820,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       </div>
       <button id="lessonQuit" class="btn" style="padding:6px 10px">✖</button>
     </div>
-    <div id="lessonQ" style="text-align:center;min-height:240px"></div>
+    <div id="lessonQ" style="text-align:center;min-height:360px;display:flex;flex-direction:column;justify-content:center"></div>
     <div id="lessonFeedback" class="feedback" style="min-height:26px;text-align:center"></div>
   </div>
 </div>
@@ -924,6 +929,8 @@ const AUDIO_QUIZ_SIZE = 8;
 const FISH_COST = 100;
 const NAME_COST = 500;
 const CATNIP_COST = 250;
+const BALL_COST = 300;
+const BALL_DURATION_MS = 1800000;   // 30 minutes
 const CATNIP_DURATION_MS = 180000;
 const CATNIP_SPEED_FACTOR = 3.0;
 const CATNIP_TURN_FACTOR = 0.45;
@@ -1052,7 +1059,7 @@ function setImageWithFallback(imgEl, emojiEl, item){
 const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0, releasedCount:RELEASE_BASE,
   achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false,mastered100:false,score1000:false,allColors:false}, achFx:{},
-  mapUnlocked:0, mapDays:[], streakFreezes:0, streakFreezeAwardedAt:0,
+  mapUnlocked:0, mapDays:[], streakFreezes:0, streakFreezeAwardedAt:0, ballEndsAt:0,
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
@@ -1160,6 +1167,7 @@ function loadState(){
   if(!Array.isArray(state.mapDays)) state.mapDays = [];
   if(typeof state.streakFreezes !== 'number') state.streakFreezes = 0;
   if(typeof state.streakFreezeAwardedAt !== 'number') state.streakFreezeAwardedAt = 0;
+  if(typeof state.ballEndsAt !== 'number') state.ballEndsAt = 0;
   initDailyUnlock();
   applyTheme(state.theme||'default');
   state.mapUnlocked = computeCatsUnlocked();
@@ -1269,6 +1277,42 @@ function reflectBadges(){
 /* ===================== ROAMING CATS ===================== */
 const CAT_EMOJIS = ['🐈','🐈‍⬛','🐱'];
 let cats = []; let catAnim = { running:false, lastTs:0, bounds:null }; let flashNamesUntil = 0;
+let ball = null, ballTicker = null;   // playful ball the cats chase
+function ballActive(){ return (state.ballEndsAt||0) > Date.now(); }
+function ensureBallTicker(){
+  if(ballTicker) return;
+  ballTicker = setInterval(()=>{
+    if(!ballActive()){ clearInterval(ballTicker); ballTicker=null; stopBall(); if(state.ballEndsAt){ state.ballEndsAt=0; persist(); } }
+    if(typeof updateShopUI==='function') updateShopUI();
+  }, 1000);
+}
+function spawnBall(){
+  const layer=$('catLayer'); if(!layer || ball) return;
+  const B=catAnim.bounds || layer.getBoundingClientRect();
+  const el=document.createElement('div'); el.className='ball'; el.textContent='⚽'; layer.appendChild(el);
+  const ang=Math.random()*Math.PI*2, sp=150;
+  ball={ el, x:B.w/2, y:B.h/2, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp, spin:0 };
+  el.style.left=ball.x+'px'; el.style.top=ball.y+'px';
+  ensureBallTicker();
+}
+function stopBall(){ if(ball){ ball.el.remove(); ball=null; } }
+function updateBall(dt, B){
+  if(!ball) return;
+  if(!ballActive()){ stopBall(); state.ballEndsAt=0; persist(); updateShopUI(); return; }
+  ball.x += ball.vx*dt; ball.y += ball.vy*dt;
+  const r=6, sz=28;
+  if(ball.x<r){ ball.x=r; ball.vx=Math.abs(ball.vx); }
+  if(ball.y<r){ ball.y=r; ball.vy=Math.abs(ball.vy); }
+  if(ball.x>B.w-sz-r){ ball.x=B.w-sz-r; ball.vx=-Math.abs(ball.vx); }
+  if(ball.y>B.h-sz-r){ ball.y=B.h-sz-r; ball.vy=-Math.abs(ball.vy); }
+  // cats bat the ball when they reach it
+  for(const c of cats){
+    const dx=ball.x-c.x, dy=ball.y-c.y, d=Math.hypot(dx,dy);
+    if(d<38){ const a=Math.atan2(dy,dx)+(Math.random()-0.5)*1.4; const sp=150+Math.random()*70; ball.vx=Math.cos(a)*sp; ball.vy=Math.sin(a)*sp; }
+  }
+  ball.spin += (ball.vx)*dt*2;
+  ball.el.style.left=ball.x+'px'; ball.el.style.top=ball.y+'px'; ball.el.style.transform='rotate('+Math.round(ball.spin)+'deg)';
+}
 function getCatName(i){ return state.catNames && state.catNames[i] ? state.catNames[i] : `Cat ${i+1}`; }
 function getNextCatIndex(){
   const n = state.mapUnlocked||0; if(n<=0) return 0;
@@ -1313,13 +1357,21 @@ function spawnJooniCat(i){
 function stepCats(ts){
   if(!catAnim.running) return;
   const dt = Math.min(0.04, (ts - catAnim.lastTs)/1000); catAnim.lastTs = ts; const B = catAnim.bounds;
+  const chasing = !!ball;
   for(const c of cats){
     if(ts > c.nextTurn){
-      const dTheta = (Math.random()-0.5) * (Math.PI/3);
-      const angle = Math.atan2(c.vy, c.vx) + dTheta;
-      const sp = Math.max(20, Math.min(90, c.speed + (Math.random()-0.5)*20));
+      let angle;
+      if(chasing && Math.random() < 0.75){
+        // playful: head toward the ball
+        angle = Math.atan2(ball.y - c.y, ball.x - c.x) + (Math.random()-0.5)*0.6;
+      } else {
+        angle = Math.atan2(c.vy, c.vx) + (Math.random()-0.5) * (Math.PI/3);
+      }
+      const sp = chasing ? Math.max(60, Math.min(120, c.speed + (Math.random()-0.5)*20))
+                         : Math.max(20, Math.min(90,  c.speed + (Math.random()-0.5)*20));
       c.speed = sp; c.vx = Math.cos(angle)*c.speed; c.vy = Math.sin(angle)*c.speed;
-      const base = 800 + Math.random()*1600; c.nextTurn = ts + base * (c.turnMult || 1);
+      const base = chasing ? (300 + Math.random()*400) : (800 + Math.random()*1600);
+      c.nextTurn = ts + base * (c.turnMult || 1);
     }
     c.x += c.vx * dt; c.y += c.vy * dt;
     const r = 6;
@@ -1330,10 +1382,11 @@ function stepCats(ts){
     if(c.vx < 0) c.el.classList.add('flip'); else c.el.classList.remove('flip');
     c.el.style.left = c.x + 'px'; c.el.style.top = c.y + 'px';
   }
+  updateBall(dt, B);
   updateNamesVisibility(); requestAnimationFrame(stepCats);
 }
-function startCats(){ const count = Math.max(0, state.mapUnlocked || 0); if(count<=0 && !state.jooniPet){ stopCats(); return; } if(catAnim.running){ spawnCats(count); return; } spawnCats(count); catAnim.running = true; catAnim.lastTs = performance.now(); requestAnimationFrame(stepCats); window.addEventListener('resize', onResizeCats); }
-function stopCats(){ catAnim.running = false; const layer = $('catLayer'); if(layer) layer.innerHTML=''; cats = []; window.removeEventListener('resize', onResizeCats); }
+function startCats(){ const count = Math.max(0, state.mapUnlocked || 0); if(count<=0 && !state.jooniPet){ stopCats(); return; } if(catAnim.running){ spawnCats(count); if(ballActive()) spawnBall(); return; } spawnCats(count); if(ballActive()) spawnBall(); catAnim.running = true; catAnim.lastTs = performance.now(); requestAnimationFrame(stepCats); window.addEventListener('resize', onResizeCats); }
+function stopCats(){ catAnim.running = false; const layer = $('catLayer'); if(layer) layer.innerHTML=''; cats = []; ball=null; window.removeEventListener('resize', onResizeCats); }
 function onResizeCats(){
   if(!catAnim.running) return; const layer = $('catLayer'); const rect = layer.getBoundingClientRect();
   catAnim.bounds = { w: rect.width, h: rect.height, pad: 6 };
@@ -1846,6 +1899,10 @@ function updateShopUI(){
   if(feedBtn) feedBtn.disabled = (state.inventory?.fish||0) <= 0;
   const buyN=$('buyCatnipBtn'); if(buyN){ buyN.textContent = `🌿 Buy Catnip (${CATNIP_COST})`; buyN.disabled = state.score < CATNIP_COST; }
   const jb=$('adoptJooniBtn'); if(jb){ jb.textContent = state.jooniPet ? '🐱 Jooni adopted ✓' : `🐱 Adopt Jooni (${JOONI_PET_COST})`; jb.disabled = state.jooniPet || state.score < JOONI_PET_COST; }
+  const bb=$('buyBallBtn'); if(bb){
+    if(ballActive()){ const rem=Math.max(0, state.ballEndsAt-Date.now()); bb.textContent=`⚽ Playing (${fmtCatnip(rem)})`; bb.disabled=true; }
+    else { bb.textContent=`⚽ Ball (${BALL_COST})`; bb.disabled = state.score < BALL_COST; }
+  }
   updateCatnipCountdownUI();
   const hasToken = (state.inventory?.nameTokens||0) > 0;
   if(nameBtn){ nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`; nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0); }
@@ -1935,6 +1992,15 @@ $('adoptJooniBtn').addEventListener('click', ()=>{
   if(window.confetti){ confetti({origin:{x:0.5,y:1},particleCount:140,spread:90,startVelocity:60}); }
   if(typeof Jooni!=='undefined') Jooni.milestone('Yaaay! Now I live in your bazaar! Merci Nicole! 🐱💜');
   renderMap(); startCats(); updateShopUI(); persist();  // startCats respawns if already running
+});
+$('buyBallBtn').addEventListener('click', ()=>{
+  if(ballActive()){ $('shopMsg').textContent='The ball is already out! 🐾'; $('shopMsg').className='feedback ok'; return; }
+  if(!state.jooniPet && (state.mapUnlocked||0)===0){ $('shopMsg').textContent='Unlock or adopt a cat first to play!'; $('shopMsg').className='feedback warn'; return; }
+  if(state.score < BALL_COST){ $('shopMsg').textContent=`A ball costs ${BALL_COST} points.`; $('shopMsg').className='feedback warn'; return; }
+  state.score -= BALL_COST; state.ballEndsAt = Date.now() + BALL_DURATION_MS;
+  $('shopMsg').textContent='You tossed a ball out! The cats are playing ⚽😸'; $('shopMsg').className='feedback ok';
+  spawnBall(); startCats(); updateShopUI(); persist();
+  if(typeof Jooni!=='undefined') Jooni.milestone('A ball! Bâzi konim — let’s play! ⚽🐾');
 });
 function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Show Names'; }
 function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ const nm = c.isJooni ? 'Jooni' : getCatName(c.idx); if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = nm; } c.el.title = nm; }); } }
