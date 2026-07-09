@@ -761,8 +761,16 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <h3 style="margin:0" id="journeyTitle">🧭 Journey</h3>
       <button id="journeyClose" class="btn">Close</button>
     </div>
-    <div id="journeyStats" class="stat" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:space-around;margin-bottom:8px;font-size:13px"></div>
-    <div id="streakBlock" class="stat" style="margin-bottom:8px">
+    <div id="journeyStats" class="stat" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:space-around;margin-bottom:10px;font-size:13px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button id="showMapBtn" class="btn" style="flex:1">🧭 Lesson Map</button>
+      <button id="showCalBtn" class="btn" style="flex:1">🔥 Streak Calendar</button>
+    </div>
+    <div id="journeyMapSection">
+      <p class="tiny" id="journeySub" style="margin:0 0 6px;color:#6b7280">Follow the path — finish a lesson to unlock the next!</p>
+      <div id="journeyPath" class="jpath"></div>
+    </div>
+    <div id="streakBlock" class="stat" style="display:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="font-size:15px;font-weight:900">🔥 <span id="streakCount">0</span>-day streak</div>
         <div class="tiny" id="freezeCount" title="Streak freezes protect a missed day">❄️ 0</div>
@@ -770,8 +778,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <div id="streakCal" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px"></div>
       <div class="tiny" style="color:#6b7280;margin-top:6px">Last 4 weeks · 🟩 practiced · ⭐ goal met · ❄️ freeze</div>
     </div>
-    <p class="tiny" id="journeySub" style="margin:0 0 6px;color:#6b7280">Follow the path — finish a lesson to unlock the next!</p>
-    <div id="journeyPath" class="jpath"></div>
   </div>
 </div>
 
@@ -1967,7 +1973,17 @@ function deriveLessons(){
   }
   return out;
 }
-function openJourney(){ renderJourney(); $('journeyModal').style.display='grid'; }
+function showJourneySection(which){
+  const map = which!=='cal';
+  $('journeyMapSection').style.display = map ? 'block' : 'none';
+  $('streakBlock').style.display = map ? 'none' : 'block';
+  $('showMapBtn').classList.toggle('primary', map);
+  $('showCalBtn').classList.toggle('primary', !map);
+  if(!map) renderStreakCalendar();
+}
+function openJourney(){ renderJourney(); showJourneySection('map'); $('journeyModal').style.display='grid'; }
+$('showMapBtn').addEventListener('click', ()=> showJourneySection('map'));
+$('showCalBtn').addEventListener('click', ()=> showJourneySection('cal'));
 function closeJourney(){ $('journeyModal').style.display='none'; }
 function renderJourney(){
   const path=$('journeyPath'); if(!path) return;
