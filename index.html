@@ -901,7 +901,8 @@ const CAT_BOWL_IMG  = 'images/cat_bowl.png';
 const CAT_TOY_COST  = 600;
 const CAT_BOWL_COST = 800;
 const JOONI_PET_COST = 25000;
-const JOONI_SIDE_IMG = 'images/Jooni-Side.png';
+const JOONI_SIDE_IMG = 'images/Jooni_Side.png';
+const JOONI_SIDE_IMG_ALT = 'images/Jooni-Side.png';   // fallback if named with a hyphen
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
 const POSTCARD_UNLOCK_EVERY = 15;
 
@@ -1263,9 +1264,11 @@ function spawnCats(count){
 }
 function spawnJooniCat(i){
   const el = document.createElement('div'); el.className = 'cat cat-jooni';
-  const img = document.createElement('img'); img.className='cat-img'; img.src=JOONI_SIDE_IMG; img.alt='Jooni';
+  const img = document.createElement('img'); img.className='cat-img'; img.alt='Jooni';
   const emo = document.createElement('span'); emo.className='cat-emoji'; emo.textContent='🐱'; emo.style.display='none';
-  img.onerror=()=>{ img.style.display='none'; emo.style.display='inline-block'; };
+  let triedAlt=false;
+  img.onerror=()=>{ if(!triedAlt){ triedAlt=true; img.src=JOONI_SIDE_IMG_ALT; } else { img.style.display='none'; emo.style.display='inline-block'; } };
+  img.src=JOONI_SIDE_IMG;
   el.appendChild(img); el.appendChild(emo);
   const label = document.createElement('div'); label.className='cat-name'; label.textContent='Jooni'; el.appendChild(label);
   el.title='Jooni'; $('catLayer').appendChild(el);
