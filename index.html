@@ -154,6 +154,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   background:#0b1229;border:1px solid var(--line);border-radius:12px;
   height:clamp(260px, 45vh, 380px);
 }
+@media (max-width:700px){ .map-wrap.arena{ height:clamp(190px, 30vh, 260px); } }
 
 /* Rewards / shop row */
 .shop-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -226,14 +227,6 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   }
   /* Dictionary: table scrolls, prev/next stays visible */
   #dictPanel { max-height: 52vh; overflow-y: auto; }
-
-  /* Shop dropdowns: render in-flow on mobile so the scrolling
-     modal-card doesn't clip the absolutely-positioned panels */
-  #foodPanel, #feedPanel, #furnPanel {
-    position: static !important;
-    width: 100%;
-    margin-top: 6px;
-  }
 }
 
 /* ========= Badge visuals ========= */
@@ -295,6 +288,25 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .aq-option.correct{ border-color: var(--accent); box-shadow:0 0 0 3px rgba(34,197,94,.35) inset; animation:popCorrect .3s cubic-bezier(.22,1.6,.36,1); }
 @keyframes popCorrect{ 50%{ transform:scale(1.06) } }
 .aq-option.wrong{ border-color: var(--err); box-shadow:0 0 0 2px rgba(239,68,68,.22) inset }
+
+/* ======== Bazaar (mobile-first) ======== */
+.bazaar-card{max-width:520px;max-height:92vh;overflow-y:auto}
+.bazaar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.bazaar-head h3{font-size:1.15rem}
+.bazaar-stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
+.bazaar-stats span{background:var(--well);border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-weight:800;font-size:14px}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-top:8px}
+.shop-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:82px;padding:10px 4px;
+  border-radius:16px;border:1px solid var(--line);border-bottom-width:4px;border-bottom-color:#101a30;background:#1c2942;color:#e5e7eb;cursor:pointer;
+  transition:filter .12s ease,transform .06s ease}
+.shop-tile:hover{filter:brightness(1.13)}
+.shop-tile:active{transform:translateY(2px);border-bottom-width:2px}
+.shop-tile:disabled{opacity:.4;cursor:default;transform:none}
+.st-icon{font-size:27px;line-height:1}
+.st-name{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.3px;color:#cbd5e1}
+.st-price{font-size:12px;font-weight:900;color:var(--accent-2)}
+.shop-tile.owned{background:color-mix(in srgb,var(--accent) 18%,#1c2942);border-color:color-mix(in srgb,var(--accent) 45%,#000)}
+.shop-tile.owned .st-price{color:var(--accent)}
 
 /* ======== Lesson runner ======== */
 .lmedia{width:150px;height:150px;margin:6px auto 10px;display:grid;place-items:center;background:var(--well);border:1px solid var(--line);border-radius:18px}
@@ -516,87 +528,48 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 
 <!-- Bazaar Map Modal -->
 <div id="mapModal" class="modal">
-  <div class="modal-card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <div class="shop-row"><button id="toggleNamesBtn" class="btn" title="Show/hide cat names">🐾 Show Names</button></div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <h3 style="margin:0">🗺️ Persian Bazaar Progress</h3>
-        <div class="shop-row">
-          <button id="openShop" class="btn accent" title="Redeem cat rewards">💠 Redeem</button>
-          <button id="closeMap" class="btn">Close</button>
-        </div>
-      </div>
+  <div class="modal-card bazaar-card">
+    <div class="bazaar-head">
+      <h3 style="margin:0">🗺️ Persian Bazaar</h3>
+      <button id="closeMap" class="icon-btn" title="Close" style="width:36px;height:36px">✕</button>
     </div>
-    <p class="tiny">Lots of cats live here 🐈. Cats are unlocked at 5, 20, 100, 250, 500. </p>
+    <div class="bazaar-stats">
+      <span>⭐ <b id="shopScore">0</b></span>
+      <span>🐟 <b id="shopFish">0</b></span>
+      <span>🌿 <b id="shopCatnip">0</b></span>
+    </div>
 
     <div class="map-wrap" id="mapWrap">
       <div id="mapGrid" class="map"></div>
       <div id="catLayer" class="cat-layer"></div>
     </div>
 
-    <div id="shopPanel" class="stat" style="display:none; margin-top:10px">
-      <div class="muted" style="margin-bottom:8px">Score: <b id="shopScore">0</b> • Fish: <b id="shopFish">0</b> • Catnip: <b id="shopCatnip">0</b></div>
-      <div class="shop-row" style="flex-wrap:wrap;gap:8px;align-items:flex-start">
+    <p class="tiny" style="text-align:center;margin:8px 0 2px;color:#6b7280">Tap an item to buy · cats unlock at 5, 20, 100, 250, 500</p>
 
-        <!-- Food dropdown -->
-        <div style="position:relative">
-          <button id="toggleFoodPanel" class="btn">Food ▾</button>
-          <div id="foodPanel" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:12px;padding:8px;z-index:60;min-width:180px;flex-direction:column;gap:6px">
-            <button id="buyFishBtn" class="btn" style="width:100%;text-align:left">🐟 Buy Fish (100)</button>
-            <button id="buyCatnipBtn" class="btn" style="width:100%;text-align:left">🌿 Buy Catnip (250)</button>
-          </div>
-        </div>
-
-        <!-- Feed dropdown -->
-        <div style="position:relative">
-          <button id="toggleFeedPanel" class="btn">Feed ▾</button>
-          <div id="feedPanel" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:12px;padding:8px;z-index:60;min-width:180px;flex-direction:column;gap:6px">
-            <button id="feedFishBtn" class="btn" style="width:100%;text-align:left">🍽️ Feed Cats</button>
-            <button id="useCatnipBtn" class="btn" style="width:100%;text-align:left">🌿 Use Catnip</button>
-          </div>
-        </div>
-
-        <!-- Name a cat -->
-        <button id="toggleNameArea" class="btn">📝 Name a Cat (500)</button>
-
-        <!-- Furniture dropdown -->
-        <div style="position:relative">
-          <button id="toggleFurnPanel" class="btn">🪑 Furniture ▾</button>
-          <div id="furnPanel" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:linear-gradient(180deg,#0b1229,#121a36);border:1px solid #1f2937;border-radius:12px;padding:8px;z-index:60;min-width:200px;flex-direction:column;gap:6px">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-              <span class="tiny" style="color:#e5e7eb">Cat Tree</span>
-              <button id="buyTreeBtn" class="btn" style="white-space:nowrap">Buy (1000)</button>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-              <span class="tiny" style="color:#e5e7eb">Cat Toy</span>
-              <button id="buyToyBtn" class="btn" style="white-space:nowrap">Buy (600)</button>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-              <span class="tiny" style="color:#e5e7eb">Cat Bowl</span>
-              <button id="buyBowlBtn" class="btn" style="white-space:nowrap">Buy (800)</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Play ball -->
-        <button id="buyBallBtn" class="btn">⚽ Ball (300)</button>
-
-        <!-- Adopt Jooni (special pet) -->
-        <button id="adoptJooniBtn" class="btn">🐱 Adopt Jooni (25000)</button>
-
-      </div>
-
-      <div id="nameArea" style="display:none; margin-top:8px">
-        <div class="shop-row">
-          <select id="catSelect" class="btn"></select>
-          <input id="catNameInput" class="input" placeholder="Enter a cute name…" style="max-width:260px"/>
-          <button id="confirmNameBtn" class="primary">Save Name</button>
-          <span id="nameCostNote" class="tiny muted">Costs 500 points.</span>
-        </div>
-      </div>
-
-      <div id="shopMsg" class="feedback" style="margin-top:8px"></div>
+    <div class="shop-grid">
+      <button class="shop-tile" id="buyFishBtn"><span class="st-icon">🐟</span><span class="st-name">Fish</span><span class="st-price">100</span></button>
+      <button class="shop-tile" id="feedFishBtn"><span class="st-icon">🍽️</span><span class="st-name">Feed</span><span class="st-price">·</span></button>
+      <button class="shop-tile" id="buyCatnipBtn"><span class="st-icon">🌿</span><span class="st-name">Catnip</span><span class="st-price">250</span></button>
+      <button class="shop-tile" id="useCatnipBtn"><span class="st-icon">🎉</span><span class="st-name">Party</span><span class="st-price">·</span></button>
+      <button class="shop-tile" id="buyBallBtn"><span class="st-icon">⚽</span><span class="st-name">Ball</span><span class="st-price">300</span></button>
+      <button class="shop-tile" id="toggleNameArea"><span class="st-icon">📝</span><span class="st-name">Name</span><span class="st-price">500</span></button>
+      <button class="shop-tile" id="buyTreeBtn"><span class="st-icon">🌳</span><span class="st-name">Tree</span><span class="st-price">1000</span></button>
+      <button class="shop-tile" id="buyToyBtn"><span class="st-icon">🎾</span><span class="st-name">Toy</span><span class="st-price">600</span></button>
+      <button class="shop-tile" id="buyBowlBtn"><span class="st-icon">🥣</span><span class="st-name">Bowl</span><span class="st-price">800</span></button>
+      <button class="shop-tile" id="adoptJooniBtn"><span class="st-icon">🐱</span><span class="st-name">Jooni</span><span class="st-price">25k</span></button>
+      <button class="shop-tile" id="toggleNamesBtn"><span class="st-icon">🐾</span><span class="st-name">Names</span><span class="st-price">show</span></button>
     </div>
+
+    <div id="nameArea" style="display:none; margin-top:10px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select id="catSelect" class="btn" style="flex:1;min-width:110px"></select>
+        <input id="catNameInput" class="input" placeholder="Cute name…" style="flex:2;min-width:130px"/>
+        <button id="confirmNameBtn" class="primary">Save</button>
+      </div>
+      <span id="nameCostNote" class="tiny muted">Costs 500 points.</span>
+    </div>
+
+    <div id="shopMsg" class="feedback" style="margin-top:8px;text-align:center"></div>
   </div>
 </div>
 
@@ -1815,14 +1788,15 @@ function removeCatnipFromCat(c){
   c.vx = Math.cos(ang)*c.speed; c.vy = Math.sin(ang)*c.speed; c.turnMult = 1; c.el.classList.remove('catnip'); c.__catnip = false;
 }
 function updateCatnipCountdownUI(){
-  const btn = $('useCatnipBtn'); if(!btn) return;
+  const btn = $('useCatnipBtn'); if(!btn) return; const p=btn.querySelector('.st-price');
   if(catnipActive){
     const remaining = Math.max(0, catnipEndsAt - Date.now());
-    btn.textContent = `🌿 Catnip Party (${fmtCatnip(remaining)})`;
+    if(p) p.textContent = fmtCatnip(remaining);
     btn.disabled = true; if(remaining <= 0){ stopCatnipParty(); }
   }else{
-    btn.textContent = '🌿 Use Catnip';
-    btn.disabled = (state.inventory?.catnip||0) <= 0 || (state.mapUnlocked||0) === 0;
+    const nip = state.inventory?.catnip||0;
+    if(p) p.textContent = nip>0 ? `×${nip}` : '·';
+    btn.disabled = nip <= 0 || (state.mapUnlocked||0) === 0;
   }
 }
 function startCatnipParty(ms = CATNIP_DURATION_MS){
@@ -1892,28 +1866,32 @@ $('closeAch').addEventListener('click', ()=> $('achModal').style.display='none')
 $('openMap').addEventListener('click', ()=>{ renderMap(); $('mapModal').style.display='grid'; requestAnimationFrame(startCats); updateShopUI(); updateNamesToggleUI(); updateNamesVisibility(); });
 $('closeMap').addEventListener('click', ()=>{ $('mapModal').style.display='none'; stopCats(); });
 
+/* Shop tile helpers */
+function stSet(id, price, disabled, owned){
+  const t=$(id); if(!t) return;
+  const p=t.querySelector('.st-price'); if(p) p.textContent = price;
+  t.disabled = !!disabled;
+  t.classList.toggle('owned', !!owned);
+}
 function updateShopUI(){
   const scoreEl=$('shopScore'), fishEl=$('shopFish'), nipEl=$('shopCatnip');
   if(scoreEl) scoreEl.textContent = state.score; if(fishEl) fishEl.textContent = state.inventory?.fish || 0; if(nipEl) nipEl.textContent = state.inventory?.catnip || 0;
-  const buyBtn=$('buyFishBtn'), feedBtn=$('feedFishBtn'), nameBtn=$('toggleNameArea');
-  if(buyBtn){ buyBtn.textContent = `🐟 Buy Fish (${FISH_COST})`; buyBtn.disabled = state.score < FISH_COST; }
-  if(feedBtn) feedBtn.disabled = (state.inventory?.fish||0) <= 0;
-  const buyN=$('buyCatnipBtn'); if(buyN){ buyN.textContent = `🌿 Buy Catnip (${CATNIP_COST})`; buyN.disabled = state.score < CATNIP_COST; }
-  const jb=$('adoptJooniBtn'); if(jb){ jb.textContent = state.jooniPet ? '🐱 Jooni adopted ✓' : `🐱 Adopt Jooni (${JOONI_PET_COST})`; jb.disabled = state.jooniPet || state.score < JOONI_PET_COST; }
-  const bb=$('buyBallBtn'); if(bb){
-    if(ballActive()){ const rem=Math.max(0, state.ballEndsAt-Date.now()); bb.textContent=`⚽ Playing (${fmtCatnip(rem)})`; bb.disabled=true; }
-    else { bb.textContent=`⚽ Ball (${BALL_COST})`; bb.disabled = state.score < BALL_COST; }
-  }
-  updateCatnipCountdownUI();
+  const fish = state.inventory?.fish||0;
+  stSet('buyFishBtn', FISH_COST, state.score < FISH_COST);
+  stSet('feedFishBtn', fish>0?`×${fish}`:'·', fish<=0);
+  stSet('buyCatnipBtn', CATNIP_COST, state.score < CATNIP_COST);
+  if(ballActive()) stSet('buyBallBtn', fmtCatnip(Math.max(0,state.ballEndsAt-Date.now())), true);
+  else stSet('buyBallBtn', BALL_COST, state.score < BALL_COST);
   const hasToken = (state.inventory?.nameTokens||0) > 0;
-  if(nameBtn){ nameBtn.textContent = `📝 Name a Cat (${NAME_COST})`; nameBtn.disabled = !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0); }
-  if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
-  // Furniture panel buttons
+  stSet('toggleNameArea', NAME_COST, !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0));
   const f = state.furniture||{};
-  const treeBtn=$('buyTreeBtn'), toyBtn=$('buyToyBtn'), bowlBtn=$('buyBowlBtn');
-  if(treeBtn){ treeBtn.textContent = f.catTree  ? '✓ Owned' : `Buy (${FURNITURE_COST})`; treeBtn.disabled = f.catTree  || state.score < FURNITURE_COST; }
-  if(toyBtn) { toyBtn.textContent  = f.catToy   ? '✓ Owned' : `Buy (${CAT_TOY_COST})`;  toyBtn.disabled  = f.catToy   || state.score < CAT_TOY_COST; }
-  if(bowlBtn){ bowlBtn.textContent = f.catBowl  ? '✓ Owned' : `Buy (${CAT_BOWL_COST})`; bowlBtn.disabled = f.catBowl  || state.score < CAT_BOWL_COST; }
+  stSet('buyTreeBtn', f.catTree?'✓':FURNITURE_COST, f.catTree||state.score<FURNITURE_COST, f.catTree);
+  stSet('buyToyBtn',  f.catToy ?'✓':CAT_TOY_COST,  f.catToy ||state.score<CAT_TOY_COST,  f.catToy);
+  stSet('buyBowlBtn', f.catBowl?'✓':CAT_BOWL_COST, f.catBowl||state.score<CAT_BOWL_COST, f.catBowl);
+  stSet('adoptJooniBtn', state.jooniPet?'✓':'25k', state.jooniPet||state.score<JOONI_PET_COST, state.jooniPet);
+  stSet('toggleNamesBtn', state.showCatNames?'hide':'show', false);
+  updateCatnipCountdownUI();
+  if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
   const sel=$('catSelect');
   if(sel){
     const n = state.mapUnlocked||0; sel.innerHTML='';
@@ -1922,9 +1900,6 @@ function updateShopUI(){
   }
   if(cats && cats.length){ cats.forEach(c => { const nm=c.isJooni?'Jooni':getCatName(c.idx); c.el.title = nm; if(c.label) c.label.textContent = nm; }); }
 }
-$('openShop').addEventListener('click', ()=>{
-  const panel = $('shopPanel'); panel.style.display = panel.style.display==='none' ? 'block' : 'none'; updateShopUI();
-});
 $('feedFishBtn').addEventListener('click', ()=>{
   if((state.inventory.fish||0) <= 0) return; state.inventory.fish -= 1;
   $('shopMsg').textContent = 'Fed the cats! They’re zooming 😺💨'; $('shopMsg').className='feedback ok';
@@ -1954,24 +1929,6 @@ $('confirmNameBtn').addEventListener('click', ()=>{
   if((state.inventory.nameTokens||0) <= 0){ $('shopMsg').textContent='You need to buy a new name token first.'; $('shopMsg').className='feedback warn'; return; }
   if(!state.catNames) state.catNames = {}; state.catNames[idx] = name; state.nameCursor = idx; state.inventory.nameTokens = Math.max(0, (state.inventory.nameTokens||0)-1);
   $('shopMsg').textContent = `Named cat #${idx+1} “${name}” 🏷️`; $('shopMsg').className='feedback ok'; $('catNameInput').value=''; $('nameArea').style.display='none'; flashCatNames(4000); persist();
-});
-/* Shop dropdowns */
-function closeShopDropdowns(except){
-  ['foodPanel','feedPanel','furnPanel'].forEach(id=>{ if(id!==except){ const p=$(id); if(p) p.style.display='none'; } });
-}
-function toggleShopPanel(id){
-  const p=$(id); if(!p) return;
-  const next = p.style.display==='flex' ? 'none' : 'flex';
-  closeShopDropdowns(id);
-  p.style.display = next;
-  updateShopUI();
-}
-$('toggleFoodPanel').addEventListener('click', (e)=>{ e.stopPropagation(); toggleShopPanel('foodPanel'); });
-$('toggleFeedPanel').addEventListener('click', (e)=>{ e.stopPropagation(); toggleShopPanel('feedPanel'); });
-$('toggleFurnPanel').addEventListener('click', (e)=>{ e.stopPropagation(); toggleShopPanel('furnPanel'); });
-document.addEventListener('click', (e)=>{
-  if(e.target.closest && e.target.closest('#foodPanel,#feedPanel,#furnPanel')) return; // keep panel open while shopping
-  closeShopDropdowns(null);
 });
 
 function buyFurnItem(key, cost, label){
@@ -2005,7 +1962,7 @@ $('buyBallBtn').addEventListener('click', ()=>{
   updateShopUI(); persist();
   if(typeof Jooni!=='undefined') Jooni.milestone('A ball! Bâzi konim — let’s play! ⚽🐾');
 });
-function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Show Names'; }
+function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; const p=btn.querySelector('.st-price'); if(p) p.textContent = state.showCatNames ? 'hide' : 'show'; }
 function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ const nm = c.isJooni ? 'Jooni' : getCatName(c.idx); if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = nm; } c.el.title = nm; }); } }
 function flashCatNames(ms=3000){ flashNamesUntil = Date.now() + ms; updateNamesVisibility(); setTimeout(()=>updateNamesVisibility(), ms+50); }
 $('toggleNamesBtn').addEventListener('click', ()=>{ state.showCatNames = !state.showCatNames; persist(); });
