@@ -124,7 +124,8 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 /* roaming cats overlay */
 .cat-layer{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
 .cat{position:absolute;font-size:32px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35));will-change:transform,left,top}
-.cat.flip{transform:scaleX(-1)}
+/* Flip only the cat graphic (not the name label) when walking left */
+.cat.flip .cat-emoji, .cat.flip .cat-img{transform:scaleX(-1)}
 @media(min-width:760px){ .cat{font-size:40px} }
 .cat .cat-emoji{display:inline-block}
 .cat .cat-img{height:44px;width:auto;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
