@@ -305,6 +305,12 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .mtile.wrong{border-color:var(--err);border-bottom-color:var(--err);animation:mwrong .3s}
 @keyframes mwrong{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 
+/* ======== Journey stats grid ======== */
+.jstats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.jstat{background:var(--well);border:1px solid var(--line);border-radius:12px;padding:8px 4px;text-align:center}
+.jstat .v{font-size:17px;font-weight:900;display:block;line-height:1.2}
+.jstat .l{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.3px}
+
 /* ======== Streak calendar ======== */
 .scell{aspect-ratio:1/1;border-radius:6px;background:var(--well);border:1px solid var(--line);display:grid;place-items:center;font-size:12px;line-height:1}
 .scell.on{background:var(--accent);border-color:color-mix(in srgb,var(--accent) 55%,#000)}
@@ -761,7 +767,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <h3 style="margin:0" id="journeyTitle">🧭 Journey</h3>
       <button id="journeyClose" class="btn">Close</button>
     </div>
-    <div id="journeyStats" class="stat" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:space-around;margin-bottom:10px;font-size:13px"></div>
+    <div id="journeyStats" class="jstats-grid" style="margin-bottom:10px"></div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <button id="showMapBtn" class="btn" style="flex:1">🧭 Lesson Map</button>
       <button id="showCalBtn" class="btn" style="flex:1">🔥 Streak Calendar</button>
@@ -1632,6 +1638,19 @@ function computeDayStreak(){
   for(let k=start;k<3650;k++){ if(dayActive(isoForOffset(k))) streak++; else break; }
   return streak;
 }
+function longestDayStreak(){
+  const nums = (state.mapDays||[]).filter(d=>(d.correct||0)>0 || d.frozen)
+    .map(d=>Math.round(new Date(d.date+'T00:00:00').getTime()/86400000));
+  const set = new Set(nums); let best=0;
+  for(const d of set){ if(!set.has(d-1)){ let len=1; while(set.has(d+len)) len++; if(len>best) best=len; } }
+  return best;
+}
+function accuracyPct(){
+  let c=0,w=0; for(const k in (state.srs||{})){ c+=state.srs[k].correct||0; w+=state.srs[k].wrong||0; }
+  return (c+w) ? Math.round(c/(c+w)*100) : 0;
+}
+function masteredWordCount(){ let n=0; for(const k in (state.srs||{})){ if((state.srs[k].stage||0)>=4) n++; } return n; }
+function daysPracticedCount(){ return (state.mapDays||[]).filter(d=>(d.correct||0)>0).length; }
 /* If yesterday was missed but the day before was active, spend a freeze to bridge it */
 function maybeUseFreeze(){
   const y=isoForOffset(1), y2=isoForOffset(2);
@@ -2022,10 +2041,18 @@ function renderJourney(){
     if(cls==='current' && !currentNode) currentNode=node;
   });
   $('journeyTitle').textContent = `🧭 ${ACTIVE_PROFILE||'Your'}'s Journey`;
-  $('journeyStats').innerHTML =
-    `<span>⭐ <b>${state.score}</b> pts</span>`+
-    `<span>📖 <b>${(state.covered||[]).length}</b> learned</span>`+
-    `<span>🧭 <b>${doneCount}</b>/${lessons.length} lessons</span>`;
+  const js = (emoji,val,label)=>`<div class="jstat"><span class="v">${emoji} ${val}</span><span class="l">${label}</span></div>`;
+  $('journeyStats').innerHTML = [
+    js('⭐', state.score, 'points'),
+    js('📖', `${(state.covered||[]).length}/${words.length}`, 'learned'),
+    js('🏆', masteredWordCount(), 'mastered'),
+    js('🔥', computeDayStreak(), 'day streak'),
+    js('🏅', longestDayStreak(), 'best streak'),
+    js('🧭', `${doneCount}/${lessons.length}`, 'lessons'),
+    js('🎯', accuracyPct()+'%', 'accuracy'),
+    js('📅', daysPracticedCount(), 'days'),
+    js('❄️', state.streakFreezes||0, 'freezes'),
+  ].join('');
   renderStreakCalendar();
   $('journeySub').textContent = `Finish a lesson to unlock the next!`;
   // scroll the current lesson into view
