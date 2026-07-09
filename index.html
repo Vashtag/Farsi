@@ -294,6 +294,24 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 @keyframes popCorrect{ 50%{ transform:scale(1.06) } }
 .aq-option.wrong{ border-color: var(--err); box-shadow:0 0 0 2px rgba(239,68,68,.22) inset }
 
+/* ======== Lesson runner ======== */
+.lmedia{width:150px;height:150px;margin:6px auto 10px;display:grid;place-items:center;background:var(--well);border:1px solid var(--line);border-radius:18px}
+.lmedia img{max-width:100%;max-height:100%;object-fit:contain}
+.lmedia .lemoji{font-size:84px;line-height:1}
+.lprompt{font-size:1.15rem;font-weight:800;margin-bottom:12px}
+.lfa{font-family:var(--font-farsi);direction:rtl;font-size:2rem;font-weight:700;color:#a78bfa;margin:2px 0}
+.ltrans{font-size:1.4rem;font-weight:800;color:var(--accent-2)}
+.lgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.lopt{padding:14px 10px;border-radius:14px;border:2px solid #2b3b5c;border-bottom-width:4px;border-bottom-color:#101a30;background:#1c2942;color:#e5e7eb;cursor:pointer;font-weight:800;font-size:15px;min-height:56px;display:flex;align-items:center;justify-content:center;text-align:center;transition:filter .12s,transform .06s}
+.lopt:hover{filter:brightness(1.12)} .lopt:active{transform:translateY(2px);border-bottom-width:2px}
+.lopt.img-opt{aspect-ratio:1/1;min-height:0}
+.lopt.img-opt img{max-width:100%;max-height:100%;object-fit:contain} .lopt.img-opt .lemoji{font-size:52px}
+.lopt.correct{background:var(--accent);border-color:color-mix(in srgb,var(--accent) 55%,#000);color:#06240f}
+.lopt.wrong{background:color-mix(in srgb,var(--err) 30%,#1c2942);border-color:var(--err)}
+.lslot{width:46px;height:46px;border:2px dashed #3b4d6b;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--font-farsi);font-size:1.5rem}
+.ltile{width:46px;height:46px;border-radius:12px;border:2px solid #2b3b5c;border-bottom-width:4px;border-bottom-color:#101a30;background:#1c2942;color:#e5e7eb;font-family:var(--font-farsi);font-size:1.5rem;cursor:pointer}
+.ltile:disabled{opacity:.3}
+
 /* ======== Match game ======== */
 .mtile{padding:14px 10px;border-radius:14px;border:2px solid #2b3b5c;border-bottom-width:4px;border-bottom-color:#101a30;
   background:#1c2942;color:#e5e7eb;cursor:pointer;font-weight:800;font-size:16px;min-height:52px;
@@ -785,6 +803,20 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <div id="streakCal" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px"></div>
       <div class="tiny" style="color:#6b7280;margin-top:6px">Last 4 weeks · 🟩 practiced · ⭐ goal met · ❄️ freeze</div>
     </div>
+  </div>
+</div>
+
+<!-- Lesson runner (mixed exercises) -->
+<div id="lessonModal" class="modal">
+  <div class="modal-card" style="max-width:520px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="qprogress" style="flex:1;height:12px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-right:10px">
+        <div id="lessonBar" class="bar" style="height:12px;width:0%"></div>
+      </div>
+      <button id="lessonQuit" class="btn" style="padding:6px 10px">✖</button>
+    </div>
+    <div id="lessonQ" style="text-align:center;min-height:240px"></div>
+    <div id="lessonFeedback" class="feedback" style="min-height:26px;text-align:center"></div>
   </div>
 </div>
 
@@ -1595,11 +1627,9 @@ const POINTS_PER_CORRECT_LQ = 2; // 2 points for Learn & Quiz modes
 
 function handleAnswer(correct, gi, source='typing'){
   const r=ensureSRS(gi); r.seen++;
-  if(lessonActive) lessonTotal++;
   if(correct){
     r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1); scheduleAfter(gi,SRS_INTERVALS_HOURS[r.stage]||24);
     state.score+=POINTS_PER_CORRECT_LQ; state.streak+=1; addCovered(gi);
-    if(lessonActive) lessonCorrect++;
     sessionAnswered.add(gi); updateSessionBar();
     if(source!=='speech'){ $('typeFeedback').textContent=`Great! +${POINTS_PER_CORRECT_LQ} points`; $('typeFeedback').className='feedback ok'; }
     celebrateSimple();
@@ -1611,7 +1641,6 @@ function handleAnswer(correct, gi, source='typing'){
     Jooni.encourage();
   }
   persist();
-  if(lessonActive && lessonFilter && lessonFilter.every(i=>sessionAnswered.has(i))){ setTimeout(finishLesson, 550); return; }
   setTimeout(next, 450);
 }
 const COLOR_INDICES = words.reduce((acc,w,i)=>{ if(['white','black','red','blue','green','yellow','purple','orange (color)','pink'].includes(w.en)) acc.push(i); return acc; }, []);
@@ -2064,14 +2093,8 @@ function renderJourney(){
   // scroll the current lesson into view
   setTimeout(()=>{ if(currentNode) currentNode.scrollIntoView({block:'center'}); }, 30);
 }
-function launchLesson(idxs){
-  lessonFilter = idxs.slice();
-  activeCat = 'all';
-  lessonActive = true; lessonCorrect = 0; lessonTotal = 0;
-  closeJourney();
-  $('startOverlay').style.display='none';
-  mode='learn'; resetSessionProgress(); ensureOrder(); showItem();
-}
+/* ── Mixed-exercise lesson runner ── */
+let LESSON = { queue:[], qi:0, words:[], correct:0, total:0 };
 function currentLessonIdxs(){
   const lessons = deriveLessons(), cov = getCoveredSet();
   for(const idxs of lessons){
@@ -2080,17 +2103,138 @@ function currentLessonIdxs(){
   for(let k=lessons.length-1;k>=0;k--){ if(lessons[k].every(isReleased)) return lessons[k]; } // all done → replay last
   return lessons[0];
 }
+function lessonSpellable(wi){ const l=spellLetters(words[wi]); return l.length>=2 && l.length<=6 && !words[wi].fa.includes(' '); }
+function buildLessonQueue(idxs){
+  const cov=getCoveredSet(), q=[];
+  idxs.forEach(wi=>{ if(!cov.has(wi)) q.push({type:'intro', wi}); });   // introduce new words
+  const quiz = idxs.map(wi=>{
+    const types=['pickImage','pickWord','type']; if(lessonSpellable(wi)) types.push('spell');
+    return { type: types[Math.floor(Math.random()*types.length)], wi };
+  });
+  shuffle(quiz);
+  return q.concat(quiz);
+}
+function launchLesson(idxs){
+  LESSON = { words: idxs.slice(), qi:0, correct:0, total:0, queue: buildLessonQueue(idxs) };
+  closeJourney(); $('startOverlay').style.display='none';
+  $('lessonModal').style.display='grid';
+  renderLessonStep();
+}
 function startCurrentLesson(){ $('startOverlay').style.display='none'; launchLesson(currentLessonIdxs()); Jooni.greet(); }
+function mediaEl(wi){
+  const d=document.createElement('div'); d.className='lmedia';
+  const img=document.createElement('img'); const emo=document.createElement('span'); emo.className='lemoji';
+  d.appendChild(img); d.appendChild(emo); setImageWithFallback(img, emo, words[wi]); return d;
+}
+function lessonDistractors(wi, n){
+  const pool = unlockedIndices().filter(i=>i!==wi && words[i].en!==words[wi].en);
+  shuffle(pool); return pool.slice(0, n);
+}
+function renderLessonStep(){
+  const Q=$('lessonQ'), fb=$('lessonFeedback'); fb.textContent=''; fb.className='feedback';
+  $('lessonBar').style.width = `${Math.round(LESSON.qi / Math.max(1,LESSON.queue.length) * 100)}%`;
+  if(LESSON.qi >= LESSON.queue.length){ finishLesson(); return; }
+  const step = LESSON.queue[LESSON.qi], wi = step.wi, item = words[wi];
+  Q.innerHTML='';
+  if(step.type==='intro'){
+    Q.appendChild(mediaEl(wi));
+    Q.insertAdjacentHTML('beforeend', `<div class="lfa">${item.fa}</div><div class="ltrans">${item.translit}</div><div class="lprompt" style="margin-top:4px">${item.en}</div>`);
+    const b=document.createElement('button'); b.className='primary'; b.style.width='100%'; b.textContent='Got it →';
+    b.addEventListener('click', ()=>{ LESSON.qi++; renderLessonStep(); }); Q.appendChild(b);
+    return;
+  }
+  if(step.type==='pickImage'){
+    Q.insertAdjacentHTML('beforeend', `<div class="lprompt">Which one is “<b>${item.en}</b>”?</div>`);
+    const grid=document.createElement('div'); grid.className='lgrid';
+    const opts=shuffle([wi, ...lessonDistractors(wi,3)]);
+    opts.forEach(oi=>{
+      const btn=document.createElement('button'); btn.className='lopt img-opt';
+      const img=document.createElement('img'); const emo=document.createElement('span'); emo.className='lemoji';
+      btn.appendChild(img); btn.appendChild(emo); setImageWithFallback(img, emo, words[oi]);
+      btn.addEventListener('click', ()=> lessonPick(btn, oi===wi, wi, grid));
+      grid.appendChild(btn);
+    });
+    Q.appendChild(grid); return;
+  }
+  if(step.type==='pickWord'){
+    Q.appendChild(mediaEl(wi));
+    Q.insertAdjacentHTML('beforeend', `<div class="lprompt">What is this?</div>`);
+    const grid=document.createElement('div'); grid.className='lgrid';
+    const opts=shuffle([wi, ...lessonDistractors(wi,3)]);
+    opts.forEach(oi=>{
+      const btn=document.createElement('button'); btn.className='lopt'; btn.textContent=words[oi].translit;
+      btn.addEventListener('click', ()=> lessonPick(btn, oi===wi, wi, grid));
+      grid.appendChild(btn);
+    });
+    Q.appendChild(grid); return;
+  }
+  if(step.type==='type'){
+    Q.appendChild(mediaEl(wi));
+    Q.insertAdjacentHTML('beforeend', `<div class="lprompt">${item.en}</div><div class="tiny" style="color:#6b7280;margin-bottom:6px">Type the pronunciation</div>`);
+    const inp=document.createElement('input'); inp.className='input'; inp.placeholder='e.g., sib'; inp.autocapitalize='off'; inp.autocorrect='off'; inp.spellcheck=false;
+    const b=document.createElement('button'); b.className='primary'; b.style.cssText='width:100%;margin-top:10px'; b.textContent='Check';
+    const submit=()=>{ const ok=normalizeTranslit(inp.value)===normalizeTranslit(item.translit) || closeEnough(normalizeTranslit(inp.value), normalizeTranslit(item.translit)); lessonResult(ok, wi, ok?'':`Answer: ${item.translit}`); };
+    b.addEventListener('click', submit);
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter') submit(); });
+    Q.appendChild(inp); Q.appendChild(b); setTimeout(()=>inp.focus(),40); return;
+  }
+  if(step.type==='spell'){
+    Q.appendChild(mediaEl(wi));
+    Q.insertAdjacentHTML('beforeend', `<div class="lprompt">${item.en} <span class="tiny" style="color:#6b7280">(${item.translit})</span></div>`);
+    const letters=spellLetters(item);
+    const slots=document.createElement('div'); slots.style.cssText='display:flex;gap:6px;justify-content:center;direction:rtl;margin-bottom:12px;min-height:50px';
+    const state2={ filled:[] };
+    letters.forEach(()=>{ const s=document.createElement('div'); s.className='lslot'; slots.appendChild(s); });
+    const decoys=DECOY_POOL.filter(l=>!letters.includes(l)); shuffle(decoys);
+    const tileLetters=shuffle([...letters, ...decoys.slice(0,2)]);
+    const tray=document.createElement('div'); tray.style.cssText='display:flex;flex-wrap:wrap;gap:6px;justify-content:center';
+    tileLetters.forEach(ch=>{
+      const t=document.createElement('button'); t.className='ltile'; t.textContent=ch;
+      t.addEventListener('click', ()=>{
+        if(t.disabled || state2.filled.length>=letters.length) return;
+        const slot=slots.children[state2.filled.length]; slot.textContent=ch; slot.style.borderColor='#6366f1';
+        state2.filled.push(ch); t.disabled=true;
+        if(state2.filled.length===letters.length){
+          const ok=state2.filled.every((c,k)=>c===letters[k]);
+          lessonResult(ok, wi, ok?'':`It’s ${item.fa}`);
+        }
+      });
+      tray.appendChild(t);
+    });
+    Q.appendChild(slots); Q.appendChild(tray); return;
+  }
+}
+function lessonPick(btn, ok, wi, grid){
+  Array.from(grid.children).forEach(b=>b.style.pointerEvents='none');
+  btn.classList.add(ok?'correct':'wrong');
+  lessonResult(ok, wi, ok?'':`It’s ${words[wi].en}`);
+}
+function lessonResult(ok, wi, wrongMsg){
+  const fb=$('lessonFeedback');
+  LESSON.total++;
+  if(ok){
+    LESSON.correct++; state.score+=POINTS_PER_CORRECT_LQ; state.streak+=1; addCovered(wi);
+    const r=ensureSRS(wi); r.seen++; r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1); scheduleAfter(wi,SRS_INTERVALS_HOURS[r.stage]||24);
+    fb.textContent='✔ Correct!'; fb.className='feedback ok'; celebrateSimple(); checkDailyGoalAndMap(); updateAchievementProgress(); persist();
+  }else{
+    state.streak=0; const r=ensureSRS(wi); r.seen++; r.wrong++; r.stage=Math.max(0,r.stage-1); scheduleAfter(wi,2);
+    fb.textContent=wrongMsg||'Not quite'; fb.className='feedback warn'; Jooni.encourage(); persist();
+  }
+  LESSON.qi++;
+  setTimeout(renderLessonStep, ok?700:1300);
+}
 function finishLesson(){
-  lessonActive = false;
-  const acc = lessonTotal ? Math.round(lessonCorrect/lessonTotal*100) : 100;
-  const xp = lessonCorrect * POINTS_PER_CORRECT_LQ;
+  $('lessonModal').style.display='none';
+  const acc = LESSON.total ? Math.round(LESSON.correct/LESSON.total*100) : 100;
+  const xp = LESSON.correct * POINTS_PER_CORRECT_LQ;
   $('lessonDoneStats').innerHTML = `<span>⭐ +${xp} XP</span><span>🎯 ${acc}%</span>`;
   if(window.confetti) confetti({particleCount:130,spread:85,startVelocity:55,origin:{y:.6}});
   if(typeof Jooni!=='undefined') Jooni.milestone("Lesson complete! Âfarin Nicole! 🎉🐾");
   $('lessonDoneModal').style.display='grid';
 }
-$('lessonContinue').addEventListener('click', ()=>{ $('lessonDoneModal').style.display='none'; lessonFilter=null; openJourney(); });
+$('lessonQuit').addEventListener('click', ()=>{ $('lessonModal').style.display='none'; openJourney(); });
+$('lessonModal').addEventListener('click', e=>{ if(e.target.id==='lessonModal'){ $('lessonModal').style.display='none'; openJourney(); } });
+$('lessonContinue').addEventListener('click', ()=>{ $('lessonDoneModal').style.display='none'; openJourney(); });
 $('journeyClose').addEventListener('click', closeJourney);
 $('journeyModal').addEventListener('click', e=>{ if(e.target.id==='journeyModal') closeJourney(); });
 $('profileBadge').addEventListener('click', openJourney);
