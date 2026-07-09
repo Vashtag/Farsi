@@ -152,9 +152,8 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 /* Arena when cats are unlocked (grid hidden) */
 .map-wrap.arena{
   background:#0b1229;border:1px solid var(--line);border-radius:12px;
-  height:clamp(260px, 45vh, 380px);
+  height:clamp(300px, 52vh, 440px);
 }
-@media (max-width:700px){ .map-wrap.arena{ height:clamp(190px, 30vh, 260px); } }
 
 /* Rewards / shop row */
 .shop-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -295,18 +294,10 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .bazaar-head h3{font-size:1.15rem}
 .bazaar-stats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
 .bazaar-stats span{background:var(--well);border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-weight:800;font-size:14px}
-.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-top:8px}
-.shop-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:82px;padding:10px 4px;
-  border-radius:16px;border:1px solid var(--line);border-bottom-width:4px;border-bottom-color:#101a30;background:#1c2942;color:#e5e7eb;cursor:pointer;
-  transition:filter .12s ease,transform .06s ease}
-.shop-tile:hover{filter:brightness(1.13)}
-.shop-tile:active{transform:translateY(2px);border-bottom-width:2px}
-.shop-tile:disabled{opacity:.4;cursor:default;transform:none}
-.st-icon{font-size:27px;line-height:1}
-.st-name{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.3px;color:#cbd5e1}
-.st-price{font-size:12px;font-weight:900;color:var(--accent-2)}
-.shop-tile.owned{background:color-mix(in srgb,var(--accent) 18%,#1c2942);border-color:color-mix(in srgb,var(--accent) 45%,#000)}
-.shop-tile.owned .st-price{color:var(--accent)}
+.bazaar-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+.bazaar-btns .btn{font-size:13px;padding:9px 12px}
+.bazaar-sub{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px;background:var(--well);border:1px solid var(--line);border-radius:14px;padding:10px}
+.bazaar-sub .btn{font-size:13px}
 
 /* ======== Lesson runner ======== */
 .lmedia{width:150px;height:150px;margin:6px auto 10px;display:grid;place-items:center;background:var(--well);border:1px solid var(--line);border-radius:18px}
@@ -544,20 +535,24 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <div id="catLayer" class="cat-layer"></div>
     </div>
 
-    <p class="tiny" style="text-align:center;margin:8px 0 2px;color:#6b7280">Tap an item to buy · cats unlock at 5, 20, 100, 250, 500</p>
-
-    <div class="shop-grid">
-      <button class="shop-tile" id="buyFishBtn"><span class="st-icon">🐟</span><span class="st-name">Fish</span><span class="st-price">100</span></button>
-      <button class="shop-tile" id="feedFishBtn"><span class="st-icon">🍽️</span><span class="st-name">Feed</span><span class="st-price">·</span></button>
-      <button class="shop-tile" id="buyCatnipBtn"><span class="st-icon">🌿</span><span class="st-name">Catnip</span><span class="st-price">250</span></button>
-      <button class="shop-tile" id="useCatnipBtn"><span class="st-icon">🎉</span><span class="st-name">Party</span><span class="st-price">·</span></button>
-      <button class="shop-tile" id="buyBallBtn"><span class="st-icon">⚽</span><span class="st-name">Ball</span><span class="st-price">300</span></button>
-      <button class="shop-tile" id="toggleNameArea"><span class="st-icon">📝</span><span class="st-name">Name</span><span class="st-price">500</span></button>
-      <button class="shop-tile" id="buyTreeBtn"><span class="st-icon">🌳</span><span class="st-name">Tree</span><span class="st-price">1000</span></button>
-      <button class="shop-tile" id="buyToyBtn"><span class="st-icon">🎾</span><span class="st-name">Toy</span><span class="st-price">600</span></button>
-      <button class="shop-tile" id="buyBowlBtn"><span class="st-icon">🥣</span><span class="st-name">Bowl</span><span class="st-price">800</span></button>
-      <button class="shop-tile" id="adoptJooniBtn"><span class="st-icon">🐱</span><span class="st-name">Jooni</span><span class="st-price">25k</span></button>
-      <button class="shop-tile" id="toggleNamesBtn"><span class="st-icon">🐾</span><span class="st-name">Names</span><span class="st-price">show</span></button>
+    <div class="bazaar-btns">
+      <button id="btnFood" class="btn">🍽️ Food</button>
+      <button id="btnFurn" class="btn">🪑 Furniture</button>
+      <button id="buyBallBtn" class="btn">⚽ Ball</button>
+      <button id="toggleNameArea" class="btn">📝 Name</button>
+      <button id="adoptJooniBtn" class="btn">🐱 Jooni</button>
+      <button id="toggleNamesBtn" class="btn">🐾 Names</button>
+    </div>
+    <div id="foodSub" class="bazaar-sub" style="display:none">
+      <button id="buyFishBtn" class="btn">🐟 Buy Fish (100)</button>
+      <button id="feedFishBtn" class="btn">🍽️ Feed Cats</button>
+      <button id="buyCatnipBtn" class="btn">🌿 Buy Catnip (250)</button>
+      <button id="useCatnipBtn" class="btn">🎉 Use Catnip</button>
+    </div>
+    <div id="furnSub" class="bazaar-sub" style="display:none">
+      <button id="buyTreeBtn" class="btn">🌳 Cat Tree (1000)</button>
+      <button id="buyToyBtn" class="btn">🎾 Cat Toy (600)</button>
+      <button id="buyBowlBtn" class="btn">🥣 Cat Bowl (800)</button>
     </div>
 
     <div id="nameArea" style="display:none; margin-top:10px">
@@ -1788,15 +1783,14 @@ function removeCatnipFromCat(c){
   c.vx = Math.cos(ang)*c.speed; c.vy = Math.sin(ang)*c.speed; c.turnMult = 1; c.el.classList.remove('catnip'); c.__catnip = false;
 }
 function updateCatnipCountdownUI(){
-  const btn = $('useCatnipBtn'); if(!btn) return; const p=btn.querySelector('.st-price');
+  const btn = $('useCatnipBtn'); if(!btn) return;
   if(catnipActive){
     const remaining = Math.max(0, catnipEndsAt - Date.now());
-    if(p) p.textContent = fmtCatnip(remaining);
+    btn.textContent = `🎉 Party (${fmtCatnip(remaining)})`;
     btn.disabled = true; if(remaining <= 0){ stopCatnipParty(); }
   }else{
-    const nip = state.inventory?.catnip||0;
-    if(p) p.textContent = nip>0 ? `×${nip}` : '·';
-    btn.disabled = nip <= 0 || (state.mapUnlocked||0) === 0;
+    btn.textContent = '🎉 Use Catnip';
+    btn.disabled = (state.inventory?.catnip||0) <= 0 || (state.mapUnlocked||0) === 0;
   }
 }
 function startCatnipParty(ms = CATNIP_DURATION_MS){
@@ -1866,30 +1860,23 @@ $('closeAch').addEventListener('click', ()=> $('achModal').style.display='none')
 $('openMap').addEventListener('click', ()=>{ renderMap(); $('mapModal').style.display='grid'; requestAnimationFrame(startCats); updateShopUI(); updateNamesToggleUI(); updateNamesVisibility(); });
 $('closeMap').addEventListener('click', ()=>{ $('mapModal').style.display='none'; stopCats(); });
 
-/* Shop tile helpers */
-function stSet(id, price, disabled, owned){
-  const t=$(id); if(!t) return;
-  const p=t.querySelector('.st-price'); if(p) p.textContent = price;
-  t.disabled = !!disabled;
-  t.classList.toggle('owned', !!owned);
-}
 function updateShopUI(){
-  const scoreEl=$('shopScore'), fishEl=$('shopFish'), nipEl=$('shopCatnip');
-  if(scoreEl) scoreEl.textContent = state.score; if(fishEl) fishEl.textContent = state.inventory?.fish || 0; if(nipEl) nipEl.textContent = state.inventory?.catnip || 0;
-  const fish = state.inventory?.fish||0;
-  stSet('buyFishBtn', FISH_COST, state.score < FISH_COST);
-  stSet('feedFishBtn', fish>0?`×${fish}`:'·', fish<=0);
-  stSet('buyCatnipBtn', CATNIP_COST, state.score < CATNIP_COST);
-  if(ballActive()) stSet('buyBallBtn', fmtCatnip(Math.max(0,state.ballEndsAt-Date.now())), true);
-  else stSet('buyBallBtn', BALL_COST, state.score < BALL_COST);
+  if($('shopScore')) $('shopScore').textContent = state.score;
+  if($('shopFish')) $('shopFish').textContent = state.inventory?.fish || 0;
+  if($('shopCatnip')) $('shopCatnip').textContent = state.inventory?.catnip || 0;
+  const b=(id,txt,dis)=>{ const el=$(id); if(el){ el.textContent=txt; el.disabled=!!dis; } };
+  b('buyFishBtn', `🐟 Buy Fish (${FISH_COST})`, state.score < FISH_COST);
+  b('feedFishBtn', '🍽️ Feed Cats', (state.inventory?.fish||0) <= 0);
+  b('buyCatnipBtn', `🌿 Buy Catnip (${CATNIP_COST})`, state.score < CATNIP_COST);
+  if(ballActive()) b('buyBallBtn', `⚽ Playing (${fmtCatnip(Math.max(0,state.ballEndsAt-Date.now()))})`, true);
+  else b('buyBallBtn', `⚽ Ball (${BALL_COST})`, state.score < BALL_COST);
   const hasToken = (state.inventory?.nameTokens||0) > 0;
-  stSet('toggleNameArea', NAME_COST, !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0));
+  b('toggleNameArea', `📝 Name (${NAME_COST})`, !hasToken && (state.score < NAME_COST || (state.mapUnlocked||0) === 0));
   const f = state.furniture||{};
-  stSet('buyTreeBtn', f.catTree?'✓':FURNITURE_COST, f.catTree||state.score<FURNITURE_COST, f.catTree);
-  stSet('buyToyBtn',  f.catToy ?'✓':CAT_TOY_COST,  f.catToy ||state.score<CAT_TOY_COST,  f.catToy);
-  stSet('buyBowlBtn', f.catBowl?'✓':CAT_BOWL_COST, f.catBowl||state.score<CAT_BOWL_COST, f.catBowl);
-  stSet('adoptJooniBtn', state.jooniPet?'✓':'25k', state.jooniPet||state.score<JOONI_PET_COST, state.jooniPet);
-  stSet('toggleNamesBtn', state.showCatNames?'hide':'show', false);
+  b('buyTreeBtn', f.catTree?'🌳 Cat Tree ✓':`🌳 Cat Tree (${FURNITURE_COST})`, f.catTree||state.score<FURNITURE_COST);
+  b('buyToyBtn',  f.catToy ?'🎾 Cat Toy ✓':`🎾 Cat Toy (${CAT_TOY_COST})`,   f.catToy ||state.score<CAT_TOY_COST);
+  b('buyBowlBtn', f.catBowl?'🥣 Cat Bowl ✓':`🥣 Cat Bowl (${CAT_BOWL_COST})`, f.catBowl||state.score<CAT_BOWL_COST);
+  b('adoptJooniBtn', state.jooniPet?'🐱 Jooni ✓':`🐱 Jooni (${JOONI_PET_COST})`, state.jooniPet||state.score<JOONI_PET_COST);
   updateCatnipCountdownUI();
   if($('nameCostNote')) $('nameCostNote').style.display = hasToken ? 'none' : 'inline';
   const sel=$('catSelect');
@@ -1900,6 +1887,8 @@ function updateShopUI(){
   }
   if(cats && cats.length){ cats.forEach(c => { const nm=c.isJooni?'Jooni':getCatName(c.idx); c.el.title = nm; if(c.label) c.label.textContent = nm; }); }
 }
+$('btnFood').addEventListener('click', ()=>{ const p=$('foodSub'); const show=p.style.display==='none'; $('furnSub').style.display='none'; p.style.display=show?'flex':'none'; });
+$('btnFurn').addEventListener('click', ()=>{ const p=$('furnSub'); const show=p.style.display==='none'; $('foodSub').style.display='none'; p.style.display=show?'flex':'none'; });
 $('feedFishBtn').addEventListener('click', ()=>{
   if((state.inventory.fish||0) <= 0) return; state.inventory.fish -= 1;
   $('shopMsg').textContent = 'Fed the cats! They’re zooming 😺💨'; $('shopMsg').className='feedback ok';
@@ -1962,7 +1951,7 @@ $('buyBallBtn').addEventListener('click', ()=>{
   updateShopUI(); persist();
   if(typeof Jooni!=='undefined') Jooni.milestone('A ball! Bâzi konim — let’s play! ⚽🐾');
 });
-function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; const p=btn.querySelector('.st-price'); if(p) p.textContent = state.showCatNames ? 'hide' : 'show'; }
+function updateNamesToggleUI(){ const btn = $('toggleNamesBtn'); if(!btn) return; btn.textContent = state.showCatNames ? '🐾 Hide Names' : '🐾 Names'; }
 function updateNamesVisibility(){ const show = state.showCatNames || (Date.now() < flashNamesUntil); if(cats && cats.length){ cats.forEach(c=>{ const nm = c.isJooni ? 'Jooni' : getCatName(c.idx); if(c.label){ c.label.style.display = show ? 'block' : 'none'; c.label.textContent = nm; } c.el.title = nm; }); } }
 function flashCatNames(ms=3000){ flashNamesUntil = Date.now() + ms; updateNamesVisibility(); setTimeout(()=>updateNamesVisibility(), ms+50); }
 $('toggleNamesBtn').addEventListener('click', ()=>{ state.showCatNames = !state.showCatNames; persist(); });
