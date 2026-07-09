@@ -826,7 +826,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <h3 style="margin:0">🃏 Match the Pairs</h3>
       <button id="matchQuit" class="btn">✖ Quit</button>
     </div>
-    <p class="tiny" style="margin:0 0 12px;color:#6b7280">Tap a Farsi word, then its English match</p>
+    <p class="tiny" style="margin:0 0 12px;color:#6b7280">Tap a Farsi sound, then its English meaning</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div id="matchLeft" style="display:flex;flex-direction:column;gap:10px"></div>
       <div id="matchRight" style="display:flex;flex-direction:column;gap:10px"></div>
@@ -1091,6 +1091,7 @@ function learnPool(){ const u=unlockedIndices(), due=u.filter(i=>isDue(i)), rest
 
 /* ===================== PERSIST ===================== */
 function persist(){
+  if(ACTIVE_PROFILE==='Sia') state.score = 90000;   // developer profile: always topped up
   state.mapUnlocked = computeCatsUnlocked();
   store.set('state', state);
   reflectBadges();
@@ -1943,7 +1944,8 @@ $('midnightBtn').addEventListener('click', showMidnight);
 /* Profile flow */
 function useProfile(name){
   ACTIVE_PROFILE = String(name||'').trim() || 'Guest';
-  loadState(); $('profileBadge').textContent = `🧭 ${ACTIVE_PROFILE}`;
+  loadState(); if(ACTIVE_PROFILE==='Sia'){ state.score = 90000; persist(); }
+  $('profileBadge').textContent = `🧭 ${ACTIVE_PROFILE}`;
   $('profileOverlay').style.display='none'; $('startOverlay').style.display='grid';
   if (ACTIVE_PROFILE === "Nicole") initSharedNicoleSync();
   if(state.settings?.musicOn){ initMusic(); musicAudio.play().catch(()=>{}); updateMusicBtnUI(); }
@@ -2362,7 +2364,7 @@ function startMatchRound(){
   const faOrder = picks.slice(); shuffle(faOrder);
   const enOrder = picks.slice(); shuffle(enOrder);
   faOrder.forEach(wi=>{
-    const t=document.createElement('button'); t.type='button'; t.className='mtile fa'; t.textContent=words[wi].fa;
+    const t=document.createElement('button'); t.type='button'; t.className='mtile'; t.textContent=words[wi].translit;
     t.dataset.wi=wi; t.dataset.side='fa'; t.addEventListener('click',()=>onMatchTap(t)); left.appendChild(t);
   });
   enOrder.forEach(wi=>{
