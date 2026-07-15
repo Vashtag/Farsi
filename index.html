@@ -661,6 +661,11 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
         <p class="tiny">Read example sentences & translations.</p>
         <button id="openSentences" class="btn">📖 Open Sentence Practice</button>
       </div>
+      <div class="stat" id="devRecordTile" style="display:none">
+        <b>🎙️ Record Audio (dev)</b>
+        <p class="tiny">Record missing word audio in your voice and upload it to GitHub for Nicole.</p>
+        <button id="openRecord" class="btn">🎙️ Open Recorder</button>
+      </div>
       <div class="stat">
         <b>Danger zone</b>
         <p class="tiny">Clear this profile’s score, streak, SRS, unlocks, and achievements.</p>
@@ -668,6 +673,32 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
         <button id="resetNamesBtn" class="btn" style="margin-top:8px;background:linear-gradient(180deg,#f59e0b,#d97706);border-color:#b45309" title="Clear all saved cat names for this profile only">🐾 Reset Cat Names</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Audio Recorder (dev only) -->
+<div id="recordModal" class="modal">
+  <div class="modal-card" style="max-width:520px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3 style="margin:0">🎙️ Record Audio</h3>
+      <button id="closeRecord" class="btn">Close</button>
+    </div>
+    <div class="stat" style="margin-bottom:10px">
+      <label class="tiny">GitHub token (fine-grained, Contents: read/write)</label>
+      <input id="ghToken" class="input" type="password" placeholder="github_pat_…" style="margin-top:4px"/>
+      <label class="tiny" style="margin-top:8px;display:block">Branch</label>
+      <input id="ghBranch" class="input" style="margin-top:4px"/>
+      <div class="tiny muted" style="margin-top:4px">Stored only on this device · repo vashtag/farsi</div>
+    </div>
+    <label class="tiny">Word to record <span id="recProgress" class="muted"></span></label>
+    <select id="recWordSel" class="btn" style="width:100%;margin:4px 0 10px"></select>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+      <button id="recStart" class="btn">● Record</button>
+      <button id="recStop" class="btn" disabled>■ Stop</button>
+      <audio id="recPreview" controls style="flex:1;min-width:160px;height:36px"></audio>
+    </div>
+    <button id="recUpload" class="primary" style="width:100%" disabled>⬆️ Save to GitHub</button>
+    <div id="recMsg" class="feedback" style="min-height:24px;margin-top:8px"></div>
   </div>
 </div>
 
@@ -1614,6 +1645,25 @@ function getAudio(item){
 function playWord(item){ const a=getAudio(item); if(!a) return; try{ a.currentTime=0; a.play().catch(()=>{}); }catch{} }
 async function playYourAudio(){ const gi=order[idx]; playWord(words[gi]); }
 
+/* ---- Recorded-audio manifest: words recorded in dev mode become playable ---- */
+function audioSlug(item){
+  return (item.translit||item.en||'').toLowerCase()
+    .normalize('NFKD').replace(/[̀-ͯ]/g,'')  // strip accents/circumflex
+    .replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+}
+async function loadRecordedAudio(){
+  try{
+    const res = await fetch('audio/rec/manifest.json?cb='+Date.now(), {cache:'no-store'});
+    if(!res.ok) return;
+    const man = await res.json();
+    const have = new Set(Array.isArray(man) ? man : Object.keys(man||{}));
+    let changed=false;
+    words.forEach(w=>{ if(!w.audio){ const s=audioSlug(w); if(have.has(s)){ w.audio=`audio/rec/${s}.wav`; changed=true; } } });
+    // refresh the current card so the Listen button appears if applicable
+    if(changed && typeof order!=='undefined' && order.length && typeof showItem==='function') showItem();
+  }catch{}
+}
+
 /* ===================== SPEECH RECOG ===================== */
 let SR=null;
 function levenshtein(a,b){const m=a.length,n=b.length,dp=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)dp[i][0]=i;for(let j=0;j<=n;j++)dp[0][j]=j;for(let i=1;i<=m;i++){for(let j=1;j<=n;j++){const c=a[i-1]===b[j-1]?0:1;dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+c)}}return dp[m][n]}
@@ -1956,7 +2006,7 @@ function updateNamesVisibility(){ const show = state.showCatNames || (Date.now()
 function flashCatNames(ms=3000){ flashNamesUntil = Date.now() + ms; updateNamesVisibility(); setTimeout(()=>updateNamesVisibility(), ms+50); }
 $('toggleNamesBtn').addEventListener('click', ()=>{ state.showCatNames = !state.showCatNames; persist(); });
 
-$('openSettings').addEventListener('click', ()=>{ $('settingsModal').style.display='grid'; $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`; $('jooniToggle').textContent=`🐱 Jooni: ${state.settings?.jooniOn===false?'OFF':'ON'}`; populateThemeDropdown(); });
+$('openSettings').addEventListener('click', ()=>{ $('settingsModal').style.display='grid'; $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`; $('jooniToggle').textContent=`🐱 Jooni: ${state.settings?.jooniOn===false?'OFF':'ON'}`; const dr=$('devRecordTile'); if(dr) dr.style.display = (ACTIVE_PROFILE==='Sia')?'block':'none'; populateThemeDropdown(); });
 $('jooniToggle').addEventListener('click', ()=>{ const on = !(state.settings?.jooniOn!==false); Jooni.setEnabled(on); $('jooniToggle').textContent=`🐱 Jooni: ${on?'ON':'OFF'}`; if(on) Jooni.tip(); });
 $('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
 $('settingsModal').addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
@@ -2839,6 +2889,111 @@ updateMusicBtnUI();
 
 /* Init */
 initSpeech();
+loadRecordedAudio();
+
+/* ===================== DEV: RECORD & UPLOAD AUDIO ===================== */
+(function(){
+  const GH_REPO = 'vashtag/farsi';
+  let mediaRec=null, chunks=[], recordedBlob=null, stream=null;
+  const $r = id => document.getElementById(id);
+
+  function openRecorder(){
+    $r('ghToken').value  = localStorage.getItem('ff_dev_gh_token') || '';
+    $r('ghBranch').value = localStorage.getItem('ff_dev_gh_branch') || 'claude/alphabet-spelling-learning-zXVWz';
+    populateWords();
+    recordedBlob=null; $r('recPreview').removeAttribute('src'); $r('recUpload').disabled=true; $r('recMsg').textContent='';
+    $r('recordModal').style.display='grid';
+  }
+  function populateWords(){
+    const sel=$r('recWordSel'); sel.innerHTML='';
+    const missing = words.map((w,i)=>({w,i})).filter(o=>!o.w.audio);
+    missing.forEach(o=>{ const opt=document.createElement('option'); opt.value=String(o.i); opt.textContent=`${o.w.en} — ${o.w.translit}`; sel.appendChild(opt); });
+    $r('recProgress').textContent = `(${missing.length} still missing)`;
+  }
+  async function startRec(){
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      mediaRec = new MediaRecorder(stream); chunks=[];
+      mediaRec.ondataavailable = e=>{ if(e.data.size) chunks.push(e.data); };
+      mediaRec.onstop = ()=>{
+        recordedBlob = new Blob(chunks, {type: mediaRec.mimeType||'audio/webm'});
+        $r('recPreview').src = URL.createObjectURL(recordedBlob);
+        $r('recUpload').disabled=false;
+        if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+      };
+      mediaRec.start();
+      $r('recStart').disabled=true; $r('recStop').disabled=false;
+      $r('recMsg').textContent='🎙️ Recording… say the word clearly.'; $r('recMsg').className='feedback';
+    }catch(e){ $r('recMsg').textContent='Mic error: '+e.message; $r('recMsg').className='feedback err'; }
+  }
+  function stopRec(){ if(mediaRec && mediaRec.state!=='inactive') mediaRec.stop(); $r('recStart').disabled=false; $r('recStop').disabled=true; }
+
+  // Decode + downmix to mono + resample to 16kHz + encode 16-bit PCM WAV
+  async function toWav16kMono(blob){
+    const buf = await blob.arrayBuffer();
+    const AC = window.AudioContext||window.webkitAudioContext;
+    const decoded = await new AC().decodeAudioData(buf);
+    const rate=16000, frames=Math.ceil(decoded.duration*rate);
+    const off = new OfflineAudioContext(1, Math.max(1,frames), rate);
+    const src = off.createBufferSource(); src.buffer=decoded; src.connect(off.destination); src.start();
+    const rendered = await off.startRendering();
+    return encodeWav(rendered.getChannelData(0), rate);
+  }
+  function encodeWav(samples, rate){
+    const bytes = new ArrayBuffer(44 + samples.length*2), view=new DataView(bytes);
+    const wr = (o,s)=>{ for(let i=0;i<s.length;i++) view.setUint8(o+i, s.charCodeAt(i)); };
+    wr(0,'RIFF'); view.setUint32(4, 36+samples.length*2, true); wr(8,'WAVE'); wr(12,'fmt ');
+    view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,1,true);
+    view.setUint32(24,rate,true); view.setUint32(28,rate*2,true); view.setUint16(32,2,true); view.setUint16(34,16,true);
+    wr(36,'data'); view.setUint32(40, samples.length*2, true);
+    let o=44; for(let i=0;i<samples.length;i++){ let s=Math.max(-1,Math.min(1,samples[i])); view.setInt16(o, s<0?s*0x8000:s*0x7FFF, true); o+=2; }
+    return new Uint8Array(bytes);
+  }
+  function b64(bytes){ let s=''; const chunk=0x8000; for(let i=0;i<bytes.length;i+=chunk){ s+=String.fromCharCode.apply(null, bytes.subarray(i,i+chunk)); } return btoa(s); }
+
+  async function ghGet(path, branch, token){
+    const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}?ref=${encodeURIComponent(branch)}`,{headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json'}});
+    if(r.status===200) return r.json(); return null;
+  }
+  async function ghPut(path, contentB64, message, branch, token, sha){
+    const body={message, content:contentB64, branch}; if(sha) body.sha=sha;
+    const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}`,{method:'PUT',headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error(`GitHub ${r.status}: ${(await r.text()).slice(0,120)}`);
+    return r.json();
+  }
+  async function uploadRec(){
+    const token=$r('ghToken').value.trim(), branch=$r('ghBranch').value.trim();
+    if(!token){ $r('recMsg').textContent='Enter your GitHub token first.'; $r('recMsg').className='feedback warn'; return; }
+    if(!recordedBlob){ $r('recMsg').textContent='Record something first.'; $r('recMsg').className='feedback warn'; return; }
+    localStorage.setItem('ff_dev_gh_token', token); localStorage.setItem('ff_dev_gh_branch', branch);
+    const wi = parseInt($r('recWordSel').value,10); const slug = audioSlug(words[wi]);
+    const path = `audio/rec/${slug}.wav`;
+    $r('recUpload').disabled=true; $r('recMsg').textContent='Converting & uploading…'; $r('recMsg').className='feedback';
+    try{
+      const wav = await toWav16kMono(recordedBlob); const contentB64 = b64(wav);
+      const existing = await ghGet(path, branch, token);
+      await ghPut(path, contentB64, `Add audio: ${words[wi].en} (${slug})`, branch, token, existing && existing.sha);
+      // update manifest
+      const mPath='audio/rec/manifest.json';
+      const mFile = await ghGet(mPath, branch, token);
+      let list=[]; if(mFile && mFile.content){ try{ list = JSON.parse(decodeURIComponent(escape(atob(mFile.content.replace(/\n/g,''))))); }catch{ list=[]; } }
+      if(!Array.isArray(list)) list=[];
+      if(!list.includes(slug)) list.push(slug);
+      const mB64 = btoa(unescape(encodeURIComponent(JSON.stringify(list,null,0))));
+      await ghPut(mPath, mB64, `Update audio manifest (+${slug})`, branch, token, mFile && mFile.sha);
+      words[wi].audio = path;
+      $r('recMsg').textContent=`✔ Uploaded ${words[wi].en}! It will play after the site rebuilds (~1 min).`; $r('recMsg').className='feedback ok';
+      recordedBlob=null; $r('recPreview').removeAttribute('src'); populateWords();
+    }catch(e){ $r('recMsg').textContent='Upload failed: '+e.message; $r('recMsg').className='feedback err'; $r('recUpload').disabled=false; }
+  }
+
+  const ob=$r('openRecord'); if(ob) ob.addEventListener('click', openRecorder);
+  const cb=$r('closeRecord'); if(cb) cb.addEventListener('click', ()=>{ $r('recordModal').style.display='none'; });
+  $r('recStart').addEventListener('click', startRec);
+  $r('recStop').addEventListener('click', stopRec);
+  $r('recUpload').addEventListener('click', uploadRec);
+  $r('recordModal').addEventListener('click', e=>{ if(e.target.id==='recordModal') e.target.style.display='none'; });
+})();
 </script>
 </body>
 </html>
