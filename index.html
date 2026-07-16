@@ -684,19 +684,42 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="closeRecord" class="btn">Close</button>
     </div>
     <div class="stat" style="margin-bottom:10px">
-      <label class="tiny">GitHub token (fine-grained, Contents: read/write)</label>
-      <input id="ghToken" class="input" type="password" placeholder="github_pat_…" style="margin-top:4px"/>
+      <div id="tokenSaved" style="display:none;align-items:center;gap:10px">
+        <span style="font-weight:800">🔑 GitHub token saved ✓</span>
+        <button id="changeToken" class="btn" style="padding:4px 10px;font-size:12px">Change</button>
+      </div>
+      <div id="tokenEntry">
+        <label class="tiny">GitHub token (fine-grained, Contents: read/write)</label>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <input id="ghToken" class="input" type="password" placeholder="github_pat_…" style="flex:1"/>
+          <button id="saveToken" class="btn">Save</button>
+        </div>
+      </div>
       <label class="tiny" style="margin-top:8px;display:block">Branch</label>
       <input id="ghBranch" class="input" style="margin-top:4px"/>
-      <div class="tiny muted" style="margin-top:4px">Stored only on this device · repo vashtag/farsi</div>
+      <div class="tiny muted" style="margin-top:4px">On this device only · repo vashtag/farsi · noise reduction + cleanup on</div>
     </div>
     <label class="tiny">Word to record <span id="recProgress" class="muted"></span></label>
     <select id="recWordSel" class="btn" style="width:100%;margin:4px 0 10px"></select>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
       <button id="recStart" class="btn">● Record</button>
       <button id="recStop" class="btn" disabled>■ Stop</button>
-      <audio id="recPreview" controls style="flex:1;min-width:160px;height:36px"></audio>
+      <span id="recTimer" class="tiny muted"></span>
     </div>
+    <div id="trimWrap" style="display:none;margin-bottom:10px">
+      <div style="position:relative;height:70px">
+        <canvas id="recWave" width="960" height="140" style="width:100%;height:70px;border-radius:10px;background:var(--well);border:1px solid var(--line);display:block"></canvas>
+        <div id="dimL" style="position:absolute;top:0;left:0;height:100%;width:0;background:rgba(4,8,20,.62);border-radius:10px 0 0 10px;pointer-events:none"></div>
+        <div id="dimR" style="position:absolute;top:0;right:0;height:100%;width:0;background:rgba(4,8,20,.62);border-radius:0 10px 10px 0;pointer-events:none"></div>
+      </div>
+      <input id="trimStart" type="range" min="0" max="1000" value="0" style="width:100%;margin-top:6px"/>
+      <input id="trimEnd" type="range" min="0" max="1000" value="1000" style="width:100%"/>
+      <div class="tiny muted" style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+        <span>✂️ <b id="trimStartT">0.00</b>s – <b id="trimEndT">0.00</b>s</span>
+        <button id="playSel" class="btn" style="padding:4px 10px;font-size:12px">▶ Play selection</button>
+      </div>
+    </div>
+    <audio id="recPreview" style="display:none"></audio>
     <button id="recUpload" class="primary" style="width:100%" disabled>⬆️ Save to GitHub</button>
     <div id="recMsg" class="feedback" style="min-height:24px;margin-top:8px"></div>
   </div>
@@ -2894,15 +2917,30 @@ loadRecordedAudio();
 /* ===================== DEV: RECORD & UPLOAD AUDIO ===================== */
 (function(){
   const GH_REPO = 'vashtag/farsi';
-  let mediaRec=null, chunks=[], recordedBlob=null, stream=null;
+  let mediaRec=null, chunks=[], recordedBlob=null, stream=null, decodedBuffer=null;
+  let selStart=0, selEnd=0, recTimerId=null, recT0=0, selPlayTimer=null;
   const $r = id => document.getElementById(id);
+  const getToken = () => localStorage.getItem('ff_dev_gh_token') || '';
 
+  function reflectTokenState(){
+    const has = !!getToken();
+    $r('tokenSaved').style.display = has ? 'flex' : 'none';
+    $r('tokenEntry').style.display = has ? 'none' : 'block';
+    if(!has) $r('ghToken').value='';   // never show the stored token
+  }
   function openRecorder(){
-    $r('ghToken').value  = localStorage.getItem('ff_dev_gh_token') || '';
     $r('ghBranch').value = localStorage.getItem('ff_dev_gh_branch') || 'claude/alphabet-spelling-learning-zXVWz';
+    reflectTokenState();
     populateWords();
-    recordedBlob=null; $r('recPreview').removeAttribute('src'); $r('recUpload').disabled=true; $r('recMsg').textContent='';
+    resetTake();
+    $r('recMsg').textContent='';
     $r('recordModal').style.display='grid';
+  }
+  function resetTake(){
+    recordedBlob=null; decodedBuffer=null;
+    $r('recPreview').removeAttribute('src');
+    $r('trimWrap').style.display='none';
+    $r('recUpload').disabled=true;
   }
   function populateWords(){
     const sel=$r('recWordSel'); sel.innerHTML='';
@@ -2912,36 +2950,87 @@ loadRecordedAudio();
   }
   async function startRec(){
     try{
-      stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      resetTake();
+      // browser-level noise reduction + echo cancel + auto gain
+      stream = await navigator.mediaDevices.getUserMedia({audio:{ echoCancellation:true, noiseSuppression:true, autoGainControl:true, channelCount:1 }});
       mediaRec = new MediaRecorder(stream); chunks=[];
       mediaRec.ondataavailable = e=>{ if(e.data.size) chunks.push(e.data); };
-      mediaRec.onstop = ()=>{
+      mediaRec.onstop = async ()=>{
         recordedBlob = new Blob(chunks, {type: mediaRec.mimeType||'audio/webm'});
         $r('recPreview').src = URL.createObjectURL(recordedBlob);
-        $r('recUpload').disabled=false;
         if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+        clearInterval(recTimerId); $r('recTimer').textContent='';
+        try{
+          const AC = window.AudioContext||window.webkitAudioContext;
+          decodedBuffer = await new AC().decodeAudioData(await recordedBlob.arrayBuffer());
+          setupTrim(); $r('recUpload').disabled=false;
+          $r('recMsg').textContent='Trim the ends if needed, then Save.'; $r('recMsg').className='feedback';
+        }catch(e){ $r('recMsg').textContent='Could not decode audio: '+e.message; $r('recMsg').className='feedback err'; }
       };
       mediaRec.start();
       $r('recStart').disabled=true; $r('recStop').disabled=false;
+      recT0=Date.now(); recTimerId=setInterval(()=>{ $r('recTimer').textContent='● '+((Date.now()-recT0)/1000).toFixed(1)+'s'; },100);
       $r('recMsg').textContent='🎙️ Recording… say the word clearly.'; $r('recMsg').className='feedback';
     }catch(e){ $r('recMsg').textContent='Mic error: '+e.message; $r('recMsg').className='feedback err'; }
   }
   function stopRec(){ if(mediaRec && mediaRec.state!=='inactive') mediaRec.stop(); $r('recStart').disabled=false; $r('recStop').disabled=true; }
 
-  // Decode + downmix to mono + resample to 16kHz + encode 16-bit PCM WAV
-  async function toWav16kMono(blob){
-    const buf = await blob.arrayBuffer();
-    const AC = window.AudioContext||window.webkitAudioContext;
-    const decoded = await new AC().decodeAudioData(buf);
-    const rate=16000, frames=Math.ceil(decoded.duration*rate);
-    const off = new OfflineAudioContext(1, Math.max(1,frames), rate);
-    const src = off.createBufferSource(); src.buffer=decoded; src.connect(off.destination); src.start();
-    const rendered = await off.startRendering();
-    return encodeWav(rendered.getChannelData(0), rate);
+  /* ---- Trim UI ---- */
+  function setupTrim(){
+    $r('trimWrap').style.display='block';
+    $r('trimStart').value=0; $r('trimEnd').value=1000;
+    drawWave(decodedBuffer);
+    updateTrim();
+  }
+  function drawWave(buf){
+    const cv=$r('recWave'), ctx=cv.getContext('2d'); const W=cv.width,H=cv.height;
+    ctx.clearRect(0,0,W,H); const ch=buf.getChannelData(0); const step=Math.max(1,Math.floor(ch.length/W));
+    ctx.fillStyle='#38bdf8';
+    for(let x=0;x<W;x++){ let mn=1,mx=-1; for(let j=0;j<step;j++){ const v=ch[x*step+j]||0; if(v<mn)mn=v; if(v>mx)mx=v; } const y1=(1-mx)/2*H, y2=(1-mn)/2*H; ctx.fillRect(x,y1,1,Math.max(1,y2-y1)); }
+  }
+  function updateTrim(){
+    let a=+$r('trimStart').value, b=+$r('trimEnd').value;
+    if(a>b-15){ if(this===$r('trimStart')){ a=Math.max(0,b-15); $r('trimStart').value=a; } else { b=Math.min(1000,a+15); $r('trimEnd').value=b; } }
+    const dur = decodedBuffer ? decodedBuffer.duration : 0;
+    selStart=(a/1000)*dur; selEnd=(b/1000)*dur;
+    $r('dimL').style.width=(a/10)+'%'; $r('dimR').style.width=((1000-b)/10)+'%';
+    $r('trimStartT').textContent=selStart.toFixed(2); $r('trimEndT').textContent=selEnd.toFixed(2);
+  }
+  function playSelection(){
+    const a=$r('recPreview'); if(!a.src) return;
+    clearTimeout(selPlayTimer);
+    a.currentTime=selStart; a.play();
+    selPlayTimer=setTimeout(()=>{ a.pause(); }, Math.max(50,(selEnd-selStart)*1000));
+  }
+
+  /* ---- Process selection → cleaned 16k mono WAV ---- */
+  async function processToWav(){
+    const sr=decodedBuffer.sampleRate;
+    const s0=Math.floor(selStart*sr), s1=Math.min(decodedBuffer.length, Math.floor(selEnd*sr));
+    const segLen=Math.max(1, s1-s0), chs=decodedBuffer.numberOfChannels;
+    const AC=window.AudioContext||window.webkitAudioContext; const ac=new AC();
+    const seg=ac.createBuffer(1, segLen, sr); const out=seg.getChannelData(0);
+    for(let i=0;i<segLen;i++){ let v=0; for(let c=0;c<chs;c++) v+=decodedBuffer.getChannelData(c)[s0+i]||0; out[i]=v/chs; }
+    // offline render at 16k with high-pass (remove rumble) + low-shelf-ish cleanup
+    const rate=16000, frames=Math.ceil(segLen/sr*rate);
+    const off=new OfflineAudioContext(1, Math.max(1,frames), rate);
+    const src=off.createBufferSource(); src.buffer=seg;
+    const hp=off.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=85; hp.Q.value=0.7;
+    src.connect(hp); hp.connect(off.destination); src.start();
+    const data=(await off.startRendering()).getChannelData(0);
+    // trim leading/trailing near-silence, then peak-normalize to ~-1 dB
+    let a=0,b=data.length-1; const th=0.006;
+    while(a<b && Math.abs(data[a])<th) a++;
+    while(b>a && Math.abs(data[b])<th) b--;
+    const trimmed=data.subarray(Math.max(0,a-160), Math.min(data.length,b+160)); // keep ~10ms pad
+    let peak=0; for(let i=0;i<trimmed.length;i++){ const v=Math.abs(trimmed[i]); if(v>peak)peak=v; }
+    const gain=peak>0?Math.min(8, 0.89/peak):1;
+    const norm=new Float32Array(trimmed.length); for(let i=0;i<trimmed.length;i++) norm[i]=trimmed[i]*gain;
+    return encodeWav(norm, rate);
   }
   function encodeWav(samples, rate){
-    const bytes = new ArrayBuffer(44 + samples.length*2), view=new DataView(bytes);
-    const wr = (o,s)=>{ for(let i=0;i<s.length;i++) view.setUint8(o+i, s.charCodeAt(i)); };
+    const bytes=new ArrayBuffer(44+samples.length*2), view=new DataView(bytes);
+    const wr=(o,s)=>{ for(let i=0;i<s.length;i++) view.setUint8(o+i, s.charCodeAt(i)); };
     wr(0,'RIFF'); view.setUint32(4, 36+samples.length*2, true); wr(8,'WAVE'); wr(12,'fmt ');
     view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,1,true);
     view.setUint32(24,rate,true); view.setUint32(28,rate*2,true); view.setUint16(32,2,true); view.setUint16(34,16,true);
@@ -2952,45 +3041,49 @@ loadRecordedAudio();
   function b64(bytes){ let s=''; const chunk=0x8000; for(let i=0;i<bytes.length;i+=chunk){ s+=String.fromCharCode.apply(null, bytes.subarray(i,i+chunk)); } return btoa(s); }
 
   async function ghGet(path, branch, token){
-    const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}?ref=${encodeURIComponent(branch)}`,{headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json'}});
+    const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}?ref=${encodeURIComponent(branch)}`,{headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json'}});
     if(r.status===200) return r.json(); return null;
   }
   async function ghPut(path, contentB64, message, branch, token, sha){
     const body={message, content:contentB64, branch}; if(sha) body.sha=sha;
-    const r = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}`,{method:'PUT',headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}`,{method:'PUT',headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)});
     if(!r.ok) throw new Error(`GitHub ${r.status}: ${(await r.text()).slice(0,120)}`);
     return r.json();
   }
   async function uploadRec(){
-    const token=$r('ghToken').value.trim(), branch=$r('ghBranch').value.trim();
-    if(!token){ $r('recMsg').textContent='Enter your GitHub token first.'; $r('recMsg').className='feedback warn'; return; }
-    if(!recordedBlob){ $r('recMsg').textContent='Record something first.'; $r('recMsg').className='feedback warn'; return; }
-    localStorage.setItem('ff_dev_gh_token', token); localStorage.setItem('ff_dev_gh_branch', branch);
-    const wi = parseInt($r('recWordSel').value,10); const slug = audioSlug(words[wi]);
-    const path = `audio/rec/${slug}.wav`;
-    $r('recUpload').disabled=true; $r('recMsg').textContent='Converting & uploading…'; $r('recMsg').className='feedback';
+    const token=getToken(), branch=$r('ghBranch').value.trim();
+    if(!token){ reflectTokenState(); $r('recMsg').textContent='Add your GitHub token first.'; $r('recMsg').className='feedback warn'; return; }
+    if(!decodedBuffer){ $r('recMsg').textContent='Record something first.'; $r('recMsg').className='feedback warn'; return; }
+    localStorage.setItem('ff_dev_gh_branch', branch);
+    const wi=parseInt($r('recWordSel').value,10); const slug=audioSlug(words[wi]);
+    const path=`audio/rec/${slug}.wav`;
+    $r('recUpload').disabled=true; $r('recMsg').textContent='Cleaning up & uploading…'; $r('recMsg').className='feedback';
     try{
-      const wav = await toWav16kMono(recordedBlob); const contentB64 = b64(wav);
-      const existing = await ghGet(path, branch, token);
+      const wav=await processToWav(); const contentB64=b64(wav);
+      const existing=await ghGet(path, branch, token);
       await ghPut(path, contentB64, `Add audio: ${words[wi].en} (${slug})`, branch, token, existing && existing.sha);
-      // update manifest
       const mPath='audio/rec/manifest.json';
-      const mFile = await ghGet(mPath, branch, token);
-      let list=[]; if(mFile && mFile.content){ try{ list = JSON.parse(decodeURIComponent(escape(atob(mFile.content.replace(/\n/g,''))))); }catch{ list=[]; } }
+      const mFile=await ghGet(mPath, branch, token);
+      let list=[]; if(mFile && mFile.content){ try{ list=JSON.parse(decodeURIComponent(escape(atob(mFile.content.replace(/\n/g,''))))); }catch{ list=[]; } }
       if(!Array.isArray(list)) list=[];
       if(!list.includes(slug)) list.push(slug);
-      const mB64 = btoa(unescape(encodeURIComponent(JSON.stringify(list,null,0))));
+      const mB64=btoa(unescape(encodeURIComponent(JSON.stringify(list,null,0))));
       await ghPut(mPath, mB64, `Update audio manifest (+${slug})`, branch, token, mFile && mFile.sha);
-      words[wi].audio = path;
-      $r('recMsg').textContent=`✔ Uploaded ${words[wi].en}! It will play after the site rebuilds (~1 min).`; $r('recMsg').className='feedback ok';
-      recordedBlob=null; $r('recPreview').removeAttribute('src'); populateWords();
+      words[wi].audio=path;
+      $r('recMsg').textContent=`✔ Uploaded ${words[wi].en}! Plays after the site rebuilds (~1 min).`; $r('recMsg').className='feedback ok';
+      resetTake(); populateWords();
     }catch(e){ $r('recMsg').textContent='Upload failed: '+e.message; $r('recMsg').className='feedback err'; $r('recUpload').disabled=false; }
   }
 
   const ob=$r('openRecord'); if(ob) ob.addEventListener('click', openRecorder);
-  const cb=$r('closeRecord'); if(cb) cb.addEventListener('click', ()=>{ $r('recordModal').style.display='none'; });
+  $r('closeRecord').addEventListener('click', ()=>{ $r('recordModal').style.display='none'; });
+  $r('saveToken').addEventListener('click', ()=>{ const t=$r('ghToken').value.trim(); if(t){ localStorage.setItem('ff_dev_gh_token', t); } $r('ghToken').value=''; reflectTokenState(); $r('recMsg').textContent='Token saved on this device.'; $r('recMsg').className='feedback ok'; });
+  $r('changeToken').addEventListener('click', ()=>{ localStorage.removeItem('ff_dev_gh_token'); reflectTokenState(); $r('ghToken').focus(); });
   $r('recStart').addEventListener('click', startRec);
   $r('recStop').addEventListener('click', stopRec);
+  $r('trimStart').addEventListener('input', updateTrim);
+  $r('trimEnd').addEventListener('input', updateTrim);
+  $r('playSel').addEventListener('click', playSelection);
   $r('recUpload').addEventListener('click', uploadRec);
   $r('recordModal').addEventListener('click', e=>{ if(e.target.id==='recordModal') e.target.style.display='none'; });
 })();
