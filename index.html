@@ -666,6 +666,11 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
         <p class="tiny">Record missing word audio in your voice and upload it to GitHub for Nicole.</p>
         <button id="openRecord" class="btn">🎙️ Open Recorder</button>
       </div>
+      <div class="stat" id="devPhotoTile" style="display:none">
+        <b>🖼️ Add Photo (dev)</b>
+        <p class="tiny">Pick an image from your phone; it's auto-cropped to 500×500 and uploaded for Nicole.</p>
+        <button id="openPhoto" class="btn">🖼️ Open Photo Uploader</button>
+      </div>
       <div class="stat">
         <b>Danger zone</b>
         <p class="tiny">Clear this profile’s score, streak, SRS, unlocks, and achievements.</p>
@@ -725,6 +730,29 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <audio id="recPreview" style="display:none"></audio>
     <button id="recUpload" class="primary" style="width:100%" disabled>⬆️ Save to GitHub</button>
     <div id="recMsg" class="feedback" style="min-height:24px;margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- Photo Uploader (dev only) -->
+<div id="photoModal" class="modal">
+  <div class="modal-card" style="max-width:500px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h3 style="margin:0">🖼️ Add Photo</h3>
+      <button id="closePhoto" class="btn">Close</button>
+    </div>
+    <div id="photoTokenNote" class="tiny muted" style="margin-bottom:8px"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <label class="tiny">Word <span id="photoProgress" class="muted"></span></label>
+      <button id="photoModeBtn" class="btn" style="padding:4px 10px;font-size:12px">🆕 Missing</button>
+    </div>
+    <select id="photoWordSel" class="btn" style="width:100%;margin:4px 0 10px"></select>
+    <label for="photoFile" class="btn" style="display:block;text-align:center;cursor:pointer">📷 Choose / take a photo</label>
+    <input id="photoFile" type="file" accept="image/*" style="display:none"/>
+    <div style="display:grid;place-items:center;margin:12px 0">
+      <canvas id="photoCanvas" width="500" height="500" style="width:200px;height:200px;border-radius:16px;border:1px solid var(--line);background:var(--well)"></canvas>
+    </div>
+    <button id="photoUpload" class="primary" style="width:100%" disabled>⬆️ Save to GitHub</button>
+    <div id="photoMsg" class="feedback" style="min-height:24px;margin-top:8px"></div>
   </div>
 </div>
 
@@ -1690,6 +1718,18 @@ async function loadRecordedAudio(){
     if(changed && typeof order!=='undefined' && order.length && typeof showItem==='function') showItem();
   }catch{}
 }
+let ADDED_IMG_SLUGS = new Set();
+async function loadAddedImages(){
+  try{
+    const res = await fetch('images/img_manifest.json?cb='+Date.now(), {cache:'no-store'});
+    if(!res.ok) return;
+    const man = await res.json();
+    ADDED_IMG_SLUGS = new Set(Array.isArray(man) ? man : Object.keys(man||{}));
+    let changed=false;
+    words.forEach(w=>{ const s=audioSlug(w); if(ADDED_IMG_SLUGS.has(s)){ const p=`images/${s}.jpg`; if(w.image!==p){ w.image=p; changed=true; } } });
+    if(changed && typeof order!=='undefined' && order.length && typeof showItem==='function') showItem();
+  }catch{}
+}
 
 /* ===================== SPEECH RECOG ===================== */
 let SR=null;
@@ -2033,7 +2073,7 @@ function updateNamesVisibility(){ const show = state.showCatNames || (Date.now()
 function flashCatNames(ms=3000){ flashNamesUntil = Date.now() + ms; updateNamesVisibility(); setTimeout(()=>updateNamesVisibility(), ms+50); }
 $('toggleNamesBtn').addEventListener('click', ()=>{ state.showCatNames = !state.showCatNames; persist(); });
 
-$('openSettings').addEventListener('click', ()=>{ $('settingsModal').style.display='grid'; $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`; $('jooniToggle').textContent=`🐱 Jooni: ${state.settings?.jooniOn===false?'OFF':'ON'}`; const dr=$('devRecordTile'); if(dr) dr.style.display = (ACTIVE_PROFILE==='Sia')?'block':'none'; populateThemeDropdown(); });
+$('openSettings').addEventListener('click', ()=>{ $('settingsModal').style.display='grid'; $('reviewToggle').textContent=`🔁 Review All Mastered: ${state.settings?.reviewAll?'ON':'OFF'}`; $('jooniToggle').textContent=`🐱 Jooni: ${state.settings?.jooniOn===false?'OFF':'ON'}`; const dr=$('devRecordTile'); if(dr) dr.style.display = (ACTIVE_PROFILE==='Sia')?'block':'none'; const dp=$('devPhotoTile'); if(dp) dp.style.display = (ACTIVE_PROFILE==='Sia')?'block':'none'; populateThemeDropdown(); });
 $('jooniToggle').addEventListener('click', ()=>{ const on = !(state.settings?.jooniOn!==false); Jooni.setEnabled(on); $('jooniToggle').textContent=`🐱 Jooni: ${on?'ON':'OFF'}`; if(on) Jooni.tip(); });
 $('closeSettings').addEventListener('click', ()=> $('settingsModal').style.display='none');
 $('settingsModal').addEventListener('click', e=>{ if(e.target.id==='settingsModal') e.currentTarget.style.display='none'; });
@@ -2917,6 +2957,7 @@ updateMusicBtnUI();
 /* Init */
 initSpeech();
 loadRecordedAudio();
+loadAddedImages();
 
 /* ===================== DEV: RECORD & UPLOAD AUDIO ===================== */
 (function(){
@@ -3095,6 +3136,74 @@ loadRecordedAudio();
   $r('playSel').addEventListener('click', playSelection);
   $r('recUpload').addEventListener('click', uploadRec);
   $r('recordModal').addEventListener('click', e=>{ if(e.target.id==='recordModal') e.target.style.display='none'; });
+})();
+
+/* ===================== DEV: ADD PHOTO (500x500) & UPLOAD ===================== */
+(function(){
+  const GH_REPO='vashtag/farsi';
+  const $p = id => document.getElementById(id);
+  let pMode='missing', imgBlob=null;
+  const getToken = () => localStorage.getItem('ff_dev_gh_token') || '';
+
+  function openPhoto(){
+    $p('photoTokenNote').textContent = getToken() ? '🔑 Using saved GitHub token · repo vashtag/farsi'
+      : '⚠️ Save a GitHub token in the Recorder first.';
+    pMode='missing'; populate(); reset();
+    $p('photoMsg').textContent='';
+    $p('photoModal').style.display='grid';
+  }
+  function reset(){ imgBlob=null; $p('photoUpload').disabled=true; const c=$p('photoCanvas').getContext('2d'); c.clearRect(0,0,500,500); }
+  function populate(){
+    const sel=$p('photoWordSel'); sel.innerHTML='';
+    const added=(typeof ADDED_IMG_SLUGS!=='undefined')?ADDED_IMG_SLUGS:new Set();
+    const list=words.map((w,i)=>({w,i})).filter(o=> pMode==='missing' ? !o.w.image : !!o.w.image);
+    list.forEach(o=>{ const opt=document.createElement('option'); opt.value=String(o.i);
+      const mark = added.has(audioSlug(o.w))?' 🖼️':(o.w.image?' 🏞️':'');
+      opt.textContent=`${o.w.en} — ${o.w.translit}${mark}`; sel.appendChild(opt); });
+    $p('photoProgress').textContent = pMode==='missing' ? `(${list.length} missing)` : `(${list.length} with photo — pick to replace)`;
+    $p('photoModeBtn').textContent = pMode==='missing' ? '🆕 Missing' : '♻️ Replace';
+  }
+  function onFile(e){
+    const f=e.target.files && e.target.files[0]; if(!f) return;
+    const img=new Image();
+    img.onload=()=>{
+      const size=500, s=Math.min(img.width,img.height), sx=(img.width-s)/2, sy=(img.height-s)/2;
+      const cv=$p('photoCanvas'), ctx=cv.getContext('2d'); ctx.imageSmoothingQuality='high';
+      ctx.clearRect(0,0,size,size); ctx.drawImage(img, sx,sy,s,s, 0,0,size,size);
+      cv.toBlob(b=>{ imgBlob=b; $p('photoUpload').disabled=!getToken(); $p('photoMsg').textContent=getToken()?'Looks good? Save it.':'Save a token in the Recorder first.'; $p('photoMsg').className='feedback'; }, 'image/jpeg', 0.85);
+    };
+    img.onerror=()=>{ $p('photoMsg').textContent='Could not read that image.'; $p('photoMsg').className='feedback err'; };
+    img.src=URL.createObjectURL(f);
+  }
+  async function bytesB64(blob){ const buf=new Uint8Array(await blob.arrayBuffer()); let s=''; const c=0x8000; for(let i=0;i<buf.length;i+=c) s+=String.fromCharCode.apply(null, buf.subarray(i,i+c)); return btoa(s); }
+  async function ghGet(path, branch, token){ const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}?ref=${encodeURIComponent(branch)}`,{headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json'}}); return r.status===200?r.json():null; }
+  async function ghPut(path, contentB64, message, branch, token, sha){ const body={message,content:contentB64,branch}; if(sha) body.sha=sha; const r=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}`,{method:'PUT',headers:{Authorization:`Bearer ${token}`,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify(body)}); if(!r.ok) throw new Error(`GitHub ${r.status}: ${(await r.text()).slice(0,120)}`); return r.json(); }
+  async function upload(){
+    const token=getToken(), branch=localStorage.getItem('ff_dev_gh_branch')||'claude/alphabet-spelling-learning-zXVWz';
+    if(!token){ $p('photoMsg').textContent='Save a GitHub token in the Recorder first.'; $p('photoMsg').className='feedback warn'; return; }
+    if(!imgBlob){ $p('photoMsg').textContent='Choose a photo first.'; $p('photoMsg').className='feedback warn'; return; }
+    const wi=parseInt($p('photoWordSel').value,10), slug=audioSlug(words[wi]), path=`images/${slug}.jpg`;
+    $p('photoUpload').disabled=true; $p('photoMsg').textContent='Uploading…'; $p('photoMsg').className='feedback';
+    try{
+      const contentB64=await bytesB64(imgBlob);
+      const existing=await ghGet(path, branch, token);
+      await ghPut(path, contentB64, `Image: ${words[wi].en} (${slug})`, branch, token, existing && existing.sha);
+      const mPath='images/img_manifest.json'; const mFile=await ghGet(mPath, branch, token);
+      let list=[]; if(mFile && mFile.content){ try{ list=JSON.parse(decodeURIComponent(escape(atob(mFile.content.replace(/\n/g,''))))); }catch{ list=[]; } }
+      if(!Array.isArray(list)) list=[]; if(!list.includes(slug)) list.push(slug);
+      const mB64=btoa(unescape(encodeURIComponent(JSON.stringify(list,null,0))));
+      await ghPut(mPath, mB64, `Update image manifest (+${slug})`, branch, token, mFile && mFile.sha);
+      words[wi].image=path; if(typeof ADDED_IMG_SLUGS!=='undefined') ADDED_IMG_SLUGS.add(slug);
+      $p('photoMsg').textContent=`✔ Uploaded ${words[wi].en}! Shows after the site rebuilds (~1 min).`; $p('photoMsg').className='feedback ok';
+      reset(); populate();
+    }catch(e){ $p('photoMsg').textContent='Upload failed: '+e.message; $p('photoMsg').className='feedback err'; $p('photoUpload').disabled=false; }
+  }
+  const ob=$p('openPhoto'); if(ob) ob.addEventListener('click', openPhoto);
+  $p('closePhoto').addEventListener('click', ()=>{ $p('photoModal').style.display='none'; });
+  $p('photoModeBtn').addEventListener('click', ()=>{ pMode = pMode==='missing'?'existing':'missing'; populate(); });
+  $p('photoFile').addEventListener('change', onFile);
+  $p('photoUpload').addEventListener('click', upload);
+  $p('photoModal').addEventListener('click', e=>{ if(e.target.id==='photoModal') e.target.style.display='none'; });
 })();
 </script>
 </body>
