@@ -1006,26 +1006,26 @@ const POSTCARD_UNLOCK_EVERY = 15;
 
 /* Example sentences */
 const SENTENCES = [
-  { fa:"من آب می‌نوشم.", translit:"man âb minusham.", en:"I drink water.", answer:{fa:"آب", translit:"âb", en:"water"} },
-  { fa:"او یک گربه دارد.", translit:"u yek gorbe dârad.", en:"He/She has a cat.", answer:{fa:"گربه", translit:"gorbe", en:"cat"} },
-  { fa:"این خانه بزرگ است.", translit:"in khâne bozorg ast.", en:"This house is big.", answer:{fa:"خانه", translit:"khâne", en:"house"} },
-  { fa:"من کتاب می‌خوانم.", translit:"man ketâb mikhânam.", en:"I am reading a book.", answer:{fa:"کتاب", translit:"ketâb", en:"book"} },
-  { fa:"امروز هوا خوب است.", translit:"emruz havâ khub ast.", en:"The weather is good today.", answer:{fa:"هوا", translit:"havâ", en:"weather"} },
-  { fa:"سگ در پارک است.", translit:"sag dar pârk ast.", en:"The dog is in the park.", answer:{fa:"سگ", translit:"sag", en:"dog"} },
-  { fa:"من چای می‌خواهم.", translit:"man chây mikham.", en:"I want tea.", answer:{fa:"چای", translit:"chây", en:"tea"} },
-  { fa:"این غذا خوشمزه است.", translit:"in ghazâ khoshmaze ast.", en:"This food is delicious.", answer:{fa:"غذا", translit:"ghazâ", en:"food"} },
-  { fa:"من فردا می‌روم.", translit:"man fardâ miravam.", en:"I am going tomorrow.", answer:{fa:"فردا", translit:"fardâ", en:"tomorrow"} },
-  { fa:"اسم من نیکول است.", translit:"esm-e man nikol ast.", en:"My name is Nicole.", answer:{fa:"اسم", translit:"esm", en:"name"} },
-  { fa:"لطفاً آهسته صحبت کنید.", translit:"lotfan âheste sohbat konid.", en:"Please speak slowly.", answer:{fa:"لطفاً", translit:"lotfan", en:"please"} },
-  { fa:"من فارسی یاد می‌گیرم.", translit:"man fârsi yâd migiram.", en:"I am learning Farsi.", answer:{fa:"فارسی", translit:"fârsi", en:"Farsi"} },
-  { fa:"این کتاب خیلی خوب است.", translit:"in ketâb kheyli khub ast.", en:"This book is very good.", answer:{fa:"خوب", translit:"khub", en:"good"} },
-  { fa:"من گرسنه هستم.", translit:"man gorsne hastam.", en:"I am hungry.", answer:{fa:"گرسنه", translit:"gorsne", en:"hungry"} },
-  { fa:"هوا سرد است.", translit:"havâ sard ast.", en:"The weather is cold.", answer:{fa:"سرد", translit:"sard", en:"cold"} },
-  { fa:"آن ماشین قرمز است.", translit:"ân mâshin ghermez ast.", en:"That car is red.", answer:{fa:"قرمز", translit:"ghermez", en:"red"} },
-  { fa:"من دوست دارم شنا کنم.", translit:"man dust dâram shenâ konam.", en:"I like to swim.", answer:{fa:"شنا", translit:"shenâ", en:"swimming"} },
-  { fa:"قهوه یا چای؟", translit:"ghahve yâ chây?", en:"Coffee or tea?", answer:{fa:"قهوه", translit:"ghahve", en:"coffee"} },
-  { fa:"من خسته هستم.", translit:"man khaste hastam.", en:"I am tired.", answer:{fa:"خسته", translit:"khaste", en:"tired"} },
-  { fa:"بازار نزدیک است.", translit:"bâzâr nazdik ast.", en:"The bazaar is nearby.", answer:{fa:"بازار", translit:"bâzâr", en:"bazaar"} }
+  { fa:"من آب می‌نوشم.", translit:"man âb minusham.", en:"I drink water.", blanks:[{fa:"آب", translit:"âb", en:"water"},{fa:"می‌نوشم", translit:"minusham", en:"drink"}] },
+  { fa:"او یک گربه دارد.", translit:"u yek gorbe dârad.", en:"He/She has a cat.", blanks:[{fa:"گربه", translit:"gorbe", en:"cat"},{fa:"دارد", translit:"dârad", en:"has"}] },
+  { fa:"این خانه بزرگ است.", translit:"in khâne bozorg ast.", en:"This house is big.", blanks:[{fa:"خانه", translit:"khâne", en:"house"},{fa:"بزرگ", translit:"bozorg", en:"big"}] },
+  { fa:"من کتاب می‌خوانم.", translit:"man ketâb mikhânam.", en:"I am reading a book.", blanks:[{fa:"کتاب", translit:"ketâb", en:"book"},{fa:"می‌خوانم", translit:"mikhânam", en:"read"}] },
+  { fa:"امروز هوا خوب است.", translit:"emruz havâ khub ast.", en:"The weather is good today.", blanks:[{fa:"امروز", translit:"emruz", en:"today"},{fa:"هوا", translit:"havâ", en:"weather"},{fa:"خوب", translit:"khub", en:"good"}] },
+  { fa:"سگ در پارک است.", translit:"sag dar pârk ast.", en:"The dog is in the park.", blanks:[{fa:"سگ", translit:"sag", en:"dog"},{fa:"پارک", translit:"pârk", en:"park"}] },
+  { fa:"من چای می‌خواهم.", translit:"man chây mikham.", en:"I want tea.", blanks:[{fa:"چای", translit:"chây", en:"tea"},{fa:"می‌خواهم", translit:"mikham", en:"want"}] },
+  { fa:"این غذا خوشمزه است.", translit:"in ghazâ khoshmaze ast.", en:"This food is delicious.", blanks:[{fa:"غذا", translit:"ghazâ", en:"food"},{fa:"خوشمزه", translit:"khoshmaze", en:"delicious"}] },
+  { fa:"من فردا می‌روم.", translit:"man fardâ miravam.", en:"I am going tomorrow.", blanks:[{fa:"فردا", translit:"fardâ", en:"tomorrow"},{fa:"می‌روم", translit:"miravam", en:"go"}] },
+  { fa:"اسم من نیکول است.", translit:"esm-e man nikol ast.", en:"My name is Nicole.", blanks:[{fa:"اسم", translit:"esm", en:"name"},{fa:"نیکول", translit:"nikol", en:"Nicole"}] },
+  { fa:"لطفاً آهسته صحبت کنید.", translit:"lotfan âheste sohbat konid.", en:"Please speak slowly.", blanks:[{fa:"لطفاً", translit:"lotfan", en:"please"},{fa:"آهسته", translit:"âheste", en:"slowly"}] },
+  { fa:"من فارسی یاد می‌گیرم.", translit:"man fârsi yâd migiram.", en:"I am learning Farsi.", blanks:[{fa:"فارسی", translit:"fârsi", en:"Farsi"}] },
+  { fa:"این کتاب خیلی خوب است.", translit:"in ketâb kheyli khub ast.", en:"This book is very good.", blanks:[{fa:"کتاب", translit:"ketâb", en:"book"},{fa:"خیلی", translit:"kheyli", en:"very"},{fa:"خوب", translit:"khub", en:"good"}] },
+  { fa:"من گرسنه هستم.", translit:"man gorsne hastam.", en:"I am hungry.", blanks:[{fa:"گرسنه", translit:"gorsne", en:"hungry"}] },
+  { fa:"هوا سرد است.", translit:"havâ sard ast.", en:"The weather is cold.", blanks:[{fa:"هوا", translit:"havâ", en:"weather"},{fa:"سرد", translit:"sard", en:"cold"}] },
+  { fa:"آن ماشین قرمز است.", translit:"ân mâshin ghermez ast.", en:"That car is red.", blanks:[{fa:"ماشین", translit:"mâshin", en:"car"},{fa:"قرمز", translit:"ghermez", en:"red"}] },
+  { fa:"من دوست دارم شنا کنم.", translit:"man dust dâram shenâ konam.", en:"I like to swim.", blanks:[{fa:"شنا", translit:"shenâ", en:"swimming"}] },
+  { fa:"قهوه یا چای؟", translit:"ghahve yâ chây?", en:"Coffee or tea?", blanks:[{fa:"قهوه", translit:"ghahve", en:"coffee"},{fa:"چای", translit:"chây", en:"tea"}] },
+  { fa:"من خسته هستم.", translit:"man khaste hastam.", en:"I am tired.", blanks:[{fa:"خسته", translit:"khaste", en:"tired"}] },
+  { fa:"بازار نزدیک است.", translit:"bâzâr nazdik ast.", en:"The bazaar is nearby.", blanks:[{fa:"بازار", translit:"bâzâr", en:"bazaar"},{fa:"نزدیک", translit:"nazdik", en:"near"}] }
 ];
 
 /* ===================== WORDS =====================
@@ -1480,9 +1480,13 @@ function burstLeaves(count=36){
 let sentenceIdx = 0;
 let sentOrder = [];
 let sentAnswered = false;
+let sentBlankWord = null;   // the word currently blanked out of the shown sentence
 function reshuffleSentences(){ sentOrder = SENTENCES.map((_,i)=>i); shuffle(sentOrder); sentenceIdx = 0; }
-function sentDistractors(ansFa, n=3){
-  const pool = [...new Set(SENTENCES.map(s=>s.answer.fa))].filter(fa=>fa!==ansFa);
+// All blankable words across every sentence — the source of distractor choices.
+const SENT_WORD_POOL = [...new Set(SENTENCES.flatMap(s=>s.blanks.map(b=>b.fa)))];
+function sentDistractors(s, ansFa, n=3){
+  // Exclude the answer and any word already visible in the current sentence.
+  const pool = SENT_WORD_POOL.filter(fa=>fa!==ansFa && !s.fa.includes(fa));
   shuffle(pool); return pool.slice(0, n);
 }
 function renderSentence(){
@@ -1492,7 +1496,9 @@ function renderSentence(){
   if(sentenceIdx >= sentOrder.length) reshuffleSentences();
   sentAnswered = false;
   const s = SENTENCES[sentOrder[sentenceIdx]];
-  const ans = s.answer;
+  // Randomly choose which word to blank out this time.
+  const ans = s.blanks[Math.floor(Math.random()*s.blanks.length)];
+  sentBlankWord = ans;
   $('sentEn').textContent = s.en;
   // Render the Farsi sentence with a blank where the answer goes.
   const faEl = $('sentFa'); faEl.innerHTML='';
@@ -1502,7 +1508,7 @@ function renderSentence(){
   faEl.appendChild(blank);
   faEl.appendChild(document.createTextNode(parts.slice(1).join(ans.fa)));
   // Word choices: the answer plus distractors drawn from other sentences.
-  const opts = shuffle([ans.fa, ...sentDistractors(ans.fa, 3)]);
+  const opts = shuffle([ans.fa, ...sentDistractors(s, ans.fa, 3)]);
   const box = $('sentOptions'); box.innerHTML='';
   opts.forEach(fa=>{
     const b = document.createElement('button'); b.type='button'; b.className='lopt sent-opt'; b.setAttribute('dir','rtl');
@@ -1518,7 +1524,7 @@ function renderSentence(){
 function onSentPick(btn, pickedFa, s){
   if(sentAnswered) return;
   sentAnswered = true;
-  const ans = s.answer;
+  const ans = sentBlankWord;
   Array.from($('sentOptions').children).forEach(b=>{ b.disabled=true; if(b.textContent===ans.fa) b.classList.add('correct'); });
   const blank = $('sentBlank'); if(blank){ blank.textContent = ans.fa; blank.classList.add('filled'); }
   if(pickedFa===ans.fa){
@@ -3204,8 +3210,29 @@ loadAddedImages();
     $p('photoModal').style.display='grid';
   }
   function reset(){ imgBlob=null; $p('photoUpload').disabled=true; const c=$p('photoCanvas').getContext('2d'); c.clearRect(0,0,250,250); }
-  function populate(){
-    const sel=$p('photoWordSel'); sel.innerHTML='';
+  // Probe whether an image URL actually resolves (loads) in the browser.
+  function urlLoads(url){ return new Promise(res=>{ const im=new Image(); im.onload=()=>res(true); im.onerror=()=>res(false); im.src=url+'?cb='+Date.now(); }); }
+  // Candidate image paths for a word, by transliteration slug and English slug, png + jpg.
+  function candidatePaths(w){
+    const enSlug=(w.en||'').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+    const slugs=[...new Set([audioSlug(w), enSlug].filter(Boolean))];
+    const paths=[]; slugs.forEach(s=>{ paths.push(`images/${s}.png`, `images/${s}.jpg`); }); return paths;
+  }
+  // For words with no image wired into words.js, check the repo for a matching file and adopt it.
+  // Words confirmed to have no file this session are cached so we don't re-probe them each open.
+  const knownNoFile=new Set();
+  async function resolveMissingImages(){
+    const pending=words.filter(w=>!w.image && !knownNoFile.has(w));
+    await Promise.all(pending.map(async w=>{
+      for(const p of candidatePaths(w)){ if(await urlLoads(p)){ w.image=p; return; } }
+      knownNoFile.add(w);
+    }));
+  }
+  async function populate(){
+    const sel=$p('photoWordSel');
+    $p('photoProgress').textContent='(checking images…)';
+    await resolveMissingImages();
+    sel.innerHTML='';
     const added=(typeof ADDED_IMG_SLUGS!=='undefined')?ADDED_IMG_SLUGS:new Set();
     const list=words.map((w,i)=>({w,i})).filter(o=> pMode==='missing' ? !o.w.image : !!o.w.image);
     list.forEach(o=>{ const opt=document.createElement('option'); opt.value=String(o.i);
