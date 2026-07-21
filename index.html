@@ -668,7 +668,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       </div>
       <div class="stat" id="devPhotoTile" style="display:none">
         <b>🖼️ Add Photo (dev)</b>
-        <p class="tiny">Pick an image from your phone; it's auto-cropped to 500×500 and uploaded for Nicole.</p>
+        <p class="tiny">Pick an image from your phone; it's auto-cropped to 250×250 and uploaded for Nicole.</p>
         <button id="openPhoto" class="btn">🖼️ Open Photo Uploader</button>
       </div>
       <div class="stat">
@@ -749,7 +749,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <label for="photoFile" class="btn" style="display:block;text-align:center;cursor:pointer">📷 Choose / take a photo</label>
     <input id="photoFile" type="file" accept="image/*" style="display:none"/>
     <div style="display:grid;place-items:center;margin:12px 0">
-      <canvas id="photoCanvas" width="500" height="500" style="width:200px;height:200px;border-radius:16px;border:1px solid var(--line);background:var(--well)"></canvas>
+      <canvas id="photoCanvas" width="250" height="250" style="width:200px;height:200px;border-radius:16px;border:1px solid var(--line);background:var(--well)"></canvas>
     </div>
     <button id="photoUpload" class="primary" style="width:100%" disabled>⬆️ Save to GitHub</button>
     <div id="photoMsg" class="feedback" style="min-height:24px;margin-top:8px"></div>
@@ -3138,7 +3138,7 @@ loadAddedImages();
   $r('recordModal').addEventListener('click', e=>{ if(e.target.id==='recordModal') e.target.style.display='none'; });
 })();
 
-/* ===================== DEV: ADD PHOTO (500x500) & UPLOAD ===================== */
+/* ===================== DEV: ADD PHOTO (250x250) & UPLOAD ===================== */
 (function(){
   const GH_REPO='vashtag/farsi';
   const $p = id => document.getElementById(id);
@@ -3152,7 +3152,7 @@ loadAddedImages();
     $p('photoMsg').textContent='';
     $p('photoModal').style.display='grid';
   }
-  function reset(){ imgBlob=null; $p('photoUpload').disabled=true; const c=$p('photoCanvas').getContext('2d'); c.clearRect(0,0,500,500); }
+  function reset(){ imgBlob=null; $p('photoUpload').disabled=true; const c=$p('photoCanvas').getContext('2d'); c.clearRect(0,0,250,250); }
   function populate(){
     const sel=$p('photoWordSel'); sel.innerHTML='';
     const added=(typeof ADDED_IMG_SLUGS!=='undefined')?ADDED_IMG_SLUGS:new Set();
@@ -3167,7 +3167,7 @@ loadAddedImages();
     const f=e.target.files && e.target.files[0]; if(!f) return;
     const img=new Image();
     img.onload=()=>{
-      const size=500, s=Math.min(img.width,img.height), sx=(img.width-s)/2, sy=(img.height-s)/2;
+      const size=250, s=Math.min(img.width,img.height), sx=(img.width-s)/2, sy=(img.height-s)/2;
       const cv=$p('photoCanvas'), ctx=cv.getContext('2d'); ctx.imageSmoothingQuality='high';
       ctx.clearRect(0,0,size,size); ctx.drawImage(img, sx,sy,s,s, 0,0,size,size);
       cv.toBlob(b=>{ imgBlob=b; $p('photoUpload').disabled=!getToken(); $p('photoMsg').textContent=getToken()?'Looks good? Save it.':'Save a token in the Recorder first.'; $p('photoMsg').className='feedback'; }, 'image/jpeg', 0.85);
