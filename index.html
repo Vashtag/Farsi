@@ -2294,6 +2294,22 @@ function currentLessonIdxs(){
   return lessons[0];
 }
 function lessonSpellable(wi){ const l=spellLetters(words[wi]); return l.length>=2 && l.length<=6 && !words[wi].fa.includes(' '); }
+// Map a sentence blank back to a vocabulary word (by pronunciation, then English) so it can be credited.
+function wordForBlank(b){
+  const nt=normalizeTranslit(b.translit);
+  let i=words.findIndex(w=>normalizeTranslit(w.translit)===nt);
+  if(i<0) i=words.findIndex(w=>(w.en||'').toLowerCase()===(b.en||'').toLowerCase());
+  return i;
+}
+// Sentences that use one of this lesson's words as a blankable word — reinforces new vocab in context.
+function lessonSentences(idxs){
+  const set=new Set(idxs), out=[];
+  SENTENCES.forEach((s,si)=>{
+    const blank=s.blanks.find(b=>set.has(wordForBlank(b)));   // prefer blanking a word from this lesson
+    if(blank) out.push({si, blank, wi:wordForBlank(blank)});
+  });
+  return out;
+}
 function buildLessonQueue(idxs){
   const cov=getCoveredSet(), q=[];
   idxs.forEach(wi=>{ if(!cov.has(wi)) q.push({type:'intro', wi}); });   // introduce new words
@@ -2302,7 +2318,10 @@ function buildLessonQueue(idxs){
     return { type: types[Math.floor(Math.random()*types.length)], wi };
   });
   shuffle(quiz);
-  return q.concat(quiz);
+  // Cap at 2 sentence steps, added last so the words are already fresh from the quiz above.
+  const sents=lessonSentences(idxs); shuffle(sents);
+  const sentSteps=sents.slice(0,2).map(o=>({type:'sentence', si:o.si, blank:o.blank, wi:o.wi}));
+  return q.concat(quiz, sentSteps);
 }
 function launchLesson(idxs){
   LESSON = { words: idxs.slice(), qi:0, correct:0, total:0, queue: buildLessonQueue(idxs) };
@@ -2393,6 +2412,31 @@ function renderLessonStep(){
     });
     Q.appendChild(slots); Q.appendChild(tray); return;
   }
+  if(step.type==='sentence'){
+    const s=SENTENCES[step.si], ans=step.blank;
+    Q.insertAdjacentHTML('beforeend', `<div class="lprompt">Complete the sentence:</div><div class="tiny" style="color:#9aa4b2;margin-bottom:12px">${s.en}</div>`);
+    const sent=document.createElement('div'); sent.dir='ltr'; sent.style.cssText='font-size:22px;font-weight:800;color:#e5e7eb;line-height:1.9;margin-bottom:14px;text-align:center';
+    const parts=s.translit.split(ans.translit);
+    sent.appendChild(document.createTextNode(parts[0]));
+    const blank=document.createElement('span'); blank.className='sent-blank'; blank.textContent='______';
+    sent.appendChild(blank); sent.appendChild(document.createTextNode(parts.slice(1).join(ans.translit)));
+    Q.appendChild(sent);
+    const grid=document.createElement('div'); grid.className='lgrid';
+    const opts=shuffle([ans.translit, ...sentDistractors(s, ans.translit, 3)]);
+    opts.forEach(tr=>{
+      const btn=document.createElement('button'); btn.className='lopt'; btn.textContent=tr;
+      btn.addEventListener('click', ()=>{
+        Array.from(grid.children).forEach(b=>b.style.pointerEvents='none');
+        const ok = tr===ans.translit;
+        btn.classList.add(ok?'correct':'wrong');
+        if(!ok) Array.from(grid.children).forEach(b=>{ if(b.textContent===ans.translit) b.classList.add('correct'); });
+        blank.textContent=ans.translit; blank.classList.add('filled');
+        lessonResult(ok, step.wi>=0?step.wi:null, ok?'':`It’s “${ans.translit}” (${ans.en})`);
+      });
+      grid.appendChild(btn);
+    });
+    Q.appendChild(grid); return;
+  }
 }
 function lessonPick(btn, ok, wi, grid){
   Array.from(grid.children).forEach(b=>b.style.pointerEvents='none');
@@ -2403,11 +2447,12 @@ function lessonResult(ok, wi, wrongMsg){
   const fb=$('lessonFeedback');
   LESSON.total++;
   if(ok){
-    LESSON.correct++; state.score+=POINTS_PER_CORRECT_LQ; state.streak+=1; addCovered(wi);
-    const r=ensureSRS(wi); r.seen++; r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1); scheduleAfter(wi,SRS_INTERVALS_HOURS[r.stage]||24);
+    LESSON.correct++; state.score+=POINTS_PER_CORRECT_LQ; state.streak+=1;
+    if(wi!=null){ addCovered(wi); const r=ensureSRS(wi); r.seen++; r.correct++; r.stage=Math.min(r.stage+1, SRS_INTERVALS_HOURS.length-1); scheduleAfter(wi,SRS_INTERVALS_HOURS[r.stage]||24); }
     fb.textContent='✔ Correct!'; fb.className='feedback ok'; celebrateSimple(); checkDailyGoalAndMap(); updateAchievementProgress(); persist();
   }else{
-    state.streak=0; const r=ensureSRS(wi); r.seen++; r.wrong++; r.stage=Math.max(0,r.stage-1); scheduleAfter(wi,2);
+    state.streak=0;
+    if(wi!=null){ const r=ensureSRS(wi); r.seen++; r.wrong++; r.stage=Math.max(0,r.stage-1); scheduleAfter(wi,2); }
     fb.textContent=wrongMsg||'Not quite'; fb.className='feedback warn'; Jooni.encourage(); persist();
   }
   LESSON.qi++;
