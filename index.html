@@ -313,7 +313,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .lopt.img-opt img{max-width:100%;max-height:100%;object-fit:contain} .lopt.img-opt .lemoji{font-size:52px}
 .lopt.correct{background:var(--accent);border-color:color-mix(in srgb,var(--accent) 55%,#000);color:#06240f}
 .lopt.wrong{background:color-mix(in srgb,var(--err) 30%,#1c2942);border-color:var(--err)}
-.sent-opt{flex:1 1 40%;min-width:130px;font-family:var(--font-farsi);font-size:22px;direction:rtl}
+.sent-opt{flex:1 1 40%;min-width:130px;font-size:19px;direction:ltr}
 .sent-blank{display:inline-block;min-width:70px;padding:2px 12px;margin:0 4px;border-bottom:3px dashed var(--accent-2);color:var(--accent-2);font-weight:900;text-align:center;vertical-align:baseline}
 .sent-blank.filled{border-bottom-style:solid;color:var(--accent)}
 .lslot{width:46px;height:46px;border:2px dashed #3b4d6b;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--font-farsi);font-size:1.5rem}
@@ -768,10 +768,10 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     </div>
     <div id="sentencePanel" class="stat">
       <div class="en" id="sentEn" style="font-size:16px;opacity:.85;text-align:center;margin-bottom:12px"></div>
-      <div class="fa" id="sentFa" dir="rtl" style="font-size:26px;line-height:1.9;text-align:center"></div>
+      <div id="sentFa" dir="ltr" style="font-size:26px;line-height:1.9;text-align:center;color:#e5e7eb;font-weight:800"></div>
       <div id="sentOptions" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:16px"></div>
       <div class="feedback" id="sentFeedback" style="text-align:center"></div>
-      <div class="trans" id="sentTrans" dir="ltr" style="font-size:16px;opacity:.85;text-align:center;min-height:22px"></div>
+      <div id="sentTrans" dir="rtl" style="font-family:var(--font-farsi);font-size:20px;opacity:.7;text-align:center;min-height:24px"></div>
     </div>
     <div class="controls" style="justify-content:space-between">
       <div class="tiny" id="sentProgress"></div>
@@ -1483,10 +1483,10 @@ let sentAnswered = false;
 let sentBlankWord = null;   // the word currently blanked out of the shown sentence
 function reshuffleSentences(){ sentOrder = SENTENCES.map((_,i)=>i); shuffle(sentOrder); sentenceIdx = 0; }
 // All blankable words across every sentence — the source of distractor choices.
-const SENT_WORD_POOL = [...new Set(SENTENCES.flatMap(s=>s.blanks.map(b=>b.fa)))];
-function sentDistractors(s, ansFa, n=3){
+const SENT_WORD_POOL = [...new Set(SENTENCES.flatMap(s=>s.blanks.map(b=>b.translit)))];
+function sentDistractors(s, ansTr, n=3){
   // Exclude the answer and any word already visible in the current sentence.
-  const pool = SENT_WORD_POOL.filter(fa=>fa!==ansFa && !s.fa.includes(fa));
+  const pool = SENT_WORD_POOL.filter(tr=>tr!==ansTr && !s.translit.includes(tr));
   shuffle(pool); return pool.slice(0, n);
 }
 function renderSentence(){
@@ -1500,20 +1500,20 @@ function renderSentence(){
   const ans = s.blanks[Math.floor(Math.random()*s.blanks.length)];
   sentBlankWord = ans;
   $('sentEn').textContent = s.en;
-  // Render the Farsi sentence with a blank where the answer goes.
+  // Render the phonetic (transliterated) sentence with a blank where the answer goes.
   const faEl = $('sentFa'); faEl.innerHTML='';
-  const parts = s.fa.split(ans.fa);
+  const parts = s.translit.split(ans.translit);
   faEl.appendChild(document.createTextNode(parts[0]));
   const blank = document.createElement('span'); blank.id='sentBlank'; blank.className='sent-blank'; blank.textContent='______';
   faEl.appendChild(blank);
-  faEl.appendChild(document.createTextNode(parts.slice(1).join(ans.fa)));
-  // Word choices: the answer plus distractors drawn from other sentences.
-  const opts = shuffle([ans.fa, ...sentDistractors(s, ans.fa, 3)]);
+  faEl.appendChild(document.createTextNode(parts.slice(1).join(ans.translit)));
+  // Word choices (phonetic): the answer plus distractors drawn from other sentences.
+  const opts = shuffle([ans.translit, ...sentDistractors(s, ans.translit, 3)]);
   const box = $('sentOptions'); box.innerHTML='';
-  opts.forEach(fa=>{
-    const b = document.createElement('button'); b.type='button'; b.className='lopt sent-opt'; b.setAttribute('dir','rtl');
-    b.textContent = fa;
-    b.addEventListener('click', ()=> onSentPick(b, fa, s));
+  opts.forEach(tr=>{
+    const b = document.createElement('button'); b.type='button'; b.className='lopt sent-opt';
+    b.textContent = tr;
+    b.addEventListener('click', ()=> onSentPick(b, tr, s));
     box.appendChild(b);
   });
   $('sentFeedback').textContent=''; $('sentFeedback').className='feedback';
@@ -1521,21 +1521,22 @@ function renderSentence(){
   $('sentProgress').textContent = `${sentenceIdx+1} / ${sentOrder.length}`;
   $('sentNext').textContent='Skip ➡️';
 }
-function onSentPick(btn, pickedFa, s){
+function onSentPick(btn, pickedTr, s){
   if(sentAnswered) return;
   sentAnswered = true;
   const ans = sentBlankWord;
-  Array.from($('sentOptions').children).forEach(b=>{ b.disabled=true; if(b.textContent===ans.fa) b.classList.add('correct'); });
-  const blank = $('sentBlank'); if(blank){ blank.textContent = ans.fa; blank.classList.add('filled'); }
-  if(pickedFa===ans.fa){
+  Array.from($('sentOptions').children).forEach(b=>{ b.disabled=true; if(b.textContent===ans.translit) b.classList.add('correct'); });
+  const blank = $('sentBlank'); if(blank){ blank.textContent = ans.translit; blank.classList.add('filled'); }
+  if(pickedTr===ans.translit){
     $('sentFeedback').textContent='✅ Perfect! +5'; $('sentFeedback').className='feedback ok';
     state.score = (state.score||0) + 5; persist(); celebrateSimple();
   }else{
     btn.classList.add('wrong');
-    $('sentFeedback').textContent = `Not quite — the word is «${ans.fa}» (${ans.translit}, ${ans.en})`; $('sentFeedback').className='feedback warn';
+    $('sentFeedback').textContent = `Not quite — the word is "${ans.translit}" (${ans.en})`; $('sentFeedback').className='feedback warn';
     state.streak = 0; persist(); Jooni.encourage();
   }
-  $('sentTrans').textContent = `${s.translit} — ${s.en}`;
+  // Show the Persian script afterwards as gentle exposure (no reading required).
+  $('sentTrans').textContent = s.fa;
   $('sentNext').textContent='Next ➡️';
 }
 function openSentences(){ reshuffleSentences(); renderSentence(); $('sentencesModal').style.display='grid'; }
