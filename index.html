@@ -229,7 +229,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 }
 
 /* ========= Badge visuals ========= */
-.badges-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.badges-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:64vh;overflow-y:auto;padding-right:4px}
 .badge-tile{
   position:relative; padding:10px 12px; border-radius:12px; font-size:14px;
   background:#0b1229; border:1px solid var(--line); color:#9aa7b7; display:flex; align-items:center; gap:8px;
@@ -1285,7 +1285,9 @@ function setImageWithFallback(imgEl, emojiEl, item){
 /* ===================== STATE (per profile) ===================== */
 const defaultState = ()=>({
   score:0, streak:0, srs:{}, covered:[], start_date:null, unlocked_count:0, releasedCount:RELEASE_BASE,
-  achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false,mastered100:false,score1000:false,allColors:false}, achFx:{},
+  achievements:{first10:false,perfectMini:false,streak7:false,mastered50:false,mastered100:false,score1000:false,allColors:false,
+    mastered200:false,explorer200:false,score5000:false,allAnimals:false,allFood:false,allBody:false,allNature:false,allClothes:false,
+    sentence10:false,sentence50:false,nightOwl:false,perfectLesson:false,streak30:false}, achFx:{}, sentCorrect:0,
   mapUnlocked:0, mapDays:[], streakFreezes:0, streakFreezeAwardedAt:0, ballEndsAt:0,
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
@@ -1486,12 +1488,26 @@ function reflectBadges(){
     {key:'streak7', label:'7 in a row', ico:'🏅'},
     {key:'mastered50', label:'50 mastered', ico:'💪'},
     {key:'mastered100', label:'100 mastered', ico:'🏆'},
+    {key:'mastered200', label:'200 mastered', ico:'👑'},
     {key:'score1000', label:'Reach 1000 points', ico:'💰'},
-    {key:'allColors', label:'Learn all colors', ico:'🌈'}
+    {key:'score5000', label:'Reach 5000 points', ico:'💎'},
+    {key:'explorer200', label:'Explorer — 200 words seen', ico:'🗺️'},
+    {key:'allColors', label:'Learn all colors', ico:'🌈'},
+    {key:'allAnimals', label:'Animal Expert', ico:'🦁'},
+    {key:'allFood', label:'Foodie — all food', ico:'🍔'},
+    {key:'allBody', label:'Body Master', ico:'🦴'},
+    {key:'allNature', label:'Nature Lover', ico:'🌳'},
+    {key:'allClothes', label:'Fashionista', ico:'🧣'},
+    {key:'sentence10', label:'Sentence Starter — 10 right', ico:'✏️'},
+    {key:'sentence50', label:'Sentence Master — 50 right', ico:'📜'},
+    {key:'perfectLesson', label:'Perfect Lesson — 100%', ico:'⭐'},
+    {key:'streak30', label:'30-day streak', ico:'🔥'},
+    {key:'nightOwl', label:'Night Owl — practice at night', ico:'🌙'}
   ];
   const box = $('achList');
   box.classList.add('badges-grid');
-  box.innerHTML = '';
+  const earned = defs.filter(d=>A[d.key]).length;
+  box.innerHTML = `<div style="grid-column:1/-1;text-align:center;font-weight:800;color:var(--muted);margin-bottom:2px">${earned} / ${defs.length} badges earned</div>`;
   defs.forEach(d=>{
     const el = document.createElement('div');
     el.className = 'badge-tile' + (A[d.key] ? ' earned' : '');
@@ -1698,7 +1714,7 @@ function onSentPick(btn, pickedTr, s){
   const blank = $('sentBlank'); if(blank){ blank.textContent = ans.translit; blank.classList.add('filled'); }
   if(pickedTr===ans.translit){
     $('sentFeedback').textContent='✅ Perfect! +5'; $('sentFeedback').className='feedback ok';
-    state.score = (state.score||0) + 5; persist(); celebrateSimple();
+    state.score = (state.score||0) + 5; awardSentenceCorrect(); updateAchievementProgress(); persist(); celebrateSimple();
   }else{
     btn.classList.add('wrong');
     $('sentFeedback').textContent = `Not quite — the word is "${ans.translit}" (${ans.en})`; $('sentFeedback').className='feedback warn';
@@ -2010,13 +2026,35 @@ function handleAnswer(correct, gi, source='typing'){
   setTimeout(next, 450);
 }
 const COLOR_INDICES = words.reduce((acc,w,i)=>{ if(['white','black','red','blue','green','yellow','purple','orange (color)','pink'].includes(w.en)) acc.push(i); return acc; }, []);
+// Indices of every word in a given category — used for "master a whole category" badges.
+function catIndices(cat){ const out=[]; words.forEach((w,i)=>{ if((w.cats||[]).includes(cat)) out.push(i); }); return out; }
+const CAT_INDEX = { animals:catIndices('animals'), food:catIndices('food'), body:catIndices('body'), nature:catIndices('nature'), clothes:catIndices('clothes') };
+function allMastered(idxs, mSet){ return idxs.length>0 && idxs.every(i=>mSet.has(i)); }
+// Bump the sentence-correct counter and award sentence badges (called on any correct sentence answer).
+function awardSentenceCorrect(){
+  state.sentCorrect = (state.sentCorrect||0) + 1;
+  if(state.sentCorrect >= 10) awardAchievement('sentence10');
+  if(state.sentCorrect >= 50) awardAchievement('sentence50');
+  persist();
+}
 function updateAchievementProgress(){
   const m = masteredIndices(), mSet = new Set(m);
   if(m.length >= 10) awardAchievement('first10');
   if(m.length >= 50) awardAchievement('mastered50');
   if(m.length >= 100) awardAchievement('mastered100');
+  if(m.length >= 200) awardAchievement('mastered200');
+  if(learnedCount() >= 200) awardAchievement('explorer200');
   if(state.score >= 1000) awardAchievement('score1000');
+  if(state.score >= 5000) awardAchievement('score5000');
   if(COLOR_INDICES.length && COLOR_INDICES.every(i => mSet.has(i))) awardAchievement('allColors');
+  if(allMastered(CAT_INDEX.animals, mSet)) awardAchievement('allAnimals');
+  if(allMastered(CAT_INDEX.food, mSet)) awardAchievement('allFood');
+  if(allMastered(CAT_INDEX.body, mSet)) awardAchievement('allBody');
+  if(allMastered(CAT_INDEX.nature, mSet)) awardAchievement('allNature');
+  if(allMastered(CAT_INDEX.clothes, mSet)) awardAchievement('allClothes');
+  if(computeDayStreak() >= 30) awardAchievement('streak30');
+  const h = new Date().getHours();
+  if(h >= 20 || h < 5) awardAchievement('nightOwl');
 }
 function checkDailyGoalAndMap(){
   const today=todayISO(); let days = state.mapDays||[]; let todayRec = days.find(d=>d.date===today);
@@ -2600,6 +2638,7 @@ function renderLessonStep(){
         btn.classList.add(ok?'correct':'wrong');
         if(!ok) Array.from(grid.children).forEach(b=>{ if(b.textContent===ans.translit) b.classList.add('correct'); });
         blank.textContent=ans.translit; blank.classList.add('filled');
+        if(ok) awardSentenceCorrect();
         lessonResult(ok, step.wi>=0?step.wi:null, ok?'':`It’s “${ans.translit}” (${ans.en})`);
       });
       grid.appendChild(btn);
@@ -2631,6 +2670,7 @@ function finishLesson(){
   $('lessonModal').style.display='none';
   const acc = LESSON.total ? Math.round(LESSON.correct/LESSON.total*100) : 100;
   const xp = LESSON.correct * POINTS_PER_CORRECT_LQ;
+  if(LESSON.total > 0 && LESSON.correct === LESSON.total) awardAchievement('perfectLesson');
   $('lessonDoneStats').innerHTML = `<span>⭐ +${xp} XP</span><span>🎯 ${acc}%</span>`;
   if(window.confetti) confetti({particleCount:130,spread:85,startVelocity:55,origin:{y:.6}});
   if(typeof Jooni!=='undefined') Jooni.milestone("Lesson complete! Âfarin Nicole! 🎉🐾");
