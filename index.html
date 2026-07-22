@@ -1949,6 +1949,14 @@ function happyDing(){ try{
   const st=t0+i*0.05;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(0.35,st+0.03);g.gain.exponentialRampToValueAtTime(0.0001,st+0.22);
   o.start(st);o.stop(st+0.25);});
 }catch{} }
+// Gentle descending "aww, try again" tone — deliberately distinct from happyDing so
+// a correct vs incorrect answer sounds different.
+function sadDing(){ try{
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC) return;const ctx=new AC();const tones=[392,311];const t0=ctx.currentTime;
+  tones.forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o.frequency.value=f;o.connect(g);g.connect(ctx.destination);
+  const st=t0+i*0.15;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(0.22,st+0.03);g.gain.exponentialRampToValueAtTime(0.0001,st+0.3);
+  o.start(st);o.stop(st+0.32);});
+}catch{} }
 function confettiPop(){ if(window.confetti) confetti({origin:{y:1,x:0.5},gravity:1.2,ticks:180,scalar:0.9,particleCount:70,spread:75,startVelocity:55}); }
 function fireworks(){
   if(!window.confetti) return;
@@ -2155,7 +2163,7 @@ function handleAnswer(correct, gi, source='typing'){
   }else{
     r.wrong++; r.stage=Math.max(0,r.stage-1); scheduleAfter(gi,2);
     state.streak=0; if(source!=='speech'){ $('typeFeedback').textContent='Not quite.'; $('typeFeedback').className='feedback warn'; }
-    Jooni.encourage();
+    sadDing(); Jooni.encourage();
   }
   persist();
   setTimeout(next, 450);
