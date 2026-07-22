@@ -235,19 +235,12 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   background:linear-gradient(180deg,#0b3a63 0%,#0a4d78 45%,#0a5f86 100%);box-shadow:inset 0 -18px 40px rgba(0,0,0,.35),inset 0 8px 24px rgba(255,255,255,.06)}
 #aquarium .aq-decor{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:26px;opacity:.85;pointer-events:none;filter:saturate(1.1)}
 #aquarium .aq-empty{position:absolute;inset:0;display:grid;place-items:center;color:#cfe8ff;font-weight:800;opacity:.75;text-align:center;padding:0 20px}
-.aq-fish{position:absolute;font-size:30px;will-change:left,top,transform;animation:aqswim linear infinite;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
-.aq-fish .body{display:inline-block;animation:aqbob ease-in-out infinite}
-@keyframes aqswim{
-  0%{left:4%;transform:scaleX(-1)}
-  49.9%{transform:scaleX(-1)}
-  50%{left:88%;transform:scaleX(1)}
-  99.9%{transform:scaleX(1)}
-  100%{left:4%;transform:scaleX(-1)}
-}
-@keyframes aqbob{0%,100%{transform:translateY(-6px)}50%{transform:translateY(6px)}}
+/* Fish are positioned via JS transforms (a rAF swim loop) so they move even when the
+   OS "reduce motion" setting is on — a still tank isn't the point of a fish tank. */
+.aq-fish{position:absolute;top:0;left:0;font-size:30px;will-change:transform;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
 .aq-bubble{position:absolute;bottom:-14px;color:#bfe9ff;opacity:.5;font-size:12px;animation:aqrise linear infinite;pointer-events:none}
 @keyframes aqrise{0%{transform:translateY(0);opacity:0}15%{opacity:.6}100%{transform:translateY(-300px);opacity:0}}
-@media(prefers-reduced-motion:reduce){.aq-fish,.aq-fish .body,.aq-bubble{animation:none}}
+@media(prefers-reduced-motion:reduce){.aq-bubble{animation:none}}
 .tank-shop{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:34vh;overflow-y:auto}
 .tank-buy{display:flex;align-items:center;gap:8px;padding:10px;border-radius:12px;border:2px solid #2b3b5c;border-bottom-width:4px;border-bottom-color:#101a30;background:#1c2942;color:#e5e7eb;cursor:pointer;font-weight:800;font-size:14px;text-align:left}
 .tank-buy:hover:not(:disabled){filter:brightness(1.12)} .tank-buy:active:not(:disabled){transform:translateY(2px);border-bottom-width:2px}
@@ -1046,13 +1039,9 @@ const CAT_BOWL_COST = 800;
 const JOONI_PET_COST = 25000;
 /* Fish tank — adoptable swimmers (decorative pets bought with points) */
 const FISH_SPECIES = [
-  {id:'goldfish',  emoji:'🐟', name:'Goldfish',    cost:150},
   {id:'tropical',  emoji:'🐠', name:'Tropical Fish',cost:300},
   {id:'puffer',    emoji:'🐡', name:'Pufferfish',   cost:500},
-  {id:'crab',      emoji:'🦀', name:'Crab',         cost:800},
-  {id:'octopus',   emoji:'🐙', name:'Octopus',      cost:1200},
   {id:'turtle',    emoji:'🐢', name:'Turtle',       cost:2000},
-  {id:'shark',     emoji:'🦈', name:'Baby Shark',   cost:4000},
 ];
 const TANK_MAX_FISH = 14;   // keep the tank from getting too crowded
 const JOONI_SIDE_IMG = 'images/Jooni_Side.png';
@@ -2303,24 +2292,44 @@ $('closeMap').addEventListener('click', ()=>{ $('mapModal').style.display='none'
 
 /* ===================== FISH TANK ===================== */
 function speciesById(id){ return FISH_SPECIES.find(s=>s.id===id); }
+let tankSwimmers=[], tankRAF=null, tankBounds={w:400,h:280};
+function stopTankSwim(){ if(tankRAF){ cancelAnimationFrame(tankRAF); tankRAF=null; } tankSwimmers=[]; }
+function tankStep(now){
+  const B=tankBounds; const dt=Math.min(0.05,(now-(tankStep.last||now))/1000); tankStep.last=now;
+  for(const s of tankSwimmers){
+    s.x += s.vx*dt; s.y += s.vy*dt; s.phase += dt*1.8;
+    const m=s.size*0.6;
+    if(s.x < m){ s.x=m; s.vx=Math.abs(s.vx); }
+    if(s.x > B.w-m){ s.x=B.w-m; s.vx=-Math.abs(s.vx); }
+    if(s.y < 8){ s.y=8; s.vy=Math.abs(s.vy); }
+    if(s.y > B.h-m-8){ s.y=B.h-m-8; s.vy=-Math.abs(s.vy); }
+    // emoji faces left by default → flip when swimming right
+    s.el.style.transform=`translate(${s.x.toFixed(1)}px, ${(s.y+Math.sin(s.phase)*3).toFixed(1)}px) scaleX(${s.vx>=0?-1:1})`;
+  }
+  tankRAF=requestAnimationFrame(tankStep);
+}
 function renderTankFish(){
   const aq=$('aquarium'); if(!aq) return;
+  stopTankSwim();
   aq.querySelectorAll('.aq-fish,.aq-bubble').forEach(el=>el.remove());   // keep decor + empty label
   const list=state.tankFish||[];
   $('aqEmpty').style.display = list.length ? 'none' : 'grid';
+  const B=aq.getBoundingClientRect(); tankBounds={ w:B.width||400, h:B.height||280 };
   list.forEach(id=>{
     const sp=speciesById(id); if(!sp) return;
-    const f=document.createElement('div'); f.className='aq-fish';
-    const dur=9+Math.random()*8;
-    f.style.top=(8+Math.random()*72)+'%';
-    f.style.animationDuration=dur+'s';
-    f.style.animationDelay=(-(Math.random()*dur))+'s';
-    f.style.fontSize=(22+Math.random()*14)+'px';
-    const body=document.createElement('span'); body.className='body'; body.textContent=sp.emoji;
-    body.style.animationDuration=(2.4+Math.random()*1.6)+'s';
-    f.appendChild(body); aq.appendChild(f);
+    const el=document.createElement('div'); el.className='aq-fish';
+    const size=24+Math.random()*12; el.style.fontSize=size+'px'; el.textContent=sp.emoji;
+    aq.appendChild(el);
+    const m=size*0.6;
+    tankSwimmers.push({ el, size,
+      x: m + Math.random()*Math.max(1, tankBounds.w-2*m),
+      y: 12 + Math.random()*Math.max(1, tankBounds.h-40),
+      vx: (Math.random()<0.5?-1:1)*(20+Math.random()*24),   // px/sec
+      vy: (Math.random()*2-1)*10,
+      phase: Math.random()*Math.PI*2 });
   });
   for(let i=0;i<6;i++){ const b=document.createElement('div'); b.className='aq-bubble'; b.textContent='○'; b.style.left=(6+Math.random()*88)+'%'; const d=5+Math.random()*6; b.style.animationDuration=d+'s'; b.style.animationDelay=(-(Math.random()*d))+'s'; aq.appendChild(b); }
+  if(tankSwimmers.length){ tankStep.last=performance.now(); tankRAF=requestAnimationFrame(tankStep); }
 }
 function buildTankShop(){
   const box=$('tankShop'); if(!box) return; box.innerHTML='';
@@ -2348,10 +2357,11 @@ function adoptFish(id){
   renderTankFish(); updateTankUI(); updateBadges();
   tankMsg(`${sp.emoji} ${sp.name} adopted — welcome home!`,'ok'); celebrateSimple();
 }
-function openTank(){ tankMsg(''); renderTankFish(); updateTankUI(); $('tankModal').style.display='grid'; }
+function openTank(){ $('tankModal').style.display='grid'; tankMsg(''); updateTankUI(); renderTankFish(); }
+function closeTank(){ $('tankModal').style.display='none'; stopTankSwim(); }
 $('openTank').addEventListener('click', openTank);
-$('closeTank').addEventListener('click', ()=> $('tankModal').style.display='none');
-$('tankModal').addEventListener('click', e=>{ if(e.target.id==='tankModal') e.target.style.display='none'; });
+$('closeTank').addEventListener('click', closeTank);
+$('tankModal').addEventListener('click', e=>{ if(e.target.id==='tankModal') closeTank(); });
 
 function updateShopUI(){
   if($('shopScore')) $('shopScore').textContent = state.score;
