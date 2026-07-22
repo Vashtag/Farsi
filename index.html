@@ -250,6 +250,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .pet-choice{display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 10px;border-radius:16px;border:2px solid #2b3b5c;border-bottom-width:5px;border-bottom-color:#101a30;background:#1c2942;color:#e5e7eb;cursor:pointer;font-weight:800;font-size:15px;transition:filter .12s,transform .06s}
 .pet-choice:hover{filter:brightness(1.14)} .pet-choice:active{transform:translateY(2px);border-bottom-width:2px}
 .pet-choice .pc-emoji{font-size:44px;line-height:1}
+.pet-choice .pc-img{width:72px;height:72px;object-fit:contain;border-radius:12px}
 .pet-choice .pc-sub{font-size:12px;color:#fbbf24;font-weight:800;min-height:14px}
 /* Fish name label + naming popup */
 .aq-fish{cursor:pointer}
@@ -560,8 +561,8 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     </div>
     <p class="tiny" style="margin:0 0 16px;color:#6b7280">Where do you want to go?</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <button id="chooseBazaar" class="pet-choice"><span class="pc-emoji">🐱</span><span>Cat Bazaar</span></button>
-      <button id="chooseTank" class="pet-choice"><span class="pc-emoji">🐠</span><span>Fish Tank</span><span class="pc-sub" id="chooseTankSub"></span></button>
+      <button id="chooseBazaar" class="pet-choice"><img class="pc-img" src="images/bazaar_icon.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'pc-emoji',textContent:'🐱'}))"><span>Cat Bazaar</span></button>
+      <button id="chooseTank" class="pet-choice"><img class="pc-img" src="images/tank_icon.png" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'pc-emoji',textContent:'🐠'}))"><span>Fish Tank</span><span class="pc-sub" id="chooseTankSub"></span></button>
     </div>
   </div>
 </div>
