@@ -2550,6 +2550,7 @@ $('buyTankBtn').addEventListener('click', buyTank);
 
 function updateShopUI(){
   if($('shopScore')) $('shopScore').textContent = state.score;
+  if(typeof updateBadges==='function') updateBadges();   // keep the header score in sync after a purchase
   if($('shopFish')) $('shopFish').textContent = state.inventory?.fish || 0;
   if($('shopCatnip')) $('shopCatnip').textContent = state.inventory?.catnip || 0;
   const b=(id,txt,dis)=>{ const el=$(id); if(el){ el.textContent=txt; el.disabled=!!dis; } };
@@ -2583,8 +2584,8 @@ $('feedFishBtn').addEventListener('click', ()=>{
   burstHearts(28); if(window.confetti){ confetti({origin:{x:0.2,y:1},particleCount:70,spread:75,startVelocity:50}); confetti({origin:{x:0.8,y:1},particleCount:70,spread:75,startVelocity:50}); }
   boostCatsFor(8000,2.3); flashCatNames(4000); persist();
 });
-$('buyFishBtn').addEventListener('click', ()=>{ if(state.score < FISH_COST) return; state.score -= FISH_COST; state.inventory.fish = (state.inventory.fish||0) + 1; $('shopMsg').textContent = 'Bought 1 fish! 🐟'; $('shopMsg').className='feedback ok'; persist(); });
-$('buyCatnipBtn').addEventListener('click', ()=>{ if(state.score < CATNIP_COST) return; state.score -= CATNIP_COST; state.inventory.catnip = (state.inventory.catnip||0) + 1; $('shopMsg').textContent = 'Picked up fresh catnip! 🌿'; $('shopMsg').className='feedback ok'; persist(); });
+$('buyFishBtn').addEventListener('click', ()=>{ if(state.score < FISH_COST) return; state.score -= FISH_COST; state.inventory.fish = (state.inventory.fish||0) + 1; $('shopMsg').textContent = 'Bought 1 fish! 🐟'; $('shopMsg').className='feedback ok'; persist(); updateShopUI(); });
+$('buyCatnipBtn').addEventListener('click', ()=>{ if(state.score < CATNIP_COST) return; state.score -= CATNIP_COST; state.inventory.catnip = (state.inventory.catnip||0) + 1; $('shopMsg').textContent = 'Picked up fresh catnip! 🌿'; $('shopMsg').className='feedback ok'; persist(); updateShopUI(); });
 $('useCatnipBtn').addEventListener('click', ()=>{ if((state.inventory.catnip||0) <= 0 || catnipActive) return; state.inventory.catnip -= 1; $('shopMsg').textContent = '🌿 Catnip party! Rolling, bouncing cats for a few minutes…'; $('shopMsg').className='feedback ok'; burstLeaves(40); startCatnipParty(CATNIP_DURATION_MS); persist(); });
 $('toggleNameArea').addEventListener('click', ()=>{
   const nCats = state.mapUnlocked||0;
