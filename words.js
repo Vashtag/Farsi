@@ -304,6 +304,57 @@ const words = [
   {fa:"شب", en:"night", translit:"shab", emoji:"🌃", audio:"", image:""},
   {fa:"اسم", en:"name", translit:"esm", emoji:"🏷️", audio:"", image:""},
   {fa:"دوست", en:"friend", translit:"dust", emoji:"🧑‍🤝‍🧑", audio:"", image:""},
+  /* ── More words ── */
+  {fa:"هلو", en:"peach", translit:"holu", emoji:"🍑", audio:"", image:""},
+  {fa:"گیلاس", en:"cherry", translit:"gilâs", emoji:"🍒", audio:"", image:""},
+  {fa:"گلابی", en:"pear", translit:"golâbi", emoji:"🍐", audio:"", image:""},
+  {fa:"آناناس", en:"pineapple", translit:"ânânâs", emoji:"🍍", audio:"", image:""},
+  {fa:"انبه", en:"mango", translit:"anbe", emoji:"🥭", audio:"", image:""},
+  {fa:"نارگیل", en:"coconut", translit:"nârgil", emoji:"🥥", audio:"", image:""},
+  {fa:"پیاز", en:"onion", translit:"piâz", emoji:"🧅", audio:"", image:""},
+  {fa:"سیر", en:"garlic", translit:"sir", emoji:"🧄", audio:"", image:""},
+  {fa:"ذرت", en:"corn", translit:"zorrat", emoji:"🌽", audio:"", image:""},
+  {fa:"کاهو", en:"lettuce", translit:"kâhu", emoji:"🥬", audio:"", image:""},
+  {fa:"سوپ", en:"soup", translit:"sup", emoji:"🍲", audio:"", image:""},
+  {fa:"پیتزا", en:"pizza", translit:"pitzâ", emoji:"🍕", audio:"", image:""},
+  {fa:"ساندویچ", en:"sandwich", translit:"sândevich", emoji:"🥪", audio:"", image:""},
+  {fa:"عسل", en:"honey", translit:"asal", emoji:"🍯", audio:"", image:""},
+  {fa:"ماست", en:"yogurt", translit:"mâst", emoji:"🍶", audio:"", image:""},
+  {fa:"شتر", en:"camel", translit:"shotor", emoji:"🐫", audio:"", image:""},
+  {fa:"پنگوئن", en:"penguin", translit:"penguen", emoji:"🐧", audio:"", image:""},
+  {fa:"دلفین", en:"dolphin", translit:"dolfin", emoji:"🐬", audio:"", image:""},
+  {fa:"نهنگ", en:"whale", translit:"nahang", emoji:"🐳", audio:"", image:""},
+  {fa:"کوسه", en:"shark", translit:"kuse", emoji:"🦈", audio:"", image:""},
+  {fa:"خرچنگ", en:"crab", translit:"kharchang", emoji:"🦀", audio:"", image:""},
+  {fa:"هشت‌پا", en:"octopus", translit:"hashtpâ", emoji:"🐙", audio:"", image:""},
+  {fa:"جوجه", en:"chick", translit:"juje", emoji:"🐤", audio:"", image:""},
+  {fa:"سنجاب", en:"squirrel", translit:"sanjâb", emoji:"🐿️", audio:"", image:""},
+  {fa:"مورچه", en:"ant", translit:"murche", emoji:"🐜", audio:"", image:""},
+  {fa:"حلزون", en:"snail", translit:"halazun", emoji:"🐌", audio:"", image:""},
+  {fa:"دریاچه", en:"lake", translit:"daryâche", emoji:"🏞️", audio:"", image:""},
+  {fa:"جنگل", en:"forest", translit:"jangal", emoji:"🌲", audio:"", image:""},
+  {fa:"جزیره", en:"island", translit:"jazire", emoji:"🏝️", audio:"", image:""},
+  {fa:"صحرا", en:"desert", translit:"sahrâ", emoji:"🏜️", audio:"", image:""},
+  {fa:"سنگ", en:"stone", translit:"sang", emoji:"🪨", audio:"", image:""},
+  {fa:"رنگین‌کمان", en:"rainbow", translit:"ranginkamân", emoji:"🌈", audio:"", image:""},
+  {fa:"یخ", en:"ice", translit:"yakh", emoji:"🧊", audio:"", image:""},
+  {fa:"دوچرخه", en:"bicycle", translit:"docharkhe", emoji:"🚲", audio:"", image:""},
+  {fa:"موتور", en:"motorcycle", translit:"motor", emoji:"🏍️", audio:"", image:""},
+  {fa:"قایق", en:"boat", translit:"ghâyegh", emoji:"🛶", audio:"", image:""},
+  {fa:"کشتی", en:"ship", translit:"kashti", emoji:"🚢", audio:"", image:""},
+  {fa:"کامیون", en:"truck", translit:"kâmyon", emoji:"🚚", audio:"", image:""},
+  {fa:"هلیکوپتر", en:"helicopter", translit:"helikopter", emoji:"🚁", audio:"", image:""},
+  {fa:"پل", en:"bridge", translit:"pol", emoji:"🌉", audio:"", image:""},
+  {fa:"دیوار", en:"wall", translit:"divâr", emoji:"🧱", audio:"", image:""},
+  {fa:"تلویزیون", en:"television", translit:"televizion", emoji:"📺", audio:"", image:""},
+  {fa:"پله", en:"stairs", translit:"pelle", emoji:"🪜", audio:"", image:""},
+  {fa:"گلدان", en:"flowerpot", translit:"goldân", emoji:"🪴", audio:"", image:""},
+  {fa:"دویدن", en:"to run", translit:"davidan", emoji:"🏃", audio:"", image:""},
+  {fa:"رقصیدن", en:"to dance", translit:"raghsidan", emoji:"💃", audio:"", image:""},
+  {fa:"خریدن", en:"to buy", translit:"kharidan", emoji:"🛒", audio:"", image:""},
+  {fa:"پختن", en:"to cook", translit:"pokhtan", emoji:"🍳", audio:"", image:""},
+  {fa:"شستن", en:"to wash", translit:"shostan", emoji:"🧼", audio:"", image:""},
+  {fa:"نشستن", en:"to sit", translit:"neshastan", emoji:"🪑", audio:"", image:""},
 ];
 
 /* ── Word categories (indices match words array) ── */
@@ -608,5 +659,55 @@ const CATS_MAP = [
   ["travel"],  // 295 night
   ["greetings","travel"],  // 296 name
   ["greetings","travel"],  // 297 friend
+  ["food","cooking"],  // 298 peach
+  ["food","cooking"],  // 299 cherry
+  ["food","cooking"],  // 300 pear
+  ["food","cooking"],  // 301 pineapple
+  ["food","cooking"],  // 302 mango
+  ["food","cooking"],  // 303 coconut
+  ["food","cooking"],  // 304 onion
+  ["food","cooking"],  // 305 garlic
+  ["food","cooking"],  // 306 corn
+  ["food","cooking"],  // 307 lettuce
+  ["food","cooking"],  // 308 soup
+  ["food"],  // 309 pizza
+  ["food"],  // 310 sandwich
+  ["food","cooking"],  // 311 honey
+  ["food","cooking"],  // 312 yogurt
+  ["animals"],  // 313 camel
+  ["animals"],  // 314 penguin
+  ["animals"],  // 315 dolphin
+  ["animals"],  // 316 whale
+  ["animals"],  // 317 shark
+  ["animals"],  // 318 crab
+  ["animals"],  // 319 octopus
+  ["animals"],  // 320 chick
+  ["animals"],  // 321 squirrel
+  ["animals"],  // 322 ant
+  ["animals"],  // 323 snail
+  ["nature"],  // 324 lake
+  ["nature"],  // 325 forest
+  ["nature"],  // 326 island
+  ["nature"],  // 327 desert
+  ["nature"],  // 328 stone
+  ["nature"],  // 329 rainbow
+  ["nature"],  // 330 ice
+  ["travel"],  // 331 bicycle
+  ["travel"],  // 332 motorcycle
+  ["travel"],  // 333 boat
+  ["travel"],  // 334 ship
+  ["travel"],  // 335 truck
+  ["travel"],  // 336 helicopter
+  ["travel"],  // 337 bridge
+  ["home"],  // 338 wall
+  ["home"],  // 339 television
+  ["home"],  // 340 stairs
+  ["home"],  // 341 flowerpot
+  [],  // 342 to run
+  [],  // 343 to dance
+  [],  // 344 to buy
+  [],  // 345 to cook
+  [],  // 346 to wash
+  [],  // 347 to sit
 ];
 CATS_MAP.forEach((cats, i) => { if (words[i]) words[i].cats = cats; });
