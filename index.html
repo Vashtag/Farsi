@@ -230,6 +230,29 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 
 /* ========= Badge visuals ========= */
 .badges-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:64vh;overflow-y:auto;padding-right:4px}
+/* Fish tank */
+#aquarium{position:relative;height:280px;border-radius:18px;overflow:hidden;border:2px solid #1e3a5f;
+  background:linear-gradient(180deg,#0b3a63 0%,#0a4d78 45%,#0a5f86 100%);box-shadow:inset 0 -18px 40px rgba(0,0,0,.35),inset 0 8px 24px rgba(255,255,255,.06)}
+#aquarium .aq-decor{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:26px;opacity:.85;pointer-events:none;filter:saturate(1.1)}
+#aquarium .aq-empty{position:absolute;inset:0;display:grid;place-items:center;color:#cfe8ff;font-weight:800;opacity:.75;text-align:center;padding:0 20px}
+.aq-fish{position:absolute;font-size:30px;will-change:left,top,transform;animation:aqswim linear infinite;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+.aq-fish .body{display:inline-block;animation:aqbob ease-in-out infinite}
+@keyframes aqswim{
+  0%{left:4%;transform:scaleX(-1)}
+  49.9%{transform:scaleX(-1)}
+  50%{left:88%;transform:scaleX(1)}
+  99.9%{transform:scaleX(1)}
+  100%{left:4%;transform:scaleX(-1)}
+}
+@keyframes aqbob{0%,100%{transform:translateY(-6px)}50%{transform:translateY(6px)}}
+.aq-bubble{position:absolute;bottom:-14px;color:#bfe9ff;opacity:.5;font-size:12px;animation:aqrise linear infinite;pointer-events:none}
+@keyframes aqrise{0%{transform:translateY(0);opacity:0}15%{opacity:.6}100%{transform:translateY(-300px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.aq-fish,.aq-fish .body,.aq-bubble{animation:none}}
+.tank-shop{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:34vh;overflow-y:auto}
+.tank-buy{display:flex;align-items:center;gap:8px;padding:10px;border-radius:12px;border:2px solid #2b3b5c;border-bottom-width:4px;border-bottom-color:#101a30;background:#1c2942;color:#e5e7eb;cursor:pointer;font-weight:800;font-size:14px;text-align:left}
+.tank-buy:hover:not(:disabled){filter:brightness(1.12)} .tank-buy:active:not(:disabled){transform:translateY(2px);border-bottom-width:2px}
+.tank-buy:disabled{opacity:.5;cursor:not-allowed}
+.tank-buy .femoji{font-size:22px} .tank-buy .fname{flex:1} .tank-buy .fcost{color:#fbbf24;white-space:nowrap}
 .badge-tile{
   position:relative; padding:10px 12px; border-radius:12px; font-size:14px;
   background:#0b1229; border:1px solid var(--line); color:#9aa7b7; display:flex; align-items:center; gap:8px;
@@ -410,6 +433,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div class="badge" id="streakBadge">Streak: 0 🔥</div>
     <div class="badge" id="unlockedBadge">0/0 unlocked</div>
     <button id="openMap" class="icon-btn" title="Bazaar Map">🗺️</button>
+    <button id="openTank" class="icon-btn" title="Fish Tank">🐠</button>
     <button id="openPostcards" class="icon-btn" title="Postcards">🏛️</button>
     <!-- Dictionary button removed from header; now in the mode row -->
     <button id="openAchievements" class="icon-btn" title="Badges">🏆</button>
@@ -517,6 +541,26 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <button id="closeAch" class="btn">Close</button>
     </div>
     <div id="achList" class="grid"></div>
+  </div>
+</div>
+
+<!-- Fish Tank Modal -->
+<div id="tankModal" class="modal">
+  <div class="modal-card" style="max-width:620px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <h3 style="margin:0">🐠 Fish Tank</h3>
+      <button id="closeTank" class="btn">Close</button>
+    </div>
+    <div class="bazaar-stats" style="justify-content:flex-start;gap:16px;margin-bottom:8px">
+      <span>⭐ <b id="tankScore">0</b></span>
+      <span>🐠 <b id="tankCount">0</b>/<span id="tankMax">14</span></span>
+    </div>
+    <div id="aquarium">
+      <div class="aq-decor">🌿🪸🌿&nbsp;&nbsp;🪨&nbsp;&nbsp;🌿🪸</div>
+      <div id="aqEmpty" class="aq-empty">Adopt your first fish below! 🫧</div>
+    </div>
+    <p class="tiny" id="tankMsg" style="min-height:18px;text-align:center;margin:8px 0"></p>
+    <div id="tankShop" class="tank-shop"></div>
   </div>
 </div>
 
@@ -1000,6 +1044,17 @@ const CAT_BOWL_IMG  = 'images/cat_bowl.png';
 const CAT_TOY_COST  = 600;
 const CAT_BOWL_COST = 800;
 const JOONI_PET_COST = 25000;
+/* Fish tank — adoptable swimmers (decorative pets bought with points) */
+const FISH_SPECIES = [
+  {id:'goldfish',  emoji:'🐟', name:'Goldfish',    cost:150},
+  {id:'tropical',  emoji:'🐠', name:'Tropical Fish',cost:300},
+  {id:'puffer',    emoji:'🐡', name:'Pufferfish',   cost:500},
+  {id:'crab',      emoji:'🦀', name:'Crab',         cost:800},
+  {id:'octopus',   emoji:'🐙', name:'Octopus',      cost:1200},
+  {id:'turtle',    emoji:'🐢', name:'Turtle',       cost:2000},
+  {id:'shark',     emoji:'🦈', name:'Baby Shark',   cost:4000},
+];
+const TANK_MAX_FISH = 14;   // keep the tank from getting too crowded
 const JOONI_SIDE_IMG = 'images/Jooni_Side.png';
 const JOONI_SIDE_IMG_ALT = 'images/Jooni-Side.png';   // fallback if named with a hyphen
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
@@ -1292,6 +1347,7 @@ const defaultState = ()=>({
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
+  tankFish:[],
   jooniPet:false,
   furniture:{catTree:false, catToy:false, catBowl:false},
   catNames:{}, nameCursor:-1, showCatNames:false
@@ -1385,6 +1441,7 @@ function loadState(){
   if(state.furniture.catToy  === undefined) state.furniture.catToy  = false;
   if(state.furniture.catBowl === undefined) state.furniture.catBowl = false;
   if(typeof state.jooniPet !== 'boolean') state.jooniPet = false;
+  if(!Array.isArray(state.tankFish)) state.tankFish = [];
   if(!state.catNames) state.catNames = {};
   if(typeof state.nameCursor!=='number') state.nameCursor = -1;
   if(typeof state.showCatNames!=='boolean') state.showCatNames = false;
@@ -1428,6 +1485,8 @@ function mergeStates(local, remote){
     nameTokens:Math.max(local.inventory?.nameTokens||0,remote.inventory?.nameTokens||0)
   };
   base.jooniPet = !!(local.jooniPet || remote.jooniPet);
+  // Keep whichever tank has more fish (adoptions only grow the collection).
+  base.tankFish = ((remote.tankFish?.length||0) >= (local.tankFish?.length||0)) ? (remote.tankFish||[]) : (local.tankFish||[]);
   base.streakFreezes = Math.max(local.streakFreezes||0, remote.streakFreezes||0);
   base.streakFreezeAwardedAt = Math.max(local.streakFreezeAwardedAt||0, remote.streakFreezeAwardedAt||0);
   base.furniture = {
@@ -2241,6 +2300,58 @@ $('openAchievements').addEventListener('click', ()=>{ reflectBadges(); $('achMod
 $('closeAch').addEventListener('click', ()=> $('achModal').style.display='none');
 $('openMap').addEventListener('click', ()=>{ renderMap(); $('mapModal').style.display='grid'; requestAnimationFrame(startCats); updateShopUI(); updateNamesToggleUI(); updateNamesVisibility(); });
 $('closeMap').addEventListener('click', ()=>{ $('mapModal').style.display='none'; stopCats(); });
+
+/* ===================== FISH TANK ===================== */
+function speciesById(id){ return FISH_SPECIES.find(s=>s.id===id); }
+function renderTankFish(){
+  const aq=$('aquarium'); if(!aq) return;
+  aq.querySelectorAll('.aq-fish,.aq-bubble').forEach(el=>el.remove());   // keep decor + empty label
+  const list=state.tankFish||[];
+  $('aqEmpty').style.display = list.length ? 'none' : 'grid';
+  list.forEach(id=>{
+    const sp=speciesById(id); if(!sp) return;
+    const f=document.createElement('div'); f.className='aq-fish';
+    const dur=9+Math.random()*8;
+    f.style.top=(8+Math.random()*72)+'%';
+    f.style.animationDuration=dur+'s';
+    f.style.animationDelay=(-(Math.random()*dur))+'s';
+    f.style.fontSize=(22+Math.random()*14)+'px';
+    const body=document.createElement('span'); body.className='body'; body.textContent=sp.emoji;
+    body.style.animationDuration=(2.4+Math.random()*1.6)+'s';
+    f.appendChild(body); aq.appendChild(f);
+  });
+  for(let i=0;i<6;i++){ const b=document.createElement('div'); b.className='aq-bubble'; b.textContent='○'; b.style.left=(6+Math.random()*88)+'%'; const d=5+Math.random()*6; b.style.animationDuration=d+'s'; b.style.animationDelay=(-(Math.random()*d))+'s'; aq.appendChild(b); }
+}
+function buildTankShop(){
+  const box=$('tankShop'); if(!box) return; box.innerHTML='';
+  const full=(state.tankFish||[]).length>=TANK_MAX_FISH;
+  FISH_SPECIES.forEach(sp=>{
+    const btn=document.createElement('button'); btn.className='tank-buy'; btn.type='button';
+    btn.disabled = full || state.score < sp.cost;
+    btn.innerHTML=`<span class="femoji">${sp.emoji}</span><span class="fname">${sp.name}</span><span class="fcost">⭐${sp.cost}</span>`;
+    btn.addEventListener('click', ()=> adoptFish(sp.id));
+    box.appendChild(btn);
+  });
+}
+function updateTankUI(){
+  if($('tankScore')) $('tankScore').textContent=state.score;
+  if($('tankCount')) $('tankCount').textContent=(state.tankFish||[]).length;
+  if($('tankMax')) $('tankMax').textContent=TANK_MAX_FISH;
+  buildTankShop();
+}
+function tankMsg(t,cls){ const m=$('tankMsg'); if(!m) return; m.textContent=t; m.style.color = cls==='warn' ? '#f59e0b' : (cls==='ok' ? '#34d399' : '#cbd5e1'); }
+function adoptFish(id){
+  const sp=speciesById(id); if(!sp) return;
+  if((state.tankFish||[]).length>=TANK_MAX_FISH){ tankMsg('The tank is full! 🐠','warn'); return; }
+  if(state.score < sp.cost){ tankMsg(`${sp.name} costs ⭐${sp.cost} — keep learning!`,'warn'); return; }
+  state.score -= sp.cost; state.tankFish=[...(state.tankFish||[]), id]; persist();
+  renderTankFish(); updateTankUI(); updateBadges();
+  tankMsg(`${sp.emoji} ${sp.name} adopted — welcome home!`,'ok'); celebrateSimple();
+}
+function openTank(){ tankMsg(''); renderTankFish(); updateTankUI(); $('tankModal').style.display='grid'; }
+$('openTank').addEventListener('click', openTank);
+$('closeTank').addEventListener('click', ()=> $('tankModal').style.display='none');
+$('tankModal').addEventListener('click', e=>{ if(e.target.id==='tankModal') e.target.style.display='none'; });
 
 function updateShopUI(){
   if($('shopScore')) $('shopScore').textContent = state.score;
