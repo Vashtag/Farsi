@@ -250,11 +250,12 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .pet-choice{display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 10px;border-radius:16px;border:2px solid #2b3b5c;border-bottom-width:5px;border-bottom-color:#101a30;background:#1c2942;color:#e5e7eb;cursor:pointer;font-weight:800;font-size:15px;transition:filter .12s,transform .06s}
 .pet-choice:hover{filter:brightness(1.14)} .pet-choice:active{transform:translateY(2px);border-bottom-width:2px}
 .pet-choice .pc-emoji{font-size:44px;line-height:1}
+.pet-choice .pc-sub{font-size:12px;color:#fbbf24;font-weight:800;min-height:14px}
 /* Fish name label + naming popup */
 .aq-fish{cursor:pointer}
 .aq-fish .aq-emoji{display:inline-block;will-change:transform}
 .aq-name{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:1px;background:rgba(4,20,38,.72);color:#eaf6ff;font-size:10px;font-weight:800;padding:1px 6px;border-radius:8px;white-space:nowrap;pointer-events:none}
-#fishNameBox{position:absolute;inset:0;display:none;place-items:center;background:rgba(4,12,28,.55);backdrop-filter:blur(2px);border-radius:18px;z-index:2}
+#fishNameBox,#tankLock{position:absolute;inset:0;display:none;place-items:center;background:rgba(4,12,28,.55);backdrop-filter:blur(2px);border-radius:18px;z-index:2}
 #fishNameBox .fn-card{background:linear-gradient(180deg,#0d1530,#141d3e);border:1px solid var(--line);border-radius:16px;padding:16px 18px;width:80%;max-width:280px;text-align:center}
 #fishNameBox input{width:100%;margin:10px 0;padding:10px;border-radius:10px;border:1px solid #2b3b5c;background:#0a142e;color:#e5e7eb;font-size:16px;text-align:center}
 #fishNameBox .fn-btns{display:flex;gap:8px} #fishNameBox .fn-btns button{flex:1}
@@ -558,7 +559,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <p class="tiny" style="margin:0 0 16px;color:#6b7280">Where do you want to go?</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <button id="chooseBazaar" class="pet-choice"><span class="pc-emoji">🐱</span><span>Cat Bazaar</span></button>
-      <button id="chooseTank" class="pet-choice"><span class="pc-emoji">🐠</span><span>Fish Tank</span></button>
+      <button id="chooseTank" class="pet-choice"><span class="pc-emoji">🐠</span><span>Fish Tank</span><span class="pc-sub" id="chooseTankSub"></span></button>
     </div>
   </div>
 </div>
@@ -577,6 +578,15 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div id="aquarium">
       <div class="aq-decor">🌿🪸🌿&nbsp;&nbsp;🪨&nbsp;&nbsp;🌿🪸</div>
       <div id="aqEmpty" class="aq-empty">Adopt your first fish below! 🫧</div>
+      <div id="tankLock">
+        <div class="fn-card">
+          <div style="font-size:34px">🔒🐠</div>
+          <div style="font-weight:900;margin:6px 0">Buy the Fish Tank</div>
+          <p class="tiny" style="color:#9aa4b2;margin:0 0 10px">A one-time buy — then adopt as many fish as you like!</p>
+          <button id="buyTankBtn" class="primary" style="width:100%">🛒 Buy Tank (⭐750)</button>
+          <p class="tiny" id="buyTankNote" style="margin:8px 0 0;min-height:16px"></p>
+        </div>
+      </div>
       <div id="fishNameBox">
         <div class="fn-card">
           <div>Name your <span id="fnSpecies">fish</span> <span id="fnEmoji">🐠</span></div>
@@ -588,7 +598,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
         </div>
       </div>
     </div>
-    <p class="tiny" style="text-align:center;color:#6b7280;margin:6px 0 0">Tip: tap a fish to give it a name 🏷️</p>
+    <p class="tiny" id="tankTip" style="text-align:center;color:#6b7280;margin:6px 0 0">Tip: tap a fish to give it a name 🏷️</p>
     <p class="tiny" id="tankMsg" style="min-height:18px;text-align:center;margin:8px 0"></p>
     <div id="tankShop" class="tank-shop"></div>
   </div>
@@ -1081,6 +1091,7 @@ const FISH_SPECIES = [
   {id:'turtle',    emoji:'🐢', name:'Turtle',       cost:2000},
 ];
 const TANK_MAX_FISH = 14;   // keep the tank from getting too crowded
+const TANK_COST = 750;      // one-time cost to unlock the fish tank
 const JOONI_SIDE_IMG = 'images/Jooni_Side.png';
 const JOONI_SIDE_IMG_ALT = 'images/Jooni-Side.png';   // fallback if named with a hyphen
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
@@ -1373,7 +1384,7 @@ const defaultState = ()=>({
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
-  tankFish:[],
+  tankFish:[], tankOwned:false,
   jooniPet:false,
   furniture:{catTree:false, catToy:false, catBowl:false},
   catNames:{}, nameCursor:-1, showCatNames:false
@@ -1472,6 +1483,7 @@ function loadState(){
   state.tankFish = state.tankFish
     .map(f => (typeof f === 'string') ? {sp:f, name:''} : f)
     .filter(f => f && typeof f.sp === 'string');
+  if(typeof state.tankOwned !== 'boolean') state.tankOwned = (state.tankFish.length > 0);   // grandfather in anyone who already has fish
   if(!state.catNames) state.catNames = {};
   if(typeof state.nameCursor!=='number') state.nameCursor = -1;
   if(typeof state.showCatNames!=='boolean') state.showCatNames = false;
@@ -1517,6 +1529,7 @@ function mergeStates(local, remote){
   base.jooniPet = !!(local.jooniPet || remote.jooniPet);
   // Keep whichever tank has more fish (adoptions only grow the collection).
   base.tankFish = ((remote.tankFish?.length||0) >= (local.tankFish?.length||0)) ? (remote.tankFish||[]) : (local.tankFish||[]);
+  base.tankOwned = !!(local.tankOwned || remote.tankOwned || (base.tankFish.length>0));
   base.streakFreezes = Math.max(local.streakFreezes||0, remote.streakFreezes||0);
   base.streakFreezeAwardedAt = Math.max(local.streakFreezeAwardedAt||0, remote.streakFreezeAwardedAt||0);
   base.furniture = {
@@ -2332,7 +2345,10 @@ function openBazaar(){ renderMap(); $('mapModal').style.display='grid'; requestA
 $('closeMap').addEventListener('click', ()=>{ $('mapModal').style.display='none'; stopCats(); });
 
 /* Pets chooser — one header button opens a picker for the Cat Bazaar or Fish Tank */
-function openPets(){ $('petsModal').style.display='grid'; }
+function openPets(){
+  const sub=$('chooseTankSub'); if(sub) sub.textContent = state.tankOwned ? '' : `🔒 ⭐${TANK_COST}`;
+  $('petsModal').style.display='grid';
+}
 function closePets(){ $('petsModal').style.display='none'; }
 $('openPets').addEventListener('click', openPets);
 $('closePets').addEventListener('click', closePets);
@@ -2416,10 +2432,25 @@ function buildTankShop(){
   });
 }
 function updateTankUI(){
+  const owned = !!state.tankOwned;
   if($('tankScore')) $('tankScore').textContent=state.score;
   if($('tankCount')) $('tankCount').textContent=(state.tankFish||[]).length;
   if($('tankMax')) $('tankMax').textContent=TANK_MAX_FISH;
+  $('tankLock').style.display = owned ? 'none' : 'grid';
+  $('tankShop').style.display = owned ? 'grid' : 'none';
+  if($('tankTip')) $('tankTip').style.display = owned ? 'block' : 'none';
+  if(!owned){
+    const btn=$('buyTankBtn'); if(btn) btn.disabled = state.score < TANK_COST;
+    const note=$('buyTankNote'); if(note){ note.textContent = state.score < TANK_COST ? `You have ⭐${state.score} of ${TANK_COST}.` : 'You can afford it! 🎉'; note.style.color='#9aa4b2'; }
+  }
   buildTankShop();
+}
+function buyTank(){
+  if(state.tankOwned) return;
+  if(state.score < TANK_COST){ const n=$('buyTankNote'); if(n){ n.textContent=`You need ⭐${TANK_COST} — keep learning!`; n.style.color='#f59e0b'; } return; }
+  state.score -= TANK_COST; state.tankOwned = true; persist();
+  updateBadges(); updateTankUI(); renderTankFish();
+  tankMsg('🎉 Tank unlocked! Adopt your first fish below.','ok'); celebrateSimple();
 }
 function tankMsg(t,cls){ const m=$('tankMsg'); if(!m) return; m.textContent=t; m.style.color = cls==='warn' ? '#f59e0b' : (cls==='ok' ? '#34d399' : '#cbd5e1'); }
 function adoptFish(id){
@@ -2437,6 +2468,7 @@ $('tankModal').addEventListener('click', e=>{ if(e.target.id==='tankModal') clos
 $('fnSave').addEventListener('click', saveFishName);
 $('fnCancel').addEventListener('click', closeFishName);
 $('fnInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveFishName(); } });
+$('buyTankBtn').addEventListener('click', buyTank);
 
 function updateShopUI(){
   if($('shopScore')) $('shopScore').textContent = state.score;
