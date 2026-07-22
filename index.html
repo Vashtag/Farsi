@@ -255,6 +255,8 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .aq-fish{cursor:pointer}
 .aq-fish .aq-emoji{display:inline-block;will-change:transform}
 .aq-name{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:1px;background:rgba(4,20,38,.72);color:#eaf6ff;font-size:10px;font-weight:800;padding:1px 6px;border-radius:8px;white-space:nowrap;pointer-events:none}
+.aq-pop{position:absolute;color:#dff4ff;opacity:0;font-size:12px;font-weight:800;pointer-events:none;animation:aqpop 1s ease-out forwards}
+@keyframes aqpop{0%{transform:translateY(0) scale(.5);opacity:0}20%{opacity:.85}100%{transform:translateY(-42px) scale(1);opacity:0}}
 #fishNameBox,#tankLock{position:absolute;inset:0;display:none;place-items:center;background:rgba(4,12,28,.55);backdrop-filter:blur(2px);border-radius:18px;z-index:2}
 #fishNameBox .fn-card{background:linear-gradient(180deg,#0d1530,#141d3e);border:1px solid var(--line);border-radius:16px;padding:16px 18px;width:80%;max-width:280px;text-align:center}
 #fishNameBox input{width:100%;margin:10px 0;padding:10px;border-radius:10px;border:1px solid #2b3b5c;background:#0a142e;color:#e5e7eb;font-size:16px;text-align:center}
@@ -2359,6 +2361,7 @@ $('chooseTank').addEventListener('click', ()=>{ closePets(); openTank(); });
 /* ===================== FISH TANK ===================== */
 function speciesById(id){ return FISH_SPECIES.find(s=>s.id===id); }
 let tankSwimmers=[], tankRAF=null, tankBounds={w:400,h:280};
+const BOP_DUR=0.7;   // seconds a "happy bop" lasts when a named fish is tapped
 function stopTankSwim(){ if(tankRAF){ cancelAnimationFrame(tankRAF); tankRAF=null; } tankSwimmers=[]; }
 function tankStep(now){
   const B=tankBounds; const dt=Math.min(0.05,(now-(tankStep.last||now))/1000); tankStep.last=now;
@@ -2369,11 +2372,27 @@ function tankStep(now){
     if(s.x > B.w-m){ s.x=B.w-m; s.vx=-Math.abs(s.vx); }
     if(s.y < 8){ s.y=8; s.vy=Math.abs(s.vy); }
     if(s.y > B.h-m-8){ s.y=B.h-m-8; s.vy=-Math.abs(s.vy); }
+    let bopY=0;
+    if(s.bop>0){ s.bop=Math.max(0,s.bop-dt); const p=1-s.bop/BOP_DUR; bopY=-Math.abs(Math.sin(p*Math.PI*2))*14; }
     // Move the container; flip only the emoji (so the name label stays readable).
-    s.el.style.transform=`translate(${s.x.toFixed(1)}px, ${(s.y+Math.sin(s.phase)*3).toFixed(1)}px)`;
+    s.el.style.transform=`translate(${s.x.toFixed(1)}px, ${(s.y+Math.sin(s.phase)*3+bopY).toFixed(1)}px)`;
     s.emojiEl.style.transform=`scaleX(${s.vx>=0?-1:1})`;   // emoji faces left by default → flip when swimming right
   }
   tankRAF=requestAnimationFrame(tankStep);
+}
+// A few bubbles rising from a point in the tank (used for the happy-fish reaction).
+function emitBubbles(x,y,n){
+  const aq=$('aquarium'); if(!aq) return;
+  for(let i=0;i<n;i++){
+    const b=document.createElement('div'); b.className='aq-pop'; b.textContent='°';
+    b.style.left=(x + (Math.random()*16-8))+'px'; b.style.top=(y-6)+'px'; b.style.animationDelay=(i*0.09)+'s';
+    aq.appendChild(b); setTimeout(()=>b.remove(), 1100);
+  }
+}
+// Tapping an already-named fish just makes it happy — bop + bubbles, no re-naming.
+function reactFish(idx){
+  const s=tankSwimmers.find(sw=>sw.idx===idx); if(!s) return;
+  s.bop=BOP_DUR; emitBubbles(s.x, s.y, 3+Math.floor(Math.random()*2));
 }
 function renderTankFish(){
   const aq=$('aquarium'); if(!aq) return;
@@ -2389,7 +2408,12 @@ function renderTankFish(){
     const emojiEl=document.createElement('span'); emojiEl.className='aq-emoji'; emojiEl.textContent=sp.emoji;
     const nameEl=document.createElement('div'); nameEl.className='aq-name'; nameEl.textContent=f.name||''; nameEl.style.display=f.name?'block':'none';
     el.appendChild(emojiEl); el.appendChild(nameEl); aq.appendChild(el);
-    el.addEventListener('click', ()=> openFishName(idx));
+    el.title = f.name ? f.name : 'Tap to name';
+    el.addEventListener('click', ()=>{
+      const cur=(state.tankFish||[])[idx];
+      if(cur && cur.name) reactFish(idx);   // named → happy bop + bubbles
+      else openFishName(idx);               // unnamed → open the naming popup
+    });
     const m=size*0.6;
     tankSwimmers.push({ el, emojiEl, nameEl, idx, size,
       x: m + Math.random()*Math.max(1, tankBounds.w-2*m),
@@ -2417,7 +2441,7 @@ function saveFishName(){
   const f=(state.tankFish||[])[fishNamingIdx]; if(!f){ closeFishName(); return; }
   f.name = ($('fnInput').value||'').trim().slice(0,16); persist();
   const sw=tankSwimmers.find(s=>s.idx===fishNamingIdx);
-  if(sw){ sw.nameEl.textContent=f.name; sw.nameEl.style.display=f.name?'block':'none'; }
+  if(sw){ sw.nameEl.textContent=f.name; sw.nameEl.style.display=f.name?'block':'none'; if(f.name){ sw.el.title=f.name; sw.bop=BOP_DUR; emitBubbles(sw.x, sw.y, 3); } }
   closeFishName();
 }
 function buildTankShop(){
