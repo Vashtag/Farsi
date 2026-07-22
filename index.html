@@ -981,6 +981,7 @@ const store = {
 const DAILY_WORDS = 5;          // words to answer right each day (daily goal)
 const RELEASE_BASE = 140;       // core words available from the start
 const RELEASE_BATCH = 10;       // extra words released per batch, once all released are learned
+const TRAVEL_ALWAYS_MAX = 298;  // only the original travel vocab is always-unlocked; words added later stay gated
 const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
 const MINI_QUIZ_SIZE = 5;
 const AUDIO_QUIZ_SIZE = 8;
@@ -1092,7 +1093,58 @@ const SENTENCES = [
   { fa:"مامان اینجا است.", translit:"mâmân injâ ast.", en:"Mom is here.", blanks:[{fa:"مامان", translit:"mâmân", en:"mom"}] },
   { fa:"خواهر مهربان است.", translit:"khâhar mehrabân ast.", en:"The sister is kind.", blanks:[{fa:"خواهر", translit:"khâhar", en:"sister"}] },
   { fa:"برادر بلند است.", translit:"barâdar boland ast.", en:"The brother is tall.", blanks:[{fa:"برادر", translit:"barâdar", en:"brother"},{fa:"بلند", translit:"boland", en:"tall"}] },
-  { fa:"خانواده بزرگ است.", translit:"khânevâde bozorg ast.", en:"My family is big.", blanks:[{fa:"خانواده", translit:"khânevâde", en:"family"},{fa:"بزرگ", translit:"bozorg", en:"big"}] }
+  { fa:"خانواده بزرگ است.", translit:"khânevâde bozorg ast.", en:"My family is big.", blanks:[{fa:"خانواده", translit:"khânevâde", en:"family"},{fa:"بزرگ", translit:"bozorg", en:"big"}] },
+  /* ── New-word sentences ── */
+  { fa:"هلو شیرین است.", translit:"holu shirin ast.", en:"The peach is sweet.", blanks:[{fa:"هلو", translit:"holu", en:"peach"}] },
+  { fa:"گیلاس قرمز است.", translit:"gilâs ghermez ast.", en:"The cherry is red.", blanks:[{fa:"گیلاس", translit:"gilâs", en:"cherry"},{fa:"قرمز", translit:"ghermez", en:"red"}] },
+  { fa:"گلابی سبز است.", translit:"golâbi sabz ast.", en:"The pear is green.", blanks:[{fa:"گلابی", translit:"golâbi", en:"pear"},{fa:"سبز", translit:"sabz", en:"green"}] },
+  { fa:"آناناس زرد است.", translit:"ânânâs zard ast.", en:"The pineapple is yellow.", blanks:[{fa:"آناناس", translit:"ânânâs", en:"pineapple"},{fa:"زرد", translit:"zard", en:"yellow"}] },
+  { fa:"انبه شیرین است.", translit:"anbe shirin ast.", en:"The mango is sweet.", blanks:[{fa:"انبه", translit:"anbe", en:"mango"}] },
+  { fa:"نارگیل سفید است.", translit:"nârgil sefid ast.", en:"The coconut is white.", blanks:[{fa:"نارگیل", translit:"nârgil", en:"coconut"},{fa:"سفید", translit:"sefid", en:"white"}] },
+  { fa:"پیاز تند است.", translit:"piâz tond ast.", en:"The onion is spicy.", blanks:[{fa:"پیاز", translit:"piâz", en:"onion"}] },
+  { fa:"من سیر دوست دارم.", translit:"man sir dust dâram.", en:"I like garlic.", blanks:[{fa:"سیر", translit:"sir", en:"garlic"}] },
+  { fa:"ذرت زرد است.", translit:"zorrat zard ast.", en:"The corn is yellow.", blanks:[{fa:"ذرت", translit:"zorrat", en:"corn"},{fa:"زرد", translit:"zard", en:"yellow"}] },
+  { fa:"کاهو سبز است.", translit:"kâhu sabz ast.", en:"The lettuce is green.", blanks:[{fa:"کاهو", translit:"kâhu", en:"lettuce"},{fa:"سبز", translit:"sabz", en:"green"}] },
+  { fa:"سوپ گرم است.", translit:"sup garm ast.", en:"The soup is hot.", blanks:[{fa:"سوپ", translit:"sup", en:"soup"},{fa:"گرم", translit:"garm", en:"hot"}] },
+  { fa:"پیتزا خوشمزه است.", translit:"pitzâ khoshmaze ast.", en:"The pizza is delicious.", blanks:[{fa:"پیتزا", translit:"pitzâ", en:"pizza"},{fa:"خوشمزه", translit:"khoshmaze", en:"delicious"}] },
+  { fa:"من ساندویچ می‌خورم.", translit:"man sândevich mikhoram.", en:"I eat a sandwich.", blanks:[{fa:"ساندویچ", translit:"sândevich", en:"sandwich"}] },
+  { fa:"عسل شیرین است.", translit:"asal shirin ast.", en:"The honey is sweet.", blanks:[{fa:"عسل", translit:"asal", en:"honey"}] },
+  { fa:"ماست سفید است.", translit:"mâst sefid ast.", en:"The yogurt is white.", blanks:[{fa:"ماست", translit:"mâst", en:"yogurt"},{fa:"سفید", translit:"sefid", en:"white"}] },
+  { fa:"شتر بزرگ است.", translit:"shotor bozorg ast.", en:"The camel is big.", blanks:[{fa:"شتر", translit:"shotor", en:"camel"},{fa:"بزرگ", translit:"bozorg", en:"big"}] },
+  { fa:"پنگوئن کوچک است.", translit:"penguen kuchak ast.", en:"The penguin is small.", blanks:[{fa:"پنگوئن", translit:"penguen", en:"penguin"},{fa:"کوچک", translit:"kuchak", en:"small"}] },
+  { fa:"دلفین در دریا است.", translit:"dolfin dar daryâ ast.", en:"The dolphin is in the sea.", blanks:[{fa:"دلفین", translit:"dolfin", en:"dolphin"},{fa:"دریا", translit:"daryâ", en:"sea"}] },
+  { fa:"نهنگ بزرگ است.", translit:"nahang bozorg ast.", en:"The whale is big.", blanks:[{fa:"نهنگ", translit:"nahang", en:"whale"},{fa:"بزرگ", translit:"bozorg", en:"big"}] },
+  { fa:"کوسه سریع است.", translit:"kuse sari' ast.", en:"The shark is fast.", blanks:[{fa:"کوسه", translit:"kuse", en:"shark"},{fa:"سریع", translit:"sari'", en:"fast"}] },
+  { fa:"خرچنگ کوچک است.", translit:"kharchang kuchak ast.", en:"The crab is small.", blanks:[{fa:"خرچنگ", translit:"kharchang", en:"crab"},{fa:"کوچک", translit:"kuchak", en:"small"}] },
+  { fa:"هشت‌پا در دریا است.", translit:"hashtpâ dar daryâ ast.", en:"The octopus is in the sea.", blanks:[{fa:"هشت‌پا", translit:"hashtpâ", en:"octopus"},{fa:"دریا", translit:"daryâ", en:"sea"}] },
+  { fa:"جوجه زرد است.", translit:"juje zard ast.", en:"The chick is yellow.", blanks:[{fa:"جوجه", translit:"juje", en:"chick"},{fa:"زرد", translit:"zard", en:"yellow"}] },
+  { fa:"سنجاب سریع است.", translit:"sanjâb sari' ast.", en:"The squirrel is fast.", blanks:[{fa:"سنجاب", translit:"sanjâb", en:"squirrel"},{fa:"سریع", translit:"sari'", en:"fast"}] },
+  { fa:"مورچه کوچک است.", translit:"murche kuchak ast.", en:"The ant is small.", blanks:[{fa:"مورچه", translit:"murche", en:"ant"},{fa:"کوچک", translit:"kuchak", en:"small"}] },
+  { fa:"حلزون آهسته است.", translit:"halazun âheste ast.", en:"The snail is slow.", blanks:[{fa:"حلزون", translit:"halazun", en:"snail"},{fa:"آهسته", translit:"âheste", en:"slow"}] },
+  { fa:"دریاچه آبی است.", translit:"daryâche âbi ast.", en:"The lake is blue.", blanks:[{fa:"دریاچه", translit:"daryâche", en:"lake"},{fa:"آبی", translit:"âbi", en:"blue"}] },
+  { fa:"جنگل سبز است.", translit:"jangal sabz ast.", en:"The forest is green.", blanks:[{fa:"جنگل", translit:"jangal", en:"forest"},{fa:"سبز", translit:"sabz", en:"green"}] },
+  { fa:"جزیره زیبا است.", translit:"jazire zibâ ast.", en:"The island is beautiful.", blanks:[{fa:"جزیره", translit:"jazire", en:"island"},{fa:"زیبا", translit:"zibâ", en:"beautiful"}] },
+  { fa:"صحرا گرم است.", translit:"sahrâ garm ast.", en:"The desert is hot.", blanks:[{fa:"صحرا", translit:"sahrâ", en:"desert"},{fa:"گرم", translit:"garm", en:"hot"}] },
+  { fa:"سنگ سخت است.", translit:"sang sakht ast.", en:"The stone is hard.", blanks:[{fa:"سنگ", translit:"sang", en:"stone"},{fa:"سخت", translit:"sakht", en:"difficult"}] },
+  { fa:"رنگین‌کمان زیبا است.", translit:"ranginkamân zibâ ast.", en:"The rainbow is beautiful.", blanks:[{fa:"رنگین‌کمان", translit:"ranginkamân", en:"rainbow"},{fa:"زیبا", translit:"zibâ", en:"beautiful"}] },
+  { fa:"یخ سرد است.", translit:"yakh sard ast.", en:"The ice is cold.", blanks:[{fa:"یخ", translit:"yakh", en:"ice"},{fa:"سرد", translit:"sard", en:"cold"}] },
+  { fa:"دوچرخه قرمز است.", translit:"docharkhe ghermez ast.", en:"The bicycle is red.", blanks:[{fa:"دوچرخه", translit:"docharkhe", en:"bicycle"},{fa:"قرمز", translit:"ghermez", en:"red"}] },
+  { fa:"موتور سریع است.", translit:"motor sari' ast.", en:"The motorcycle is fast.", blanks:[{fa:"موتور", translit:"motor", en:"motorcycle"},{fa:"سریع", translit:"sari'", en:"fast"}] },
+  { fa:"قایق کوچک است.", translit:"ghâyegh kuchak ast.", en:"The boat is small.", blanks:[{fa:"قایق", translit:"ghâyegh", en:"boat"},{fa:"کوچک", translit:"kuchak", en:"small"}] },
+  { fa:"کشتی بزرگ است.", translit:"kashti bozorg ast.", en:"The ship is big.", blanks:[{fa:"کشتی", translit:"kashti", en:"ship"},{fa:"بزرگ", translit:"bozorg", en:"big"}] },
+  { fa:"کامیون بزرگ است.", translit:"kâmyon bozorg ast.", en:"The truck is big.", blanks:[{fa:"کامیون", translit:"kâmyon", en:"truck"},{fa:"بزرگ", translit:"bozorg", en:"big"}] },
+  { fa:"هلیکوپتر سریع است.", translit:"helikopter sari' ast.", en:"The helicopter is fast.", blanks:[{fa:"هلیکوپتر", translit:"helikopter", en:"helicopter"},{fa:"سریع", translit:"sari'", en:"fast"}] },
+  { fa:"پل بلند است.", translit:"pol boland ast.", en:"The bridge is high.", blanks:[{fa:"پل", translit:"pol", en:"bridge"},{fa:"بلند", translit:"boland", en:"tall"}] },
+  { fa:"دیوار سفید است.", translit:"divâr sefid ast.", en:"The wall is white.", blanks:[{fa:"دیوار", translit:"divâr", en:"wall"},{fa:"سفید", translit:"sefid", en:"white"}] },
+  { fa:"تلویزیون بزرگ است.", translit:"televizion bozorg ast.", en:"The television is big.", blanks:[{fa:"تلویزیون", translit:"televizion", en:"television"},{fa:"بزرگ", translit:"bozorg", en:"big"}] },
+  { fa:"پله بلند است.", translit:"pelle boland ast.", en:"The stairs are high.", blanks:[{fa:"پله", translit:"pelle", en:"stairs"},{fa:"بلند", translit:"boland", en:"tall"}] },
+  { fa:"گلدان زیبا است.", translit:"goldân zibâ ast.", en:"The flowerpot is beautiful.", blanks:[{fa:"گلدان", translit:"goldân", en:"flowerpot"},{fa:"زیبا", translit:"zibâ", en:"beautiful"}] },
+  { fa:"دویدن خوب است.", translit:"davidan khub ast.", en:"Running is good.", blanks:[{fa:"دویدن", translit:"davidan", en:"to run"},{fa:"خوب", translit:"khub", en:"good"}] },
+  { fa:"رقصیدن خوب است.", translit:"raghsidan khub ast.", en:"Dancing is good.", blanks:[{fa:"رقصیدن", translit:"raghsidan", en:"to dance"},{fa:"خوب", translit:"khub", en:"good"}] },
+  { fa:"پختن آسان است.", translit:"pokhtan âsân ast.", en:"Cooking is easy.", blanks:[{fa:"پختن", translit:"pokhtan", en:"to cook"},{fa:"آسان", translit:"âsân", en:"easy"}] },
+  { fa:"خریدن آسان است.", translit:"kharidan âsân ast.", en:"Buying is easy.", blanks:[{fa:"خریدن", translit:"kharidan", en:"to buy"},{fa:"آسان", translit:"âsân", en:"easy"}] },
+  { fa:"شستن مهم است.", translit:"shostan mohem ast.", en:"Washing is important.", blanks:[{fa:"شستن", translit:"shostan", en:"to wash"}] },
+  { fa:"نشستن خوب است.", translit:"neshastan khub ast.", en:"Sitting is good.", blanks:[{fa:"نشستن", translit:"neshastan", en:"to sit"},{fa:"خوب", translit:"khub", en:"good"}] }
 ];
 
 /* ===================== WORDS =====================
@@ -1225,7 +1277,7 @@ function initDailyUnlock(){
    (travel vocabulary is always available for the trip). */
 function isReleased(i){
   if(i < (state.releasedCount||RELEASE_BASE)) return true;
-  return (words[i]?.cats||[]).includes('travel');
+  return i < TRAVEL_ALWAYS_MAX && (words[i]?.cats||[]).includes('travel');
 }
 function unlockedIndices(){ const out=[]; for(let i=0;i<words.length;i++){ if(isReleased(i)) out.push(i); } return out; }
 function unlockedCount(){ return unlockedIndices().length; }
