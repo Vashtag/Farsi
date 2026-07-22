@@ -2123,6 +2123,20 @@ function levenshtein(a,b){const m=a.length,n=b.length,dp=Array.from({length:m+1}
 function closeEnough(a,b){if(!a||!b)return false;if(a===b)return true;return levenshtein(a,b)<=1}
 function hasPersian(s){return /[\u0600-\u06FF]/.test(s||'')}
 function normalizeSRTranslit(s){return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'')}
+// Speech engines transcribe spoken numbers as digits ("1") or the English word
+// ("one") rather than the Persian ("yek"). Accept those forms for number words.
+const NUM_EN2DIGIT = {one:'1',two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',eight:'8',nine:'9',ten:'10'};
+function heardNumber(h){
+  const map={'۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9','٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
+  const s=(h||'').replace(/[۰-۹٠-٩]/g, d=>map[d]||d);
+  const m=s.match(/\d+/); return m?m[0]:null;
+}
+function matchesNumberWord(item, heard){
+  const digit = NUM_EN2DIGIT[(item.en||'').toLowerCase()];
+  if(!digit) return false;
+  const en = (item.en||'').toLowerCase();
+  return heard.some(h => heardNumber(h)===digit || normalizeSRTranslit(h)===en);
+}
 function initSpeech(){
   const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
   const btn = $('sayBtn');
@@ -2139,6 +2153,7 @@ function initSpeech(){
     let ok=false, picked='';
     for(const h of heard){ if(hasPersian(h) && closeEnough(normalizeFa(h), targetFa)){ ok=true; picked=h.trim(); break; } }
     if(!ok){ for(const h of heard){ if(closeEnough(normalizeSRTranslit(h), targetTr)){ ok=true; picked=h.trim(); break; } } }
+    if(!ok && matchesNumberWord(item, heard)){ ok=true; picked=(heard[0]||'').trim(); }   // spoken numbers → digit/English
     $('speechFeedback').innerHTML = ok ? `Heard: "<b>${picked}</b>" ✓`
       : `Heard: "<b>${(heard[0]||'(nothing)').trim()}</b>" ✗ — target is "<b>${item.fa}</b>" (${item.translit})`;
     $('speechFeedback').className = 'feedback ' + (ok?'ok':'warn');
@@ -3318,7 +3333,9 @@ function buildWeightedOrder(pool){
   const recall = old.slice(0, sampleN);
   const seq = [];
   const add = (arr,n)=> arr.forEach(i=>{ for(let k=0;k<n;k++) seq.push(i); });
-  add(nu,3); add(du,3); add(rec,2); add(recall,1);
+  // Brand-new words are weighted highest so she keeps meeting fresh vocabulary
+  // (and can reach the daily learning goal), with due reviews close behind.
+  add(nu,5); add(du,3); add(rec,2); add(recall,1);
   if(!seq.length) pool.forEach(i=>seq.push(i));   // safety
   shuffle(seq);
   // De-cluster so the same word never lands twice in a row.
