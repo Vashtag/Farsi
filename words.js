@@ -355,6 +355,56 @@ const words = [
   {fa:"پختن", en:"to cook", translit:"pokhtan", emoji:"🍳", audio:"", image:""},
   {fa:"شستن", en:"to wash", translit:"shostan", emoji:"🧼", audio:"", image:""},
   {fa:"نشستن", en:"to sit", translit:"neshastan", emoji:"🪑", audio:"", image:""},
+  /* ── More words (batch 2) ── */
+  {fa:"پاپ‌کورن", en:"popcorn", translit:"pâpkorn", emoji:"🍿", audio:"", image:""},
+  {fa:"کلوچه", en:"cookie", translit:"kolucheh", emoji:"🍪", audio:"", image:""},
+  {fa:"دونات", en:"donut", translit:"donât", emoji:"🍩", audio:"", image:""},
+  {fa:"آبنبات", en:"candy", translit:"âbnabât", emoji:"🍬", audio:"", image:""},
+  {fa:"پنکیک", en:"pancake", translit:"pankik", emoji:"🥞", audio:"", image:""},
+  {fa:"سالاد", en:"salad", translit:"sâlâd", emoji:"🥗", audio:"", image:""},
+  {fa:"تاکو", en:"taco", translit:"tâko", emoji:"🌮", audio:"", image:""},
+  {fa:"اسپاگتی", en:"spaghetti", translit:"espâgeti", emoji:"🍝", audio:"", image:""},
+  {fa:"آجیل", en:"nuts", translit:"âjil", emoji:"🥜", audio:"", image:""},
+  {fa:"نوشابه", en:"soda", translit:"nushâbe", emoji:"🥤", audio:"", image:""},
+  {fa:"لیموناد", en:"lemonade", translit:"limunâd", emoji:"🍋", audio:"", image:""},
+  {fa:"توپ", en:"ball", translit:"tup", emoji:"⚽", audio:"", image:""},
+  {fa:"بادبادک", en:"kite", translit:"bâdbâdak", emoji:"🪁", audio:"", image:""},
+  {fa:"بادکنک", en:"balloon", translit:"bâdkonak", emoji:"🎈", audio:"", image:""},
+  {fa:"عروسک", en:"doll", translit:"arusak", emoji:"🪆", audio:"", image:""},
+  {fa:"طبل", en:"drum", translit:"tabl", emoji:"🥁", audio:"", image:""},
+  {fa:"گیتار", en:"guitar", translit:"gitâr", emoji:"🎸", audio:"", image:""},
+  {fa:"پیانو", en:"piano", translit:"piyâno", emoji:"🎹", audio:"", image:""},
+  {fa:"زنگ", en:"bell", translit:"zang", emoji:"🔔", audio:"", image:""},
+  {fa:"مدرسه", en:"school", translit:"madrese", emoji:"🏫", audio:"", image:""},
+  {fa:"بیمارستان", en:"hospital", translit:"bimârestân", emoji:"🏥", audio:"", image:""},
+  {fa:"کتابخانه", en:"library", translit:"ketâbkhâne", emoji:"📚", audio:"", image:""},
+  {fa:"شهر", en:"city", translit:"shahr", emoji:"🏙️", audio:"", image:""},
+  {fa:"روستا", en:"village", translit:"rustâ", emoji:"🏘️", audio:"", image:""},
+  {fa:"مزرعه", en:"farm", translit:"mazrae", emoji:"🚜", audio:"", image:""},
+  {fa:"مسجد", en:"mosque", translit:"masjed", emoji:"🕌", audio:"", image:""},
+  {fa:"باغ‌وحش", en:"zoo", translit:"bâghevahsh", emoji:"🦁", audio:"", image:""},
+  {fa:"رستوران", en:"restaurant", translit:"resturân", emoji:"🍴", audio:"", image:""},
+  {fa:"دکتر", en:"doctor", translit:"doktor", emoji:"👨‍⚕️", audio:"", image:""},
+  {fa:"معلم", en:"teacher", translit:"moallem", emoji:"👩‍🏫", audio:"", image:""},
+  {fa:"پلیس", en:"police officer", translit:"polis", emoji:"👮", audio:"", image:""},
+  {fa:"آشپز", en:"chef", translit:"âshpaz", emoji:"👨‍🍳", audio:"", image:""},
+  {fa:"کشاورز", en:"farmer", translit:"keshâvarz", emoji:"🧑‍🌾", audio:"", image:""},
+  {fa:"خلبان", en:"pilot", translit:"khalabân", emoji:"🧑‍✈️", audio:"", image:""},
+  {fa:"پادشاه", en:"king", translit:"pâdeshâh", emoji:"🤴", audio:"", image:""},
+  {fa:"ملکه", en:"queen", translit:"malake", emoji:"👸", audio:"", image:""},
+  {fa:"طوفان", en:"storm", translit:"tufân", emoji:"🌀", audio:"", image:""},
+  {fa:"مه", en:"fog", translit:"meh", emoji:"🌫️", audio:"", image:""},
+  {fa:"غار", en:"cave", translit:"ghâr", emoji:"🕳️", audio:"", image:""},
+  {fa:"آتشفشان", en:"volcano", translit:"âtashfeshân", emoji:"🌋", audio:"", image:""},
+  {fa:"سیاره", en:"planet", translit:"sayâre", emoji:"🪐", audio:"", image:""},
+  {fa:"زمین", en:"earth", translit:"zamin", emoji:"🌍", audio:"", image:""},
+  {fa:"تپه", en:"hill", translit:"tape", emoji:"🏔️", audio:"", image:""},
+  {fa:"کراوات", en:"tie", translit:"kerâvât", emoji:"👔", audio:"", image:""},
+  {fa:"چکمه", en:"boots", translit:"chakme", emoji:"🥾", audio:"", image:""},
+  {fa:"چتر", en:"umbrella", translit:"chatr", emoji:"☂️", audio:"", image:""},
+  {fa:"ژاکت", en:"sweater", translit:"zhâkat", emoji:"🧥", audio:"", image:""},
+  {fa:"کیف", en:"bag", translit:"kif", emoji:"👜", audio:"", image:""},
+  {fa:"کوله‌پشتی", en:"backpack", translit:"kulepushti", emoji:"🎒", audio:"", image:""},
 ];
 
 /* ── Word categories (indices match words array) ── */
@@ -709,5 +759,54 @@ const CATS_MAP = [
   [],  // 345 to cook
   [],  // 346 to wash
   [],  // 347 to sit
+  ["food"],  // 348 popcorn
+  ["food","cooking"],  // 349 cookie
+  ["food"],  // 350 donut
+  ["food"],  // 351 candy
+  ["food","cooking"],  // 352 pancake
+  ["food","cooking"],  // 353 salad
+  ["food"],  // 354 taco
+  ["food","cooking"],  // 355 spaghetti
+  ["food"],  // 356 nuts
+  ["food"],  // 357 soda
+  ["food"],  // 358 lemonade
+  [],  // 359 ball
+  [],  // 360 kite
+  [],  // 361 balloon
+  [],  // 362 doll
+  [],  // 363 drum
+  [],  // 364 guitar
+  [],  // 365 piano
+  [],  // 366 bell
+  [],  // 367 school
+  [],  // 368 hospital
+  [],  // 369 library
+  [],  // 370 city
+  [],  // 371 village
+  [],  // 372 farm
+  [],  // 373 mosque
+  [],  // 374 zoo
+  [],  // 375 restaurant
+  [],  // 376 doctor
+  [],  // 377 teacher
+  [],  // 378 police officer
+  [],  // 379 chef
+  [],  // 380 farmer
+  [],  // 381 pilot
+  [],  // 382 king
+  [],  // 383 queen
+  ["nature"],  // 384 storm
+  ["nature"],  // 385 fog
+  ["nature"],  // 386 cave
+  ["nature"],  // 387 volcano
+  ["nature"],  // 388 planet
+  ["nature"],  // 389 earth
+  ["nature"],  // 390 hill
+  ["clothes"],  // 391 tie
+  ["clothes"],  // 392 boots
+  ["clothes"],  // 393 umbrella
+  ["clothes"],  // 394 sweater
+  ["clothes"],  // 395 bag
+  ["clothes"],  // 396 backpack
 ];
 CATS_MAP.forEach((cats, i) => { if (words[i]) words[i].cats = cats; });
