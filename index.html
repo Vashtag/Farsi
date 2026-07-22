@@ -233,7 +233,11 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 /* Fish tank */
 #aquarium{position:relative;height:280px;border-radius:18px;overflow:hidden;border:2px solid #1e3a5f;
   background:linear-gradient(180deg,#0b3a63 0%,#0a4d78 45%,#0a5f86 100%);box-shadow:inset 0 -18px 40px rgba(0,0,0,.35),inset 0 8px 24px rgba(255,255,255,.06)}
-#aquarium .aq-decor{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:26px;opacity:.85;pointer-events:none;filter:saturate(1.1)}
+#aquarium .aq-plant,#aquarium .aq-rock{position:absolute;bottom:1px;transform:translateX(-50%);pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+/* Swaying kelp — each blade rotates gently at its base. SMIL-free CSS so it stays
+   lively; kept out of the reduced-motion off-switch on purpose (it's the whole point). */
+.aq-kelp{transform-box:fill-box;transform-origin:50% 100%;animation:kelpSway ease-in-out infinite alternate}
+@keyframes kelpSway{from{transform:rotate(-6deg)}to{transform:rotate(6deg)}}
 #aquarium .aq-empty{position:absolute;inset:0;display:grid;place-items:center;color:#cfe8ff;font-weight:800;opacity:.75;text-align:center;padding:0 20px}
 /* Fish are positioned via JS transforms (a rAF swim loop) so they move even when the
    OS "reduce motion" setting is on — a still tank isn't the point of a fish tank. */
@@ -579,7 +583,33 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
       <span>🐠 <b id="tankCount">0</b>/<span id="tankMax">14</span></span>
     </div>
     <div id="aquarium">
-      <div class="aq-decor">🌿🪸🌿&nbsp;&nbsp;🪨&nbsp;&nbsp;🌿🪸</div>
+      <!-- Swaying kelp (generated) -->
+      <svg class="aq-plant" style="left:9%"  width="40" height="74" viewBox="0 0 46 82" fill="none">
+        <path class="aq-kelp" style="animation-duration:3.4s;animation-delay:-.2s"  d="M23,82 Q12,46 19,8"  stroke="#2f9e5e" stroke-width="6" stroke-linecap="round"/>
+        <path class="aq-kelp" style="animation-duration:4.2s;animation-delay:-1.3s" d="M27,82 Q38,50 31,14" stroke="#43c476" stroke-width="5" stroke-linecap="round"/>
+        <path class="aq-kelp" style="animation-duration:3.0s;animation-delay:-.7s"  d="M23,82 Q23,44 25,20" stroke="#63e096" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      <svg class="aq-plant" style="left:23%" width="30" height="56" viewBox="0 0 46 82" fill="none">
+        <path class="aq-kelp" style="animation-duration:3.7s;animation-delay:-2.1s" d="M22,82 Q14,52 20,22" stroke="#3aad68" stroke-width="6" stroke-linecap="round"/>
+        <path class="aq-kelp" style="animation-duration:3.1s;animation-delay:-.5s"  d="M26,82 Q33,54 28,26" stroke="#57d489" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      <svg class="aq-rock" style="left:46%" width="72" height="34" viewBox="0 0 72 38">
+        <defs><radialGradient id="rockG" cx="40%" cy="30%" r="80%">
+          <stop offset="0%" stop-color="#5b697e"/><stop offset="100%" stop-color="#37414f"/>
+        </radialGradient></defs>
+        <ellipse cx="36" cy="35" rx="35" ry="7" fill="rgba(0,0,0,.18)"/>
+        <path d="M6,37 Q7,15 28,11 Q50,7 62,20 Q70,29 66,37 Z" fill="url(#rockG)"/>
+        <path d="M18,22 Q25,16 34,20" stroke="#6c7c94" stroke-width="2" fill="none" stroke-linecap="round" opacity=".55"/>
+      </svg>
+      <svg class="aq-plant" style="left:70%" width="34" height="64" viewBox="0 0 46 82" fill="none">
+        <path class="aq-kelp" style="animation-duration:3.9s;animation-delay:-1.0s" d="M24,82 Q15,48 21,12" stroke="#2f9e5e" stroke-width="6" stroke-linecap="round"/>
+        <path class="aq-kelp" style="animation-duration:3.3s;animation-delay:-.3s"  d="M27,82 Q35,52 30,20" stroke="#4fce82" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      <svg class="aq-plant" style="left:87%" width="42" height="78" viewBox="0 0 46 82" fill="none">
+        <path class="aq-kelp" style="animation-duration:4.4s;animation-delay:-2.6s" d="M22,82 Q11,44 18,6"  stroke="#37a566" stroke-width="6" stroke-linecap="round"/>
+        <path class="aq-kelp" style="animation-duration:3.5s;animation-delay:-.9s"  d="M26,82 Q37,48 30,12" stroke="#5cdb8e" stroke-width="5" stroke-linecap="round"/>
+        <path class="aq-kelp" style="animation-duration:3.0s;animation-delay:-1.8s" d="M24,82 Q24,46 26,22" stroke="#7bf0a6" stroke-width="3" stroke-linecap="round"/>
+      </svg>
       <div id="aqEmpty" class="aq-empty">Adopt your first fish below! 🫧</div>
       <div id="tankLock">
         <div class="fn-card">
