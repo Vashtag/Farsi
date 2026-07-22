@@ -246,6 +246,18 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .tank-buy:hover:not(:disabled){filter:brightness(1.12)} .tank-buy:active:not(:disabled){transform:translateY(2px);border-bottom-width:2px}
 .tank-buy:disabled{opacity:.5;cursor:not-allowed}
 .tank-buy .femoji{font-size:22px} .tank-buy .fname{flex:1} .tank-buy .fcost{color:#fbbf24;white-space:nowrap}
+/* Pets chooser */
+.pet-choice{display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 10px;border-radius:16px;border:2px solid #2b3b5c;border-bottom-width:5px;border-bottom-color:#101a30;background:#1c2942;color:#e5e7eb;cursor:pointer;font-weight:800;font-size:15px;transition:filter .12s,transform .06s}
+.pet-choice:hover{filter:brightness(1.14)} .pet-choice:active{transform:translateY(2px);border-bottom-width:2px}
+.pet-choice .pc-emoji{font-size:44px;line-height:1}
+/* Fish name label + naming popup */
+.aq-fish{cursor:pointer}
+.aq-fish .aq-emoji{display:inline-block;will-change:transform}
+.aq-name{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:1px;background:rgba(4,20,38,.72);color:#eaf6ff;font-size:10px;font-weight:800;padding:1px 6px;border-radius:8px;white-space:nowrap;pointer-events:none}
+#fishNameBox{position:absolute;inset:0;display:none;place-items:center;background:rgba(4,12,28,.55);backdrop-filter:blur(2px);border-radius:18px;z-index:2}
+#fishNameBox .fn-card{background:linear-gradient(180deg,#0d1530,#141d3e);border:1px solid var(--line);border-radius:16px;padding:16px 18px;width:80%;max-width:280px;text-align:center}
+#fishNameBox input{width:100%;margin:10px 0;padding:10px;border-radius:10px;border:1px solid #2b3b5c;background:#0a142e;color:#e5e7eb;font-size:16px;text-align:center}
+#fishNameBox .fn-btns{display:flex;gap:8px} #fishNameBox .fn-btns button{flex:1}
 .badge-tile{
   position:relative; padding:10px 12px; border-radius:12px; font-size:14px;
   background:#0b1229; border:1px solid var(--line); color:#9aa7b7; display:flex; align-items:center; gap:8px;
@@ -425,8 +437,7 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div class="badge" id="scoreBadge">Score: 0</div>
     <div class="badge" id="streakBadge">Streak: 0 🔥</div>
     <div class="badge" id="unlockedBadge">0/0 unlocked</div>
-    <button id="openMap" class="icon-btn" title="Bazaar Map">🗺️</button>
-    <button id="openTank" class="icon-btn" title="Fish Tank">🐠</button>
+    <button id="openPets" class="icon-btn" title="Pets">🐾</button>
     <button id="openPostcards" class="icon-btn" title="Postcards">🏛️</button>
     <!-- Dictionary button removed from header; now in the mode row -->
     <button id="openAchievements" class="icon-btn" title="Badges">🏆</button>
@@ -537,6 +548,21 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   </div>
 </div>
 
+<!-- Pets chooser Modal -->
+<div id="petsModal" class="modal">
+  <div class="modal-card" style="max-width:420px;text-align:center">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h3 style="margin:0">🐾 Pets</h3>
+      <button id="closePets" class="btn">Close</button>
+    </div>
+    <p class="tiny" style="margin:0 0 16px;color:#6b7280">Where do you want to go?</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <button id="chooseBazaar" class="pet-choice"><span class="pc-emoji">🐱</span><span>Cat Bazaar</span></button>
+      <button id="chooseTank" class="pet-choice"><span class="pc-emoji">🐠</span><span>Fish Tank</span></button>
+    </div>
+  </div>
+</div>
+
 <!-- Fish Tank Modal -->
 <div id="tankModal" class="modal">
   <div class="modal-card" style="max-width:620px">
@@ -551,7 +577,18 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div id="aquarium">
       <div class="aq-decor">🌿🪸🌿&nbsp;&nbsp;🪨&nbsp;&nbsp;🌿🪸</div>
       <div id="aqEmpty" class="aq-empty">Adopt your first fish below! 🫧</div>
+      <div id="fishNameBox">
+        <div class="fn-card">
+          <div>Name your <span id="fnSpecies">fish</span> <span id="fnEmoji">🐠</span></div>
+          <input id="fnInput" type="text" maxlength="16" placeholder="e.g., Bubbles" autocomplete="off"/>
+          <div class="fn-btns">
+            <button id="fnCancel" class="btn">Cancel</button>
+            <button id="fnSave" class="primary">Save</button>
+          </div>
+        </div>
+      </div>
     </div>
+    <p class="tiny" style="text-align:center;color:#6b7280;margin:6px 0 0">Tip: tap a fish to give it a name 🏷️</p>
     <p class="tiny" id="tankMsg" style="min-height:18px;text-align:center;margin:8px 0"></p>
     <div id="tankShop" class="tank-shop"></div>
   </div>
@@ -1431,6 +1468,10 @@ function loadState(){
   if(state.furniture.catBowl === undefined) state.furniture.catBowl = false;
   if(typeof state.jooniPet !== 'boolean') state.jooniPet = false;
   if(!Array.isArray(state.tankFish)) state.tankFish = [];
+  // migrate old string entries ('goldfish') to objects ({sp,name}); drop retired species
+  state.tankFish = state.tankFish
+    .map(f => (typeof f === 'string') ? {sp:f, name:''} : f)
+    .filter(f => f && typeof f.sp === 'string');
   if(!state.catNames) state.catNames = {};
   if(typeof state.nameCursor!=='number') state.nameCursor = -1;
   if(typeof state.showCatNames!=='boolean') state.showCatNames = false;
@@ -2287,8 +2328,17 @@ $('revealBtn').addEventListener('click', ()=>{ const gi=order[idx], item=words[g
 
 $('openAchievements').addEventListener('click', ()=>{ reflectBadges(); $('achModal').style.display='grid'; });
 $('closeAch').addEventListener('click', ()=> $('achModal').style.display='none');
-$('openMap').addEventListener('click', ()=>{ renderMap(); $('mapModal').style.display='grid'; requestAnimationFrame(startCats); updateShopUI(); updateNamesToggleUI(); updateNamesVisibility(); });
+function openBazaar(){ renderMap(); $('mapModal').style.display='grid'; requestAnimationFrame(startCats); updateShopUI(); updateNamesToggleUI(); updateNamesVisibility(); }
 $('closeMap').addEventListener('click', ()=>{ $('mapModal').style.display='none'; stopCats(); });
+
+/* Pets chooser — one header button opens a picker for the Cat Bazaar or Fish Tank */
+function openPets(){ $('petsModal').style.display='grid'; }
+function closePets(){ $('petsModal').style.display='none'; }
+$('openPets').addEventListener('click', openPets);
+$('closePets').addEventListener('click', closePets);
+$('petsModal').addEventListener('click', e=>{ if(e.target.id==='petsModal') closePets(); });
+$('chooseBazaar').addEventListener('click', ()=>{ closePets(); openBazaar(); });
+$('chooseTank').addEventListener('click', ()=>{ closePets(); openTank(); });
 
 /* ===================== FISH TANK ===================== */
 function speciesById(id){ return FISH_SPECIES.find(s=>s.id===id); }
@@ -2303,25 +2353,29 @@ function tankStep(now){
     if(s.x > B.w-m){ s.x=B.w-m; s.vx=-Math.abs(s.vx); }
     if(s.y < 8){ s.y=8; s.vy=Math.abs(s.vy); }
     if(s.y > B.h-m-8){ s.y=B.h-m-8; s.vy=-Math.abs(s.vy); }
-    // emoji faces left by default → flip when swimming right
-    s.el.style.transform=`translate(${s.x.toFixed(1)}px, ${(s.y+Math.sin(s.phase)*3).toFixed(1)}px) scaleX(${s.vx>=0?-1:1})`;
+    // Move the container; flip only the emoji (so the name label stays readable).
+    s.el.style.transform=`translate(${s.x.toFixed(1)}px, ${(s.y+Math.sin(s.phase)*3).toFixed(1)}px)`;
+    s.emojiEl.style.transform=`scaleX(${s.vx>=0?-1:1})`;   // emoji faces left by default → flip when swimming right
   }
   tankRAF=requestAnimationFrame(tankStep);
 }
 function renderTankFish(){
   const aq=$('aquarium'); if(!aq) return;
   stopTankSwim();
-  aq.querySelectorAll('.aq-fish,.aq-bubble').forEach(el=>el.remove());   // keep decor + empty label
+  aq.querySelectorAll('.aq-fish,.aq-bubble').forEach(el=>el.remove());   // keep decor, empty label & name box
   const list=state.tankFish||[];
   $('aqEmpty').style.display = list.length ? 'none' : 'grid';
   const B=aq.getBoundingClientRect(); tankBounds={ w:B.width||400, h:B.height||280 };
-  list.forEach(id=>{
-    const sp=speciesById(id); if(!sp) return;
-    const el=document.createElement('div'); el.className='aq-fish';
-    const size=24+Math.random()*12; el.style.fontSize=size+'px'; el.textContent=sp.emoji;
-    aq.appendChild(el);
+  list.forEach((f,idx)=>{
+    const sp=speciesById(f.sp); if(!sp) return;
+    const size=24+Math.random()*12;
+    const el=document.createElement('div'); el.className='aq-fish'; el.style.fontSize=size+'px'; el.title='Tap to name';
+    const emojiEl=document.createElement('span'); emojiEl.className='aq-emoji'; emojiEl.textContent=sp.emoji;
+    const nameEl=document.createElement('div'); nameEl.className='aq-name'; nameEl.textContent=f.name||''; nameEl.style.display=f.name?'block':'none';
+    el.appendChild(emojiEl); el.appendChild(nameEl); aq.appendChild(el);
+    el.addEventListener('click', ()=> openFishName(idx));
     const m=size*0.6;
-    tankSwimmers.push({ el, size,
+    tankSwimmers.push({ el, emojiEl, nameEl, idx, size,
       x: m + Math.random()*Math.max(1, tankBounds.w-2*m),
       y: 12 + Math.random()*Math.max(1, tankBounds.h-40),
       vx: (Math.random()<0.5?-1:1)*(20+Math.random()*24),   // px/sec
@@ -2330,6 +2384,25 @@ function renderTankFish(){
   });
   for(let i=0;i<6;i++){ const b=document.createElement('div'); b.className='aq-bubble'; b.textContent='○'; b.style.left=(6+Math.random()*88)+'%'; const d=5+Math.random()*6; b.style.animationDuration=d+'s'; b.style.animationDelay=(-(Math.random()*d))+'s'; aq.appendChild(b); }
   if(tankSwimmers.length){ tankStep.last=performance.now(); tankRAF=requestAnimationFrame(tankStep); }
+}
+/* Fish naming */
+let fishNamingIdx=-1;
+function openFishName(idx){
+  const f=(state.tankFish||[])[idx]; if(!f) return;
+  fishNamingIdx=idx; const sp=speciesById(f.sp);
+  $('fnSpecies').textContent = sp?sp.name:'fish'; $('fnEmoji').textContent = sp?sp.emoji:'🐠';
+  $('fnInput').value = f.name||'';
+  $('fishNameBox').style.display='grid';
+  setTimeout(()=>$('fnInput').focus(), 30);
+}
+function closeFishName(){ $('fishNameBox').style.display='none'; fishNamingIdx=-1; }
+function saveFishName(){
+  if(fishNamingIdx<0) return;
+  const f=(state.tankFish||[])[fishNamingIdx]; if(!f){ closeFishName(); return; }
+  f.name = ($('fnInput').value||'').trim().slice(0,16); persist();
+  const sw=tankSwimmers.find(s=>s.idx===fishNamingIdx);
+  if(sw){ sw.nameEl.textContent=f.name; sw.nameEl.style.display=f.name?'block':'none'; }
+  closeFishName();
 }
 function buildTankShop(){
   const box=$('tankShop'); if(!box) return; box.innerHTML='';
@@ -2353,15 +2426,17 @@ function adoptFish(id){
   const sp=speciesById(id); if(!sp) return;
   if((state.tankFish||[]).length>=TANK_MAX_FISH){ tankMsg('The tank is full! 🐠','warn'); return; }
   if(state.score < sp.cost){ tankMsg(`${sp.name} costs ⭐${sp.cost} — keep learning!`,'warn'); return; }
-  state.score -= sp.cost; state.tankFish=[...(state.tankFish||[]), id]; persist();
+  state.score -= sp.cost; state.tankFish=[...(state.tankFish||[]), {sp:id, name:''}]; persist();
   renderTankFish(); updateTankUI(); updateBadges();
-  tankMsg(`${sp.emoji} ${sp.name} adopted — welcome home!`,'ok'); celebrateSimple();
+  tankMsg(`${sp.emoji} ${sp.name} adopted — tap it to give it a name!`,'ok'); celebrateSimple();
 }
 function openTank(){ $('tankModal').style.display='grid'; tankMsg(''); updateTankUI(); renderTankFish(); }
 function closeTank(){ $('tankModal').style.display='none'; stopTankSwim(); }
-$('openTank').addEventListener('click', openTank);
 $('closeTank').addEventListener('click', closeTank);
 $('tankModal').addEventListener('click', e=>{ if(e.target.id==='tankModal') closeTank(); });
+$('fnSave').addEventListener('click', saveFishName);
+$('fnCancel').addEventListener('click', closeFishName);
+$('fnInput').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveFishName(); } });
 
 function updateShopUI(){
   if($('shopScore')) $('shopScore').textContent = state.score;
