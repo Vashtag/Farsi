@@ -1126,9 +1126,9 @@ const FISH_SPECIES = [
 const TANK_MAX_FISH = 14;   // keep the tank from getting too crowded
 const TANK_COST = 750;      // one-time cost to unlock the fish tank
 // Dev tools (audio recorder + photo uploader) push to this branch by default.
-const DEV_DEFAULT_BRANCH = 'claude/photos-not-displaying-qnn0mr';
-// One-time migration: move any device still pointed at the old alphabet branch onto it.
-try{ if(localStorage.getItem('ff_dev_gh_branch')==='claude/alphabet-spelling-learning-zXVWz'){ localStorage.setItem('ff_dev_gh_branch', DEV_DEFAULT_BRANCH); } }catch{}
+const DEV_DEFAULT_BRANCH = 'main';
+// One-time migration: move any device still pointed at an old feature branch onto main.
+try{ const _b=localStorage.getItem('ff_dev_gh_branch'); if(_b==='claude/alphabet-spelling-learning-zXVWz' || _b==='claude/photos-not-displaying-qnn0mr'){ localStorage.setItem('ff_dev_gh_branch', DEV_DEFAULT_BRANCH); } }catch{}
 const JOONI_SIDE_IMG = 'images/Jooni_Side.png';
 const JOONI_SIDE_IMG_ALT = 'images/Jooni-Side.png';   // fallback if named with a hyphen
 const CAT_UNLOCK_THRESHOLDS = [5, 20, 100, 250, 500];
