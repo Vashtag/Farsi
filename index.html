@@ -2118,7 +2118,7 @@ async function loadAddedImages(){
 }
 
 /* ===================== SPEECH RECOG ===================== */
-let SR=null;
+let SR=null, srListening=false;
 function levenshtein(a,b){const m=a.length,n=b.length,dp=Array.from({length:m+1},()=>Array(n+1).fill(0));for(let i=0;i<=m;i++)dp[i][0]=i;for(let j=0;j<=n;j++)dp[0][j]=j;for(let i=1;i<=m;i++){for(let j=1;j<=n;j++){const c=a[i-1]===b[j-1]?0:1;dp[i][j]=Math.min(dp[i-1][j]+1,dp[i][j-1]+1,dp[i-1][j-1]+c)}}return dp[m][n]}
 function closeEnough(a,b){if(!a||!b)return false;if(a===b)return true;return levenshtein(a,b)<=1}
 function hasPersian(s){return /[\u0600-\u06FF]/.test(s||'')}
@@ -2137,16 +2137,33 @@ function matchesNumberWord(item, heard){
   const en = (item.en||'').toLowerCase();
   return heard.some(h => heardNumber(h)===digit || normalizeSRTranslit(h)===en);
 }
-function initSpeech(){
+function srSupported(){ return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+function srFeedback(text, cls){ const el=$('speechFeedback'); if(!el) return; el.innerHTML=text; el.className='feedback '+(cls||'tiny'); }
+// Map a SpeechRecognition error code to a helpful, actionable message.
+function handleSRError(code){
+  srListening=false;
+  switch(code){
+    case 'no-speech':  srFeedback('Didn’t hear anything — tap and speak again.', 'warn'); break;
+    case 'aborted':    /* benign (we stopped it) */ break;
+    case 'audio-capture': srFeedback('No microphone was found.', 'err'); break;
+    case 'not-allowed':
+    case 'service-not-available':
+      srFeedback('Mic is blocked. On iPhone: Settings → Safari → Microphone → Allow, and Settings → General → Keyboard → turn on <b>Dictation</b>. Then tap 🎤 again.', 'err'); break;
+    case 'language-not-supported':
+      srFeedback('Persian speech isn’t available on this device — try saying the English spelling instead.', 'warn'); break;
+    default: srFeedback('Speech error ('+code+'). Tap 🎤 to try again.', 'err');
+  }
+}
+function buildSR(){
   const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const btn = $('sayBtn');
-  if(!SRClass){ btn.disabled=true; btn.title='Speech not supported (try Chrome).'; return; }
-  SR = new SRClass(); SR.lang = 'fa-IR'; SR.interimResults = false; SR.maxAlternatives = 4;
-  btn.disabled=false; btn.title='Say the word in Persian (e.g., «خانه»). Speaking the transliteration also works.';
-  SR.onstart = ()=>{ $('speechFeedback').textContent='🎙️ Listening…'; $('speechFeedback').className='feedback tiny'; };
-  SR.onerror = ()=>{ $('speechFeedback').textContent='Mic error. Try again.'; $('speechFeedback').className='feedback err'; };
-  SR.onend = ()=>{ if($('speechFeedback').textContent.includes('Listening')){ $('speechFeedback').textContent='Didn’t catch that—try again.'; $('speechFeedback').className='feedback warn'; } };
-  SR.onresult = (event)=>{
+  if(!SRClass) return null;
+  const sr = new SRClass();
+  sr.lang='fa-IR'; sr.interimResults=false; sr.maxAlternatives=4; sr.continuous=false;
+  sr.onstart  = ()=>{ srListening=true; srFeedback('🎙️ Listening…', 'tiny'); };
+  sr.onerror  = (e)=>{ handleSRError((e && e.error) || 'unknown'); };
+  sr.onend    = ()=>{ srListening=false; if(($('speechFeedback')?.textContent||'').includes('Listening')){ srFeedback('Didn’t catch that — tap 🎤 to try again.', 'warn'); } };
+  sr.onresult = (event)=>{
+    srListening=false;
     const gi=order[idx], item=words[gi];
     const targetFa = normalizeFa(item.fa); const targetTr = normalizeTranslit(item.translit);
     const heard = []; for(let i=0;i<event.results[0].length;i++){ heard.push(event.results[0][i].transcript); }
@@ -2159,7 +2176,26 @@ function initSpeech(){
     $('speechFeedback').className = 'feedback ' + (ok?'ok':'warn');
     handleAnswer(ok, gi, 'speech', picked);
   };
-  $('sayBtn').addEventListener('click', ()=>{ if(!SR) return; try{ SR.stop(); SR.start(); }catch(_){} });
+  return sr;
+}
+// Start listening directly inside the tap gesture (iOS requires this — no stop()+start()).
+function startListening(){
+  if(!srSupported()){ srFeedback('Speech isn’t supported in this browser — try Safari or Chrome.', 'err'); return; }
+  if(srListening){ try{ SR && SR.stop(); }catch(_){} srListening=false; return; }   // tap again = stop
+  if(!SR) SR = buildSR();
+  try{ SR.start(); }
+  catch(err){
+    // A stuck recognizer throws InvalidStateError — rebuild fresh and retry once.
+    try{ SR = buildSR(); SR.start(); }
+    catch(e2){ handleSRError('not-allowed'); }
+  }
+}
+function initSpeech(){
+  const btn = $('sayBtn'); if(!btn) return;
+  if(!srSupported()){ btn.disabled=true; btn.title='Speech not supported (try Safari or Chrome).'; return; }
+  btn.disabled=false; btn.title='Tap, then say the word in Persian (e.g., «خانه»). Saying the English spelling works too.';
+  SR = buildSR();
+  btn.addEventListener('click', startListening);
 }
 
 /* ===================== ANSWERING / MAP ===================== */
