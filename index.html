@@ -2146,9 +2146,12 @@ function handleSRError(code){
     case 'no-speech':  srFeedback('Didn’t hear anything — tap and speak again.', 'warn'); break;
     case 'aborted':    /* benign (we stopped it) */ break;
     case 'audio-capture': srFeedback('No microphone was found.', 'err'); break;
-    case 'not-allowed':
+    case 'service-not-allowed':
     case 'service-not-available':
-      srFeedback('Mic is blocked. On iPhone: Settings → Safari → Microphone → Allow, and Settings → General → Keyboard → turn on <b>Dictation</b>. Then tap 🎤 again.', 'err'); break;
+      // On iPhone/iPad this means Safari’s speech service (Dictation) is turned off.
+      srFeedback('Speech is turned off on this device. On iPhone: Settings → General → Keyboard → turn on <b>Enable Dictation</b>, then reopen Safari and tap 🎤 again.', 'err'); break;
+    case 'not-allowed':
+      srFeedback('Mic access was blocked. On iPhone: Settings → Safari → Microphone → <b>Allow</b>, then tap 🎤 again.', 'err'); break;
     case 'language-not-supported':
       srFeedback('Persian speech isn’t available on this device — try saying the English spelling instead.', 'warn'); break;
     default: srFeedback('Speech error ('+code+'). Tap 🎤 to try again.', 'err');
