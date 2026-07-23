@@ -517,6 +517,12 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
             <button id="nextBtn" class="primary">➡️ Next</button>
           </div>
           <div class="feedback" id="speechFeedback"></div>
+          <div id="selfCheck" style="display:none;justify-content:center;gap:8px;flex-wrap:wrap;margin:4px 0 8px">
+            <button id="scPlayMine" class="btn" type="button">▶️ Hear me</button>
+            <button id="scPlayRef" class="btn" type="button">🔊 The word</button>
+            <button id="scGot" class="primary" type="button">✓ I said it!</button>
+            <button id="scRetry" class="btn" type="button">↻ Try again</button>
+          </div>
           <label class="tiny" for="typeInput">Type the pronunciation (English letters):</label>
           <input class="input" id="typeInput" placeholder="e.g., sib" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text"/>
           <div class="controls">
@@ -2148,10 +2154,10 @@ function handleSRError(code){
     case 'audio-capture': srFeedback('No microphone was found.', 'err'); break;
     case 'service-not-allowed':
     case 'service-not-available':
-      // On iPhone/iPad this means Safari’s speech service (Dictation) is turned off.
-      srFeedback('Speech is turned off on this device. On iPhone: Settings → General → Keyboard → turn on <b>Enable Dictation</b>, then reopen Safari and tap 🎤 again.', 'err'); break;
+      // Speech service unavailable (common on iOS Safari) — switch to record & self-check.
+      switchToRecordMode('Speech grading isn’t available on this device.'); break;
     case 'not-allowed':
-      srFeedback('Mic access was blocked. On iPhone: Settings → Safari → Microphone → <b>Allow</b>, then tap 🎤 again.', 'err'); break;
+      switchToRecordMode('Speech recognition was blocked.'); break;
     case 'language-not-supported':
       srFeedback('Persian speech isn’t available on this device — try saying the English spelling instead.', 'warn'); break;
     default: srFeedback('Speech error ('+code+'). Tap 🎤 to try again.', 'err');
@@ -2181,24 +2187,68 @@ function buildSR(){
   };
   return sr;
 }
+// ---- Record-and-self-check fallback (works wherever the mic/getUserMedia works,
+// even when the Web Speech API is blocked, e.g. iOS Safari service-not-allowed) ----
+let pronMode='speech';   // flips to 'record' once speech recognition proves unavailable
+let recStream=null, recRecorder=null, recChunks=[], recUrl=null, recActive=false, recAudio=null, recTimer=null;
+function switchToRecordMode(reason){
+  pronMode='record';
+  srFeedback((reason?reason+' ':'') + 'No problem — tap 🎤 to record yourself and check it.', 'warn');
+}
+async function startRecordSelfCheck(){
+  const btn=$('sayBtn');
+  if(recActive){ stopRecordSelfCheck(); return; }   // tap again = stop early
+  $('selfCheck').style.display='none';
+  try{ if(!recStream) recStream = await navigator.mediaDevices.getUserMedia({audio:true}); }
+  catch(e){ srFeedback('Microphone is blocked. Allow the mic for this site in your browser settings, then tap 🎤 again.', 'err'); return; }
+  try{ recRecorder = new MediaRecorder(recStream); }
+  catch(e){ srFeedback('Recording isn’t supported in this browser.', 'err'); return; }
+  recChunks=[];
+  recRecorder.ondataavailable = e=>{ if(e.data && e.data.size) recChunks.push(e.data); };
+  recRecorder.onstop = ()=>{
+    recActive=false; clearTimeout(recTimer); btn.textContent='🎙️ Say it';
+    const blob = new Blob(recChunks, {type: recRecorder.mimeType||'audio/webm'});
+    if(recUrl) URL.revokeObjectURL(recUrl); recUrl = URL.createObjectURL(blob);
+    const gi=order[idx], item=words[gi];
+    srFeedback(`Hear yourself, then the word «<b>${item.fa}</b>» (${item.translit}). Sound close?`, 'tiny');
+    $('selfCheck').style.display='flex';
+  };
+  recRecorder.start(); recActive=true;
+  btn.textContent='⏺️ Stop';
+  srFeedback('🎙️ Recording… say the word, then tap Stop.', 'tiny');
+  recTimer=setTimeout(()=>{ if(recActive) stopRecordSelfCheck(); }, 3500);   // auto-stop
+}
+function stopRecordSelfCheck(){ try{ if(recRecorder && recRecorder.state!=='inactive') recRecorder.stop(); }catch(_){} }
+function playMyRecording(){ if(!recUrl) return; try{ if(!recAudio) recAudio=new Audio(); recAudio.src=recUrl; recAudio.play(); }catch(_){} }
 // Start listening directly inside the tap gesture (iOS requires this — no stop()+start()).
 function startListening(){
-  if(!srSupported()){ srFeedback('Speech isn’t supported in this browser — try Safari or Chrome.', 'err'); return; }
+  $('selfCheck').style.display='none';
+  if(pronMode==='record' || !srSupported()){ startRecordSelfCheck(); return; }
   if(srListening){ try{ SR && SR.stop(); }catch(_){} srListening=false; return; }   // tap again = stop
   if(!SR) SR = buildSR();
   try{ SR.start(); }
   catch(err){
     // A stuck recognizer throws InvalidStateError — rebuild fresh and retry once.
     try{ SR = buildSR(); SR.start(); }
-    catch(e2){ handleSRError('not-allowed'); }
+    catch(e2){ switchToRecordMode('Speech recognition isn’t available here.'); }
   }
 }
 function initSpeech(){
   const btn = $('sayBtn'); if(!btn) return;
-  if(!srSupported()){ btn.disabled=true; btn.title='Speech not supported (try Safari or Chrome).'; return; }
-  btn.disabled=false; btn.title='Tap, then say the word in Persian (e.g., «خانه»). Saying the English spelling works too.';
-  SR = buildSR();
+  btn.disabled=false; btn.title='Tap, then say the word out loud.';
+  if(!srSupported()) pronMode='record';   // no Web Speech API → go straight to record & self-check
+  else SR = buildSR();
   btn.addEventListener('click', startListening);
+  // Self-check controls (record-mode fallback)
+  $('scPlayMine').addEventListener('click', playMyRecording);
+  $('scPlayRef').addEventListener('click', ()=>{ const gi=order[idx]; if(words[gi]) playWord(words[gi]); });
+  $('scRetry').addEventListener('click', startRecordSelfCheck);
+  $('scGot').addEventListener('click', ()=>{
+    $('selfCheck').style.display='none';
+    const gi=order[idx];
+    $('speechFeedback').innerHTML='Nice speaking! ⭐'; $('speechFeedback').className='feedback ok';
+    handleAnswer(true, gi, 'speech');
+  });
 }
 
 /* ===================== ANSWERING / MAP ===================== */
