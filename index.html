@@ -1098,6 +1098,7 @@ const store = {
 const DAILY_WORDS = 5;          // words to answer right each day (daily goal)
 const RELEASE_BASE = 140;       // core words available from the start
 const RELEASE_BATCH = 10;       // extra words released per batch, once all released are learned
+const NEW_PER_SESSION = 5;      // max brand-new words introduced per practice session (rest is review)
 const TRAVEL_ALWAYS_MAX = 298;  // only the original travel vocab is always-unlocked; words added later stay gated
 const SRS_INTERVALS_HOURS = [0,8,24,72,168,336];
 const MINI_QUIZ_SIZE = 5;
@@ -1478,7 +1479,13 @@ function maybeReleaseNextBatch(){
     if(typeof Jooni!=='undefined') Jooni.milestone("New words unlocked! Âfarin — you learned them all! 🎉🐾");
   }
 }
-function quizPool(){ const due=catFilter(dueIndices()); if(due.length) return due; const m=catFilter(masteredIndices()); return m.length?m:catFilter(unlockedIndices()); }
+// Quiz draws from due words AND all mastered words so it stays diverse — otherwise a
+// batch that all came due together (e.g. days of the week) is all you'd see.
+function quizPool(){
+  const due=catFilter(dueIndices()), m=catFilter(masteredIndices());
+  const blend=[...new Set([...due, ...m])];
+  return blend.length ? blend : catFilter(unlockedIndices());
+}
 let activeCat = 'all';
 let lessonFilter = null;  // when set (array of indices), restrict practice to a single Journey lesson
 let lessonActive = false, lessonCorrect = 0, lessonTotal = 0;  // finite-lesson run state
@@ -3374,20 +3381,24 @@ function buildWeightedOrder(pool){
     else old.push(i);                             // older / well-known
   }
   shuffle(nu); shuffle(du); shuffle(rec); shuffle(old);
-  // Only a rotating sample of older words comes back each pass, for recall.
-  const sampleN = Math.min(old.length, Math.max(5, Math.ceil(old.length*0.25)));
+  // Introduce only a small number of brand-new words per session so she isn't
+  // overwhelmed and can actually keep up.
+  const nuPick = nu.slice(0, NEW_PER_SESSION);
+  // Bring back a large chunk of well-known words each pass so older vocab gets reviewed.
+  const sampleN = Math.min(old.length, Math.max(12, Math.ceil(old.length*0.5)));
   const recall = old.slice(0, sampleN);
   const seq = [];
   const add = (arr,n)=> arr.forEach(i=>{ for(let k=0;k<n;k++) seq.push(i); });
-  // Brand-new words are weighted highest so she keeps meeting fresh vocabulary
-  // (and can reach the daily learning goal), with due reviews close behind.
-  add(nu,5); add(du,3); add(rec,2); add(recall,1);
+  // Balance: a few new words, due reviews first, plenty of older-word recall.
+  add(nuPick,2); add(du,3); add(rec,2); add(recall,2);
   if(!seq.length) pool.forEach(i=>seq.push(i));   // safety
   shuffle(seq);
-  // De-cluster so the same word never lands twice in a row.
+  // De-cluster: never repeat the same word, and avoid the same category back-to-back so a
+  // batch that came due together (e.g. the days of the week) can't dominate the session.
+  const pcat = i => (words[i]?.cats||[])[0] || 'misc';
   for(let k=1;k<seq.length;k++){
-    if(seq[k]===seq[k-1]){
-      for(let j=k+1;j<seq.length;j++){ if(seq[j]!==seq[k-1]){ [seq[k],seq[j]]=[seq[j],seq[k]]; break; } }
+    if(seq[k]===seq[k-1] || pcat(seq[k])===pcat(seq[k-1])){
+      for(let j=k+1;j<seq.length;j++){ if(seq[j]!==seq[k-1] && pcat(seq[j])!==pcat(seq[k-1])){ [seq[k],seq[j]]=[seq[j],seq[k]]; break; } }
     }
   }
   return seq;
