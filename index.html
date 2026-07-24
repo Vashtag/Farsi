@@ -2869,15 +2869,16 @@ function lessonSentences(idxs){
   return out;
 }
 function buildLessonQueue(idxs){
+  // Deterministic so a lesson plays in the SAME order every time Nicole opens it:
+  // intro (new words) → one quiz step per word in word order with a fixed exercise
+  // type per word → up to 2 sentence steps in a stable order.
   const cov=getCoveredSet(), q=[];
   idxs.forEach(wi=>{ if(!cov.has(wi)) q.push({type:'intro', wi}); });   // introduce new words
   const quiz = idxs.map(wi=>{
     const types=['pickImage','pickWord','type']; if(lessonSpellable(wi)) types.push('spell');
-    return { type: types[Math.floor(Math.random()*types.length)], wi };
+    return { type: types[wi % types.length], wi };   // fixed exercise type per word (no random)
   });
-  shuffle(quiz);
-  // Cap at 2 sentence steps, added last so the words are already fresh from the quiz above.
-  const sents=lessonSentences(idxs); shuffle(sents);
+  const sents=lessonSentences(idxs);   // already deterministic (SENTENCES order, first matching blank)
   const sentSteps=sents.slice(0,2).map(o=>({type:'sentence', si:o.si, blank:o.blank, wi:o.wi}));
   return q.concat(quiz, sentSteps);
 }
@@ -3391,17 +3392,7 @@ function buildWeightedOrder(pool){
   }
   return seq;
 }
-// Difficulty proxy for a stable easy→hard sort: shorter words are easier.
-function wordDifficulty(i){ return normalizeTranslit((words[i]?.translit)||(words[i]?.en)||'').length; }
-// Learn mode order is the SAME every session — sorted easy→hard (then by curriculum
-// order) so Nicole can build a consistent routine instead of a reshuffled list.
-function buildStableOrder(pool){
-  return pool.slice().sort((a,b)=>{ const d=wordDifficulty(a)-wordDifficulty(b); return d!==0 ? d : a-b; });
-}
-function ensureOrder(){
-  order = (mode==='quiz') ? buildWeightedOrder(quizPool()) : buildStableOrder(learnPool());
-  idx=0;
-}
+function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=buildWeightedOrder(pool); idx=0; }
 function showImageOrEmoji(item){ const pic=$('pic'), emo=$('emoji'); setImageWithFallback(pic, emo, item); }
 function showItem(){
   const bb=$('backBtn'); if(bb) bb.style.display = (mode==='learn')?'inline-flex':'none';
@@ -3422,7 +3413,7 @@ function showItem(){
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
   $('hintBtn').style.display = (mode==='quiz')?'inline-flex':'none'; $('typeInput').value=''; maybeFocusInput();
 }
-function next(){ idx++; if(idx>=order.length) ensureOrder(); /* wrap: quiz re-weights, learn repeats the same order */ showItem(); }
+function next(){ idx++; if(idx>=order.length) ensureOrder(); /* rebuild → re-weight + rotate recall sample */ showItem(); }
 
 /* Night Sky background (22:00–02:00) — brief) */
 (function nightSkyBackground(){
