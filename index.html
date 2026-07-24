@@ -3391,7 +3391,17 @@ function buildWeightedOrder(pool){
   }
   return seq;
 }
-function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=buildWeightedOrder(pool); idx=0; }
+// Difficulty proxy for a stable easy→hard sort: shorter words are easier.
+function wordDifficulty(i){ return normalizeTranslit((words[i]?.translit)||(words[i]?.en)||'').length; }
+// Learn mode order is the SAME every session — sorted easy→hard (then by curriculum
+// order) so Nicole can build a consistent routine instead of a reshuffled list.
+function buildStableOrder(pool){
+  return pool.slice().sort((a,b)=>{ const d=wordDifficulty(a)-wordDifficulty(b); return d!==0 ? d : a-b; });
+}
+function ensureOrder(){
+  order = (mode==='quiz') ? buildWeightedOrder(quizPool()) : buildStableOrder(learnPool());
+  idx=0;
+}
 function showImageOrEmoji(item){ const pic=$('pic'), emo=$('emoji'); setImageWithFallback(pic, emo, item); }
 function showItem(){
   const bb=$('backBtn'); if(bb) bb.style.display = (mode==='learn')?'inline-flex':'none';
@@ -3412,7 +3422,7 @@ function showItem(){
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
   $('hintBtn').style.display = (mode==='quiz')?'inline-flex':'none'; $('typeInput').value=''; maybeFocusInput();
 }
-function next(){ idx++; if(idx>=order.length) ensureOrder(); /* rebuild → re-weight + rotate recall sample */ showItem(); }
+function next(){ idx++; if(idx>=order.length) ensureOrder(); /* wrap: quiz re-weights, learn repeats the same order */ showItem(); }
 
 /* Night Sky background (22:00–02:00) — brief) */
 (function nightSkyBackground(){
