@@ -47,7 +47,9 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
 .card{background:linear-gradient(180deg,var(--grad1),var(--grad2));border:1px solid var(--line);border-radius:22px;padding:clamp(18px,3vw,30px);box-shadow:var(--shadow-card)}
 .row{display:grid;grid-template-columns:1fr;gap:16px}
 @media(min-width:860px){.row{grid-template-columns:1fr 1fr}}
-.media-wrap{display:grid;place-items:center}
+/* The media box is always visible — it holds either the photo or the emoji fallback. */
+.media-wrap{display:grid;place-items:center;width:min(420px,92%);height:min(280px,45vw);background:var(--well);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin:0 auto}
+.media-wrap img{width:100%;height:100%;background:none;border:none;border-radius:0;margin:0}
 .pic,.mq-pic{width:min(420px,92%);height:min(280px,45vw);object-fit:contain;background:var(--well);border:1px solid var(--line);border-radius:18px;display:none}
 .emoji{font-size:clamp(64px,12vw,120px);text-align:center;line-height:1;filter:drop-shadow(0 12px 24px rgba(0,0,0,.4))}
 .word{display:flex;flex-direction:column;gap:6px;align-items:flex-start;justify-content:center}
@@ -909,8 +911,10 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <div class="qprogress" style="height:8px;background:#0a142e;border:1px solid #1f2937;border-radius:999px;overflow:hidden;margin-bottom:12px">
       <div id="mqBar" class="bar" style="height:8px;width:0%"></div>
     </div>
-    <img id="mqPic" class="mq-pic" alt="" style="display:block;margin:auto" loading="lazy"/>
-    <div id="mqEmoji" class="emoji" style="display:none; text-align:center; margin-top:8px"></div>
+    <div class="media-wrap">
+      <img id="mqPic" class="mq-pic" alt="" style="display:block;margin:auto" loading="lazy"/>
+      <div id="mqEmoji" class="emoji" style="display:none; text-align:center"></div>
+    </div>
     <input id="mqInput" class="input" placeholder="Type the transliteration…" style="margin-top:12px"/>
     <div class="controls" style="justify-content:flex-end"><button id="mqCheck" class="primary">Check</button></div>
     <div id="mqFeedback" class="feedback"></div>
