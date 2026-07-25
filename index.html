@@ -1038,10 +1038,24 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
     <h3 style="margin:0 0 4px" id="scopeTitle">Category</h3>
     <p class="tiny" style="margin:0 0 16px;color:#6b7280">What do you want to practice?</p>
     <div style="display:grid;gap:10px">
-      <button id="scopeNew" class="cat-pick primary" style="height:auto;padding:14px">🆕 New words first<br><span class="tiny" style="font-weight:700;opacity:.85">learn the new ones, then review</span></button>
-      <button id="scopeAll" class="cat-pick" style="height:auto;padding:14px">📚 All words<br><span class="tiny" style="font-weight:700;opacity:.85">same easy → hard order every time</span></button>
+      <button id="scopeNew" class="cat-pick primary">New Words</button>
+      <button id="scopeAll" class="cat-pick">All Words</button>
     </div>
     <button id="scopeCancel" class="btn" style="margin-top:14px;width:100%">Cancel</button>
+  </div>
+</div>
+
+<!-- Category unlock modal (topic not unlocked yet) -->
+<div id="catUnlockModal" class="modal">
+  <div class="modal-card" style="max-width:360px;text-align:center">
+    <div style="font-size:40px">🔒</div>
+    <h3 style="margin:6px 0 2px" id="catUnlockTitle">Category</h3>
+    <p class="tiny" style="margin:0 0 10px;color:#6b7280">You haven't unlocked any of these words yet.</p>
+    <p style="margin:0 0 12px">Unlock <b>5</b> new <span id="catUnlockName">category</span> words for <b>⭐500</b>?</p>
+    <div class="bazaar-stats" style="justify-content:center;margin-bottom:10px"><span>You have ⭐ <b id="catUnlockScore">0</b></span></div>
+    <button id="catUnlockBtn" class="primary" style="width:100%">🔓 Unlock 5 words (⭐500)</button>
+    <p class="tiny" id="catUnlockMsg" style="min-height:16px;margin:8px 0 0"></p>
+    <button id="catUnlockCancel" class="btn" style="width:100%;margin-top:6px">Cancel</button>
   </div>
 </div>
 
@@ -1435,6 +1449,7 @@ const defaultState = ()=>({
   settings:{reviewAll:false, musicOn:false, musicVol:0.28},
   theme:'default',
   inventory:{fish:0, catnip:0, nameTokens:0},
+  extraUnlocked:[],
   tankFish:[], tankOwned:false,
   jooniPet:false,
   furniture:{catTree:false, catToy:false, catBowl:false},
@@ -1473,6 +1488,7 @@ function initDailyUnlock(){
    (travel vocabulary is always available for the trip). */
 function isReleased(i){
   if(i < (state.releasedCount||RELEASE_BASE)) return true;
+  if((state.extraUnlocked||[]).includes(i)) return true;   // individually unlocked (bought per-category)
   return i < TRAVEL_ALWAYS_MAX && (words[i]?.cats||[]).includes('travel');
 }
 function unlockedIndices(){ const out=[]; for(let i=0;i<words.length;i++){ if(isReleased(i)) out.push(i); } return out; }
@@ -1535,6 +1551,7 @@ function loadState(){
   if(state.furniture.catToy  === undefined) state.furniture.catToy  = false;
   if(state.furniture.catBowl === undefined) state.furniture.catBowl = false;
   if(typeof state.jooniPet !== 'boolean') state.jooniPet = false;
+  if(!Array.isArray(state.extraUnlocked)) state.extraUnlocked = [];
   if(!Array.isArray(state.tankFish)) state.tankFish = [];
   // migrate old string entries ('goldfish') to objects ({sp,name}); drop retired species
   state.tankFish = state.tankFish
@@ -1584,6 +1601,7 @@ function mergeStates(local, remote){
     nameTokens:Math.max(local.inventory?.nameTokens||0,remote.inventory?.nameTokens||0)
   };
   base.jooniPet = !!(local.jooniPet || remote.jooniPet);
+  base.extraUnlocked = [...new Set([...(local.extraUnlocked||[]), ...(remote.extraUnlocked||[])])];
   // Keep whichever tank has more fish (adoptions only grow the collection).
   base.tankFish = ((remote.tankFish?.length||0) >= (local.tankFish?.length||0)) ? (remote.tankFish||[]) : (local.tankFish||[]);
   base.tankOwned = !!(local.tankOwned || remote.tankOwned || (base.tankFish.length>0));
@@ -2438,22 +2456,53 @@ function startLearnCategory(cat, scope){
   closeCatModal(); $('scopeModal').style.display='none';
   startMode('learn');
 }
+const CAT_UNLOCK_COUNT = 5, CAT_UNLOCK_COST = 500;
 let pendingCat = null;
+function catUnlockedCount(cat){ return unlockedIndices().filter(i=>(words[i].cats||[]).includes(cat)).length; }
+function catLockedWords(cat){ return words.map((w,i)=>i).filter(i=>(words[i].cats||[]).includes(cat) && !isReleased(i)); }
+function openScope(cat){ pendingCat=cat; $('scopeTitle').textContent = CAT_LABELS[cat]||cat; $('scopeModal').style.display='grid'; }
 document.querySelectorAll('.cat-pick').forEach(btn=>{
   // The scope-modal buttons share the .cat-pick class but have no data-cat — skip them here.
   if(!btn.dataset.cat) return;
   btn.addEventListener('click', ()=>{
     const cat = btn.dataset.cat;
     if(cat==='all'){ startLearnCategory('all','mix'); return; }   // free mode: random mix of new + old
-    pendingCat = cat;                                             // a topic → ask new vs all
-    $('scopeTitle').textContent = CAT_LABELS[cat]||cat;
-    $('scopeModal').style.display='grid';
+    if(catUnlockedCount(cat)===0 && catLockedWords(cat).length){   // topic fully locked → offer to unlock
+      closeCatModal(); openCatUnlock(cat); return;
+    }
+    openScope(cat);                                                // a topic → ask new vs all
   });
 });
 $('scopeNew').addEventListener('click', ()=>{ if(pendingCat) startLearnCategory(pendingCat,'new'); });
 $('scopeAll').addEventListener('click', ()=>{ if(pendingCat) startLearnCategory(pendingCat,'all'); });
 $('scopeCancel').addEventListener('click', ()=>{ $('scopeModal').style.display='none'; });
 $('scopeModal').addEventListener('click', e=>{ if(e.target.id==='scopeModal') $('scopeModal').style.display='none'; });
+
+/* Buy a starter set of words for a locked category */
+function openCatUnlock(cat){
+  pendingCat = cat;
+  $('catUnlockTitle').textContent = CAT_LABELS[cat]||cat;
+  $('catUnlockName').textContent = (CAT_LABELS[cat]||cat).replace(/^[^\w]+\s*/,'').toLowerCase();
+  $('catUnlockScore').textContent = state.score;
+  $('catUnlockMsg').textContent = '';
+  const btn=$('catUnlockBtn'); btn.disabled = state.score < CAT_UNLOCK_COST;
+  $('catUnlockModal').style.display='grid';
+}
+function closeCatUnlock(){ $('catUnlockModal').style.display='none'; }
+$('catUnlockCancel').addEventListener('click', closeCatUnlock);
+$('catUnlockModal').addEventListener('click', e=>{ if(e.target.id==='catUnlockModal') closeCatUnlock(); });
+$('catUnlockBtn').addEventListener('click', ()=>{
+  const cat=pendingCat; if(!cat) return;
+  if(state.score < CAT_UNLOCK_COST){ $('catUnlockMsg').textContent=`You need ⭐${CAT_UNLOCK_COST} — keep learning!`; $('catUnlockMsg').style.color='#f59e0b'; return; }
+  const locked = catLockedWords(cat);
+  if(!locked.length){ $('catUnlockMsg').textContent='No more words to unlock here.'; $('catUnlockMsg').style.color='#f59e0b'; return; }
+  const toUnlock = locked.slice(0, CAT_UNLOCK_COUNT);   // lowest indices first (curriculum order)
+  state.extraUnlocked = [...new Set([...(state.extraUnlocked||[]), ...toUnlock])];
+  state.score -= CAT_UNLOCK_COST; persist(); updateBadges();
+  celebrateSimple();
+  closeCatUnlock();
+  openScope(cat);   // now the topic has unlocked words → pick New/All
+});
 $('learnBtn').addEventListener('click', ()=> openCatModal());
 $('quizBtn').addEventListener('click', ()=> startMode('quiz'));
 $('audioQuizBtn').addEventListener('click', ()=> openAudioQuiz());
