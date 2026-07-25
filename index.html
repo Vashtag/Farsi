@@ -1032,6 +1032,19 @@ main{max-width:980px;margin:24px auto;padding:0 clamp(16px,4vw,32px) 120px}
   </div>
 </div>
 
+<!-- Learn scope (new vs all) sub-modal -->
+<div id="scopeModal" class="modal">
+  <div class="modal-card" style="max-width:360px;text-align:center">
+    <h3 style="margin:0 0 4px" id="scopeTitle">Category</h3>
+    <p class="tiny" style="margin:0 0 16px;color:#6b7280">What do you want to practice?</p>
+    <div style="display:grid;gap:10px">
+      <button id="scopeNew" class="cat-pick primary" style="height:auto;padding:14px">🆕 New words first<br><span class="tiny" style="font-weight:700;opacity:.85">learn the new ones, then review</span></button>
+      <button id="scopeAll" class="cat-pick" style="height:auto;padding:14px">📚 All words<br><span class="tiny" style="font-weight:700;opacity:.85">same easy → hard order every time</span></button>
+    </div>
+    <button id="scopeCancel" class="btn" style="margin-top:14px;width:100%">Cancel</button>
+  </div>
+</div>
+
 <!-- Match (tap-the-pairs) Modal -->
 <div id="matchModal" class="modal">
   <div class="modal-card" style="max-width:520px;text-align:center">
@@ -2418,15 +2431,29 @@ function openCatModal(){ $('catModal').style.display='grid'; }
 function closeCatModal(){ $('catModal').style.display='none'; }
 $('catCancel').addEventListener('click', closeCatModal);
 $('catModal').addEventListener('click', e=>{ if(e.target.id==='catModal') closeCatModal(); });
+function startLearnCategory(cat, scope){
+  lessonFilter = null; lessonActive = false;
+  activeCat = cat; learnScope = scope;
+  $('learnBtn').textContent = 'Learn: ' + (CAT_LABELS[activeCat]||activeCat);
+  closeCatModal(); $('scopeModal').style.display='none';
+  startMode('learn');
+}
+let pendingCat = null;
 document.querySelectorAll('.cat-pick').forEach(btn=>{
+  // The scope-modal buttons share the .cat-pick class but have no data-cat — skip them here.
+  if(!btn.dataset.cat) return;
   btn.addEventListener('click', ()=>{
-    lessonFilter = null; lessonActive = false;
-    activeCat = btn.dataset.cat;
-    $('learnBtn').textContent = 'Learn: ' + (CAT_LABELS[activeCat]||activeCat);
-    closeCatModal();
-    startMode('learn');
+    const cat = btn.dataset.cat;
+    if(cat==='all'){ startLearnCategory('all','mix'); return; }   // free mode: random mix of new + old
+    pendingCat = cat;                                             // a topic → ask new vs all
+    $('scopeTitle').textContent = CAT_LABELS[cat]||cat;
+    $('scopeModal').style.display='grid';
   });
 });
+$('scopeNew').addEventListener('click', ()=>{ if(pendingCat) startLearnCategory(pendingCat,'new'); });
+$('scopeAll').addEventListener('click', ()=>{ if(pendingCat) startLearnCategory(pendingCat,'all'); });
+$('scopeCancel').addEventListener('click', ()=>{ $('scopeModal').style.display='none'; });
+$('scopeModal').addEventListener('click', e=>{ if(e.target.id==='scopeModal') $('scopeModal').style.display='none'; });
 $('learnBtn').addEventListener('click', ()=> openCatModal());
 $('quizBtn').addEventListener('click', ()=> startMode('quiz'));
 $('audioQuizBtn').addEventListener('click', ()=> openAudioQuiz());
@@ -2762,7 +2789,7 @@ let quickNicoleLongPressed=false;
 /* Start overlay: choose mode */
 function startAs(m){
   $('startOverlay').style.display='none';
-  lessonFilter = null; lessonActive = false; activeCat = 'all';   // always start on all words (weighting favors new)
+  lessonFilter = null; lessonActive = false; activeCat = 'all'; learnScope = 'mix';   // free mode: random new+old mix
   const lb=$('learnBtn'); if(lb) lb.textContent='Learn Mode';
   mode = (m==='quiz') ? 'quiz' : 'learn';
   resetSessionProgress(); ensureOrder(); showItem();
@@ -3403,7 +3430,24 @@ function buildWeightedOrder(pool){
   }
   return seq;
 }
-function ensureOrder(){ const pool = (mode==='quiz')? quizPool(): learnPool(); order=buildWeightedOrder(pool); idx=0; }
+// learnScope: 'mix' = free random mix (weighted); 'all' = same easy→hard order every time;
+// 'new' = new words first (easy→hard), then older words (easy→hard).
+let learnScope = 'mix';
+function wordDifficulty(i){ return normalizeTranslit((words[i]?.translit)||(words[i]?.en)||'').length; }
+function byDifficulty(pool){ return pool.slice().sort((a,b)=>{ const d=wordDifficulty(a)-wordDifficulty(b); return d!==0 ? d : a-b; }); }
+function isNewWord(i){ const r=state.srs[i]; return !r || !r.seen; }
+function buildNewFirstOrder(pool){
+  const news=byDifficulty(pool.filter(isNewWord)), olds=byDifficulty(pool.filter(i=>!isNewWord(i)));
+  return [...news, ...olds];
+}
+function ensureOrder(){
+  if(mode==='quiz'){ order=buildWeightedOrder(quizPool()); idx=0; return; }
+  const pool = learnPool();   // already filtered to the active category
+  if(learnScope==='all')      order = byDifficulty(pool);        // consistent easy→hard
+  else if(learnScope==='new') order = buildNewFirstOrder(pool);  // new first, then older
+  else                        order = buildWeightedOrder(pool);  // free random mix
+  idx=0;
+}
 function showImageOrEmoji(item){ const pic=$('pic'), emo=$('emoji'); setImageWithFallback(pic, emo, item); }
 function showItem(){
   const bb=$('backBtn'); if(bb) bb.style.display = (mode==='learn')?'inline-flex':'none';
