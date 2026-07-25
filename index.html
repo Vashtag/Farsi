@@ -3517,7 +3517,8 @@ function showItem(){
   const gi = order[idx % order.length]; const item = words[gi]; showImageOrEmoji(item);
   if(mode==='quiz'){ $('en').textContent=item.en; $('fa').textContent='•••'; $('trans').textContent='—'; }
   else { $('en').textContent=item.en; $('fa').textContent=item.fa; $('trans').textContent=item.translit; }
-  $('listenBtn').style.display = (mode==='quiz' || !item.audio)?'none':'inline-flex';
+  // Listen stays visible outside quiz mode — greyed out (disabled) when the word has no audio.
+  { const lb=$('listenBtn'); lb.style.display = (mode==='quiz')?'none':'inline-flex'; lb.disabled = !item.audio; lb.title = item.audio ? 'Hear the word' : 'No audio for this word yet'; }
   $('revealBtn').style.display = (mode==='quiz')?'inline-flex':'none';
   $('hintBtn').style.display = (mode==='quiz')?'inline-flex':'none'; $('typeInput').value=''; maybeFocusInput();
 }
